@@ -2,11 +2,12 @@ import Link from "next/link";
 import { updateLeadStatus } from "@/app/actions";
 import StatusSelect from "@/components/StatusSelect";
 import { listProfessionals } from "@/lib/repo";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminProfissionaisPage() {
-  const professionals = listProfessionals();
+export default async function AdminProfissionaisPage() {
+  const professionals = await listProfessionals();
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
@@ -43,7 +44,7 @@ export default function AdminProfissionaisPage() {
                   <p className="mt-2 text-sm text-slate-600">{p.bio}</p>
                 )}
                 <p className="mt-2 text-xs text-slate-400">
-                  Cadastrado em {p.created_at}
+                  Cadastrado em {formatDateTime(p.created_at)}
                 </p>
               </div>
               <form action={updateLeadStatus} className="shrink-0">

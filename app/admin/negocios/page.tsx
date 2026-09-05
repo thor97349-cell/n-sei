@@ -2,11 +2,12 @@ import Link from "next/link";
 import { updateLeadStatus } from "@/app/actions";
 import StatusSelect from "@/components/StatusSelect";
 import { listBusinesses } from "@/lib/repo";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminNegociosPage() {
-  const businesses = listBusinesses();
+export default async function AdminNegociosPage() {
+  const businesses = await listBusinesses();
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
@@ -49,7 +50,7 @@ export default function AdminNegociosPage() {
                   {b.description}
                 </p>
                 <p className="mt-2 text-xs text-slate-400">
-                  Cadastrado em {b.created_at}
+                  Cadastrado em {formatDateTime(b.created_at)}
                 </p>
               </div>
               <form action={updateLeadStatus} className="shrink-0">

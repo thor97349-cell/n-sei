@@ -5,7 +5,7 @@ import { counts } from "@/lib/repo";
 export const dynamic = "force-dynamic";
 
 export default async function AdminHomePage() {
-  const { professionals, businesses } = counts();
+  const { professionals, businesses } = await counts();
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-12">

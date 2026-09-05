@@ -1,4 +1,4 @@
-import { getDb } from "./db";
+import { getSqlReady } from "./db";
 import type { Business, LeadStatus, Professional } from "./types";
 
 export interface NewProfessional {
@@ -27,58 +27,107 @@ export interface NewBusiness {
   budget?: string;
 }
 
-export function createProfessional(data: NewProfessional): number {
-  const stmt = getDb().prepare(`
+// The Neon serverless driver can return numeric/bigint columns as strings,
+// so coerce explicitly rather than trusting the row shape.
+function toProfessional(row: Record<string, unknown>): Professional {
+  return {
+    id: Number(row.id),
+    name: String(row.name),
+    email: String(row.email),
+    phone: String(row.phone),
+    city: String(row.city),
+    expertise_area: String(row.expertise_area),
+    years_experience: Number(row.years_experience),
+    hourly_rate: Number(row.hourly_rate),
+    availability: String(row.availability),
+    bio: row.bio == null ? null : String(row.bio),
+    status: row.status as LeadStatus,
+    created_at: String(row.created_at),
+  };
+}
+
+function toBusiness(row: Record<string, unknown>): Business {
+  return {
+    id: Number(row.id),
+    business_name: String(row.business_name),
+    contact_name: String(row.contact_name),
+    email: String(row.email),
+    phone: String(row.phone),
+    city: String(row.city),
+    business_type: String(row.business_type),
+    num_employees: Number(row.num_employees),
+    help_needed: String(row.help_needed),
+    description: String(row.description),
+    urgency: String(row.urgency),
+    budget: row.budget == null ? null : String(row.budget),
+    status: row.status as LeadStatus,
+    created_at: String(row.created_at),
+  };
+}
+
+export async function createProfessional(
+  data: NewProfessional,
+): Promise<number> {
+  const sql = await getSqlReady();
+  const rows = await sql`
     INSERT INTO professionals
       (name, email, phone, city, expertise_area, years_experience, hourly_rate, availability, bio)
     VALUES
-      (@name, @email, @phone, @city, @expertise_area, @years_experience, @hourly_rate, @availability, @bio)
-  `);
-  const info = stmt.run({ ...data, bio: data.bio ?? null });
-  return Number(info.lastInsertRowid);
+      (${data.name}, ${data.email}, ${data.phone}, ${data.city}, ${data.expertise_area}, ${data.years_experience}, ${data.hourly_rate}, ${data.availability}, ${data.bio ?? null})
+    RETURNING id
+  `;
+  return Number(rows[0].id);
 }
 
-export function createBusiness(data: NewBusiness): number {
-  const stmt = getDb().prepare(`
+export async function createBusiness(data: NewBusiness): Promise<number> {
+  const sql = await getSqlReady();
+  const rows = await sql`
     INSERT INTO businesses
       (business_name, contact_name, email, phone, city, business_type, num_employees, help_needed, description, urgency, budget)
     VALUES
-      (@business_name, @contact_name, @email, @phone, @city, @business_type, @num_employees, @help_needed, @description, @urgency, @budget)
-  `);
-  const info = stmt.run({ ...data, budget: data.budget ?? null });
-  return Number(info.lastInsertRowid);
+      (${data.business_name}, ${data.contact_name}, ${data.email}, ${data.phone}, ${data.city}, ${data.business_type}, ${data.num_employees}, ${data.help_needed}, ${data.description}, ${data.urgency}, ${data.budget ?? null})
+    RETURNING id
+  `;
+  return Number(rows[0].id);
 }
 
-export function listProfessionals(): Professional[] {
-  return getDb()
-    .prepare("SELECT * FROM professionals ORDER BY created_at DESC")
-    .all() as Professional[];
+export async function listProfessionals(): Promise<Professional[]> {
+  const sql = await getSqlReady();
+  const rows = await sql`SELECT * FROM professionals ORDER BY created_at DESC`;
+  return rows.map(toProfessional);
 }
 
-export function listBusinesses(): Business[] {
-  return getDb()
-    .prepare("SELECT * FROM businesses ORDER BY created_at DESC")
-    .all() as Business[];
+export async function listBusinesses(): Promise<Business[]> {
+  const sql = await getSqlReady();
+  const rows = await sql`SELECT * FROM businesses ORDER BY created_at DESC`;
+  return rows.map(toBusiness);
 }
 
-export function updateProfessionalStatus(id: number, status: LeadStatus) {
-  getDb()
-    .prepare("UPDATE professionals SET status = ? WHERE id = ?")
-    .run(status, id);
+export async function updateProfessionalStatus(
+  id: number,
+  status: LeadStatus,
+): Promise<void> {
+  const sql = await getSqlReady();
+  await sql`UPDATE professionals SET status = ${status} WHERE id = ${id}`;
 }
 
-export function updateBusinessStatus(id: number, status: LeadStatus) {
-  getDb()
-    .prepare("UPDATE businesses SET status = ? WHERE id = ?")
-    .run(status, id);
+export async function updateBusinessStatus(
+  id: number,
+  status: LeadStatus,
+): Promise<void> {
+  const sql = await getSqlReady();
+  await sql`UPDATE businesses SET status = ${status} WHERE id = ${id}`;
 }
 
-export function counts() {
-  const professionals = getDb()
-    .prepare("SELECT COUNT(*) as n FROM professionals")
-    .get() as { n: number };
-  const businesses = getDb()
-    .prepare("SELECT COUNT(*) as n FROM businesses")
-    .get() as { n: number };
-  return { professionals: professionals.n, businesses: businesses.n };
+export async function counts(): Promise<{
+  professionals: number;
+  businesses: number;
+}> {
+  const sql = await getSqlReady();
+  const professionalRows = await sql`SELECT COUNT(*)::int AS n FROM professionals`;
+  const businessRows = await sql`SELECT COUNT(*)::int AS n FROM businesses`;
+  return {
+    professionals: Number(professionalRows[0].n),
+    businesses: Number(businessRows[0].n),
+  };
 }

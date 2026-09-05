@@ -44,7 +44,7 @@ export async function submitProfessional(formData: FormData) {
     throw new Error("Preencha todos os campos obrigatórios corretamente.");
   }
 
-  createProfessional({
+  await createProfessional({
     name,
     email,
     phone,
@@ -87,7 +87,7 @@ export async function submitBusiness(formData: FormData) {
     throw new Error("Preencha todos os campos obrigatórios corretamente.");
   }
 
-  createBusiness({
+  await createBusiness({
     business_name,
     contact_name,
     email,
@@ -139,10 +139,10 @@ export async function updateLeadStatus(formData: FormData) {
   }
 
   if (type === "professional") {
-    updateProfessionalStatus(id, status);
+    await updateProfessionalStatus(id, status);
     redirect("/admin/profissionais");
   } else if (type === "business") {
-    updateBusinessStatus(id, status);
+    await updateBusinessStatus(id, status);
     redirect("/admin/negocios");
   } else {
     throw new Error("Tipo inválido.");

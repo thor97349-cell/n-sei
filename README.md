@@ -12,19 +12,41 @@ manualmente, via WhatsApp, antes de qualquer automação.
 ## Stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript + Tailwind CSS
-- SQLite local via `better-sqlite3` (sem dependência de serviço externo)
+- Postgres (via [Neon](https://neon.tech), usando `@neondatabase/serverless`)
+  — funciona em serverless/edge, incluindo o ambiente da Vercel
+
+## Deploy na Vercel
+
+1. Acesse [vercel.com](https://vercel.com), entre com sua conta GitHub e
+   clique em **Add New → Project**.
+2. Importe o repositório `n-sei` e selecione o branch com o código deste
+   projeto. A Vercel detecta o framework (Next.js) automaticamente — não
+   precisa mudar nenhuma configuração de build.
+3. Antes ou depois do primeiro deploy, adicione um banco de dados: na aba
+   **Storage** do projeto, clique em **Create Database** e escolha
+   **Postgres (Neon)**. Ao conectar ao projeto, a variável `DATABASE_URL`
+   é criada automaticamente — não precisa copiar nada manualmente.
+4. Em **Settings → Environment Variables**, adicione `ADMIN_PASSWORD` com
+   a senha que você quer usar para acessar o painel `/admin`.
+5. Clique em **Deploy**. Ao final você recebe uma URL pública
+   (`algumacoisa.vercel.app`) para acessar no navegador.
+
+Sem o passo 3, o site sobe normalmente, mas os formulários de cadastro
+falham ao salvar — o app não guarda nada em disco (não funcionaria em uma
+função serverless), por isso depende do Postgres.
 
 ## Rodando localmente
 
+Requer uma `DATABASE_URL` de Postgres (por exemplo, o mesmo banco Neon
+criado na Vercel, ou um banco Neon próprio criado em neon.tech):
+
 ```bash
 npm install
-npm run dev
+DATABASE_URL="postgres://..." ADMIN_PASSWORD=sua-senha npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000).
-
-O banco de dados SQLite é criado automaticamente em `data/n-sei.db` na
-primeira execução (esse arquivo não é versionado).
+Abra [http://localhost:3000](http://localhost:3000). As tabelas são
+criadas automaticamente na primeira consulta.
 
 ## Estrutura
 
