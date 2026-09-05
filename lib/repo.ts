@@ -1,5 +1,10 @@
 import { getSqlReady } from "./db";
-import type { Business, LeadStatus, Professional } from "./types";
+import type {
+  Business,
+  LeadStatus,
+  PaymentStatus,
+  Professional,
+} from "./types";
 
 export interface NewProfessional {
   name: string;
@@ -26,6 +31,7 @@ export interface NewBusiness {
   description: string;
   urgency: string;
   budget?: string;
+  willingness_to_pay?: number;
 }
 
 // The Neon serverless driver can return numeric/bigint columns as strings,
@@ -44,6 +50,7 @@ function toProfessional(row: Record<string, unknown>): Professional {
     bio: row.bio == null ? null : String(row.bio),
     linkedin_url: row.linkedin_url == null ? null : String(row.linkedin_url),
     status: row.status as LeadStatus,
+    payment_status: row.payment_status as PaymentStatus,
     created_at: String(row.created_at),
   };
 }
@@ -62,7 +69,10 @@ function toBusiness(row: Record<string, unknown>): Business {
     description: String(row.description),
     urgency: String(row.urgency),
     budget: row.budget == null ? null : String(row.budget),
+    willingness_to_pay:
+      row.willingness_to_pay == null ? null : Number(row.willingness_to_pay),
     status: row.status as LeadStatus,
+    payment_status: row.payment_status as PaymentStatus,
     created_at: String(row.created_at),
   };
 }
@@ -85,9 +95,9 @@ export async function createBusiness(data: NewBusiness): Promise<number> {
   const sql = await getSqlReady();
   const rows = await sql`
     INSERT INTO businesses
-      (business_name, contact_name, email, phone, city, business_type, num_employees, help_needed, description, urgency, budget)
+      (business_name, contact_name, email, phone, city, business_type, num_employees, help_needed, description, urgency, budget, willingness_to_pay)
     VALUES
-      (${data.business_name}, ${data.contact_name}, ${data.email}, ${data.phone}, ${data.city}, ${data.business_type}, ${data.num_employees}, ${data.help_needed}, ${data.description}, ${data.urgency}, ${data.budget ?? null})
+      (${data.business_name}, ${data.contact_name}, ${data.email}, ${data.phone}, ${data.city}, ${data.business_type}, ${data.num_employees}, ${data.help_needed}, ${data.description}, ${data.urgency}, ${data.budget ?? null}, ${data.willingness_to_pay ?? null})
     RETURNING id
   `;
   return Number(rows[0].id);
@@ -175,6 +185,22 @@ export async function updateBusinessStatus(
 ): Promise<void> {
   const sql = await getSqlReady();
   await sql`UPDATE businesses SET status = ${status} WHERE id = ${id}`;
+}
+
+export async function updateProfessionalPaymentStatus(
+  id: number,
+  paymentStatus: PaymentStatus,
+): Promise<void> {
+  const sql = await getSqlReady();
+  await sql`UPDATE professionals SET payment_status = ${paymentStatus} WHERE id = ${id}`;
+}
+
+export async function updateBusinessPaymentStatus(
+  id: number,
+  paymentStatus: PaymentStatus,
+): Promise<void> {
+  const sql = await getSqlReady();
+  await sql`UPDATE businesses SET payment_status = ${paymentStatus} WHERE id = ${id}`;
 }
 
 export async function counts(): Promise<{

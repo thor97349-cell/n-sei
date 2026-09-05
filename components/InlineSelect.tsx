@@ -1,22 +1,24 @@
 "use client";
 
-import { LEAD_STATUSES } from "@/lib/types";
-
-export default function StatusSelect({
+export default function InlineSelect({
+  name,
   defaultValue,
+  options,
 }: {
+  name: string;
   defaultValue: string;
+  options: readonly string[];
 }) {
   return (
     <select
-      name="status"
+      name={name}
       defaultValue={defaultValue}
       onChange={(e) => e.currentTarget.form?.requestSubmit()}
       className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
     >
-      {LEAD_STATUSES.map((status) => (
-        <option key={status} value={status}>
-          {status}
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
         </option>
       ))}
     </select>

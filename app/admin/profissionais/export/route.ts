@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       { key: "linkedin_url", label: "LinkedIn/portfólio" },
       { key: "bio", label: "Bio" },
       { key: "status", label: "Status" },
+      { key: "payment_status", label: "Status de pagamento" },
       { key: "created_at", label: "Cadastrado em" },
     ],
     professionals,

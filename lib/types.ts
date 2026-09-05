@@ -43,6 +43,13 @@ export const LEAD_STATUSES = [
 
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
+// Payment isn't processed by the app yet — this only tracks manually,
+// ahead of the commission-billing feature, whether a closed match's
+// commission has been charged and collected.
+export const PAYMENT_STATUSES = ["pendente", "cobrado", "pago"] as const;
+
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
 export interface Professional {
   id: number;
   name: string;
@@ -56,6 +63,7 @@ export interface Professional {
   bio: string | null;
   linkedin_url: string | null;
   status: LeadStatus;
+  payment_status: PaymentStatus;
   created_at: string;
 }
 
@@ -72,6 +80,8 @@ export interface Business {
   description: string;
   urgency: string;
   budget: string | null;
+  willingness_to_pay: number | null;
   status: LeadStatus;
+  payment_status: PaymentStatus;
   created_at: string;
 }

@@ -11,10 +11,17 @@ import { sendNewLeadAlert } from "@/lib/email";
 import {
   createBusiness,
   createProfessional,
+  updateBusinessPaymentStatus,
   updateBusinessStatus,
+  updateProfessionalPaymentStatus,
   updateProfessionalStatus,
 } from "@/lib/repo";
-import { LEAD_STATUSES, type LeadStatus } from "@/lib/types";
+import {
+  LEAD_STATUSES,
+  PAYMENT_STATUSES,
+  type LeadStatus,
+  type PaymentStatus,
+} from "@/lib/types";
 
 function str(formData: FormData, field: string): string {
   const value = formData.get(field);
@@ -90,6 +97,8 @@ export async function submitBusiness(formData: FormData) {
   const description = str(formData, "description");
   const urgency = str(formData, "urgency");
   const budget = str(formData, "budget");
+  const willingnessInput = str(formData, "willingness_to_pay");
+  const willingness_to_pay = willingnessInput ? Number(willingnessInput) : NaN;
 
   if (
     !business_name ||
@@ -118,6 +127,9 @@ export async function submitBusiness(formData: FormData) {
     description,
     urgency,
     budget: budget || undefined,
+    willingness_to_pay: Number.isFinite(willingness_to_pay)
+      ? willingness_to_pay
+      : undefined,
   });
 
   await sendNewLeadAlert(
@@ -174,6 +186,26 @@ export async function updateLeadStatus(formData: FormData) {
     redirect("/admin/profissionais");
   } else if (type === "business") {
     await updateBusinessStatus(id, status);
+    redirect("/admin/negocios");
+  } else {
+    throw new Error("Tipo inválido.");
+  }
+}
+
+export async function updatePaymentStatus(formData: FormData) {
+  const type = str(formData, "type");
+  const id = Number(str(formData, "id"));
+  const paymentStatus = str(formData, "payment_status") as PaymentStatus;
+
+  if (!Number.isFinite(id) || !PAYMENT_STATUSES.includes(paymentStatus)) {
+    throw new Error("Dados inválidos.");
+  }
+
+  if (type === "professional") {
+    await updateProfessionalPaymentStatus(id, paymentStatus);
+    redirect("/admin/profissionais");
+  } else if (type === "business") {
+    await updateBusinessPaymentStatus(id, paymentStatus);
     redirect("/admin/negocios");
   } else {
     throw new Error("Tipo inválido.");

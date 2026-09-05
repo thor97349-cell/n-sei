@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { updateLeadStatus } from "@/app/actions";
+import { updateLeadStatus, updatePaymentStatus } from "@/app/actions";
 import AdminFilterBar from "@/components/AdminFilterBar";
-import StatusSelect from "@/components/StatusSelect";
+import InlineSelect from "@/components/InlineSelect";
 import { formatDateTime } from "@/lib/format";
 import { listBusinesses } from "@/lib/repo";
-import { BUSINESS_TYPES, type LeadStatus } from "@/lib/types";
+import {
+  BUSINESS_TYPES,
+  LEAD_STATUSES,
+  PAYMENT_STATUSES,
+  type LeadStatus,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +75,9 @@ export default async function AdminNegociosPage({
                 <p className="text-sm text-slate-500">
                   Urgência: {b.urgency}
                   {b.budget ? ` · Orçamento: ${b.budget}` : ""}
+                  {b.willingness_to_pay != null
+                    ? ` · Pagaria: R$ ${b.willingness_to_pay.toFixed(2)}/h`
+                    : ""}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
                   {b.contact_name} · {b.email} · {b.phone}
@@ -84,11 +92,28 @@ export default async function AdminNegociosPage({
                   Cadastrado em {formatDateTime(b.created_at)}
                 </p>
               </div>
-              <form action={updateLeadStatus} className="shrink-0">
-                <input type="hidden" name="type" value="business" />
-                <input type="hidden" name="id" value={b.id} />
-                <StatusSelect defaultValue={b.status} />
-              </form>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <form action={updateLeadStatus} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Lead</span>
+                  <input type="hidden" name="type" value="business" />
+                  <input type="hidden" name="id" value={b.id} />
+                  <InlineSelect
+                    name="status"
+                    defaultValue={b.status}
+                    options={LEAD_STATUSES}
+                  />
+                </form>
+                <form action={updatePaymentStatus} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Pagamento</span>
+                  <input type="hidden" name="type" value="business" />
+                  <input type="hidden" name="id" value={b.id} />
+                  <InlineSelect
+                    name="payment_status"
+                    defaultValue={b.payment_status}
+                    options={PAYMENT_STATUSES}
+                  />
+                </form>
+              </div>
             </div>
           </div>
         ))}

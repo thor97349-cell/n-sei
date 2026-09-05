@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { updateLeadStatus } from "@/app/actions";
+import { updateLeadStatus, updatePaymentStatus } from "@/app/actions";
 import AdminFilterBar from "@/components/AdminFilterBar";
-import StatusSelect from "@/components/StatusSelect";
+import InlineSelect from "@/components/InlineSelect";
 import { formatDateTime } from "@/lib/format";
 import { listProfessionals } from "@/lib/repo";
-import { EXPERTISE_AREAS, type LeadStatus } from "@/lib/types";
+import {
+  EXPERTISE_AREAS,
+  LEAD_STATUSES,
+  PAYMENT_STATUSES,
+  type LeadStatus,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -88,11 +93,28 @@ export default async function AdminProfissionaisPage({
                   Cadastrado em {formatDateTime(p.created_at)}
                 </p>
               </div>
-              <form action={updateLeadStatus} className="shrink-0">
-                <input type="hidden" name="type" value="professional" />
-                <input type="hidden" name="id" value={p.id} />
-                <StatusSelect defaultValue={p.status} />
-              </form>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <form action={updateLeadStatus} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Lead</span>
+                  <input type="hidden" name="type" value="professional" />
+                  <input type="hidden" name="id" value={p.id} />
+                  <InlineSelect
+                    name="status"
+                    defaultValue={p.status}
+                    options={LEAD_STATUSES}
+                  />
+                </form>
+                <form action={updatePaymentStatus} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Pagamento</span>
+                  <input type="hidden" name="type" value="professional" />
+                  <input type="hidden" name="id" value={p.id} />
+                  <InlineSelect
+                    name="payment_status"
+                    defaultValue={p.payment_status}
+                    options={PAYMENT_STATUSES}
+                  />
+                </form>
+              </div>
             </div>
           </div>
         ))}

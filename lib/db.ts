@@ -46,12 +46,16 @@ export function ensureSchema(): Promise<void> {
           bio TEXT,
           linkedin_url TEXT,
           status TEXT NOT NULL DEFAULT 'novo',
+          payment_status TEXT NOT NULL DEFAULT 'pendente',
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `;
-      // Table already existed in production before this column was added.
+      // Tables already existed in production before these columns were added.
       await sql`
         ALTER TABLE professionals ADD COLUMN IF NOT EXISTS linkedin_url TEXT
+      `;
+      await sql`
+        ALTER TABLE professionals ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pendente'
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS businesses (
@@ -67,9 +71,17 @@ export function ensureSchema(): Promise<void> {
           description TEXT NOT NULL,
           urgency TEXT NOT NULL,
           budget TEXT,
+          willingness_to_pay DOUBLE PRECISION,
           status TEXT NOT NULL DEFAULT 'novo',
+          payment_status TEXT NOT NULL DEFAULT 'pendente',
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
+      `;
+      await sql`
+        ALTER TABLE businesses ADD COLUMN IF NOT EXISTS willingness_to_pay DOUBLE PRECISION
+      `;
+      await sql`
+        ALTER TABLE businesses ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pendente'
       `;
     })();
   }

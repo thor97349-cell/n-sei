@@ -97,3 +97,10 @@ continuam salvos e visíveis no painel `/admin` de qualquer forma).
 Cadastro gratuito para os dois lados. Comissão de 15–20% sobre o valor da
 hora é cobrada apenas quando um match é efetivamente fechado (processo
 hoje acompanhado manualmente através do painel `/admin`).
+
+O formulário de negócios também pergunta quanto a pessoa pagaria por hora
+por esse tipo de ajuda (opcional, dado de pesquisa de precificação) — e
+cada lead no painel `/admin` tem um campo de **status de pagamento**
+(pendente / cobrado / pago), hoje atualizado manualmente. Nenhum pagamento
+é processado pelo app ainda; é só a estrutura de dados já pronta para
+quando a cobrança da comissão for automatizada.

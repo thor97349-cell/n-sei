@@ -184,6 +184,25 @@ export default function NegociosPage() {
                 ))}
               </select>
             </div>
+            <div>
+              <label htmlFor="willingness_to_pay" className={labelClass}>
+                Quanto você pagaria por hora por esse tipo de ajuda?
+                (opcional)
+              </label>
+              <input
+                id="willingness_to_pay"
+                name="willingness_to_pay"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Ex: 150"
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Nos ajuda a entender o valor justo pra esse tipo de serviço —
+                não é um compromisso de pagamento.
+              </p>
+            </div>
             <button
               type="submit"
               className="w-full rounded-full bg-brand px-6 py-3 font-semibold text-white shadow-sm hover:bg-brand-dark sm:w-auto"
