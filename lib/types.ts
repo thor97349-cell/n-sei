@@ -26,6 +26,13 @@ export const URGENCY_LEVELS = [
   "Sem pressa, só pesquisando",
 ] as const;
 
+export const BUDGET_RANGES = [
+  "Até R$100/hora",
+  "R$100–300/hora",
+  "R$300–500/hora",
+  "Acima de R$500/hora",
+] as const;
+
 export const LEAD_STATUSES = [
   "novo",
   "em contato",
@@ -47,6 +54,7 @@ export interface Professional {
   hourly_rate: number;
   availability: string;
   bio: string | null;
+  linkedin_url: string | null;
   status: LeadStatus;
   created_at: string;
 }

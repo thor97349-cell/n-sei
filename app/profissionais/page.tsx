@@ -135,6 +135,18 @@ export default function ProfissionaisPage() {
                   className={inputClass}
                 />
               </div>
+              <div>
+                <label htmlFor="linkedin_url" className={labelClass}>
+                  LinkedIn ou portfólio (opcional)
+                </label>
+                <input
+                  id="linkedin_url"
+                  name="linkedin_url"
+                  type="text"
+                  placeholder="linkedin.com/in/seu-perfil"
+                  className={inputClass}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="bio" className={labelClass}>

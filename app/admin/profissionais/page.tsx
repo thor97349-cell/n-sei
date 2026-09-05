@@ -43,6 +43,16 @@ export default async function AdminProfissionaisPage() {
                 {p.bio && (
                   <p className="mt-2 text-sm text-slate-600">{p.bio}</p>
                 )}
+                {p.linkedin_url && (
+                  <a
+                    href={p.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-sm text-amber-600 underline hover:text-amber-700"
+                  >
+                    Ver perfil / portfólio
+                  </a>
+                )}
                 <p className="mt-2 text-xs text-slate-400">
                   Cadastrado em {formatDateTime(p.created_at)}
                 </p>

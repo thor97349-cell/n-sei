@@ -30,6 +30,12 @@ export async function submitProfessional(formData: FormData) {
   const hourly_rate = Number(str(formData, "hourly_rate"));
   const availability = str(formData, "availability");
   const bio = str(formData, "bio");
+  const linkedinInput = str(formData, "linkedin_url");
+  const linkedin_url = linkedinInput
+    ? /^https?:\/\//i.test(linkedinInput)
+      ? linkedinInput
+      : `https://${linkedinInput}`
+    : "";
 
   if (
     !name ||
@@ -54,6 +60,7 @@ export async function submitProfessional(formData: FormData) {
     hourly_rate,
     availability,
     bio: bio || undefined,
+    linkedin_url: linkedin_url || undefined,
   });
 
   redirect("/obrigado?tipo=profissional");

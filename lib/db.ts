@@ -44,9 +44,14 @@ export function ensureSchema(): Promise<void> {
           hourly_rate DOUBLE PRECISION NOT NULL,
           availability TEXT NOT NULL,
           bio TEXT,
+          linkedin_url TEXT,
           status TEXT NOT NULL DEFAULT 'novo',
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
+      `;
+      // Table already existed in production before this column was added.
+      await sql`
+        ALTER TABLE professionals ADD COLUMN IF NOT EXISTS linkedin_url TEXT
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS businesses (

@@ -11,6 +11,7 @@ export interface NewProfessional {
   hourly_rate: number;
   availability: string;
   bio?: string;
+  linkedin_url?: string;
 }
 
 export interface NewBusiness {
@@ -41,6 +42,7 @@ function toProfessional(row: Record<string, unknown>): Professional {
     hourly_rate: Number(row.hourly_rate),
     availability: String(row.availability),
     bio: row.bio == null ? null : String(row.bio),
+    linkedin_url: row.linkedin_url == null ? null : String(row.linkedin_url),
     status: row.status as LeadStatus,
     created_at: String(row.created_at),
   };
@@ -71,9 +73,9 @@ export async function createProfessional(
   const sql = await getSqlReady();
   const rows = await sql`
     INSERT INTO professionals
-      (name, email, phone, city, expertise_area, years_experience, hourly_rate, availability, bio)
+      (name, email, phone, city, expertise_area, years_experience, hourly_rate, availability, bio, linkedin_url)
     VALUES
-      (${data.name}, ${data.email}, ${data.phone}, ${data.city}, ${data.expertise_area}, ${data.years_experience}, ${data.hourly_rate}, ${data.availability}, ${data.bio ?? null})
+      (${data.name}, ${data.email}, ${data.phone}, ${data.city}, ${data.expertise_area}, ${data.years_experience}, ${data.hourly_rate}, ${data.availability}, ${data.bio ?? null}, ${data.linkedin_url ?? null})
     RETURNING id
   `;
   return Number(rows[0].id);

@@ -1,7 +1,7 @@
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import { submitBusiness } from "@/app/actions";
-import { BUSINESS_TYPES, URGENCY_LEVELS } from "@/lib/types";
+import { BUDGET_RANGES, BUSINESS_TYPES, URGENCY_LEVELS } from "@/lib/types";
 
 const inputClass =
   "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500";
@@ -170,12 +170,19 @@ export default function NegociosPage() {
               <label htmlFor="budget" className={labelClass}>
                 Orçamento disponível (opcional)
               </label>
-              <input
+              <select
                 id="budget"
                 name="budget"
-                placeholder="Ex: até R$ 200/hora"
+                defaultValue=""
                 className={inputClass}
-              />
+              >
+                <option value="">Prefiro não informar</option>
+                {BUDGET_RANGES.map((range) => (
+                  <option key={range} value={range}>
+                    {range}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
               type="submit"
