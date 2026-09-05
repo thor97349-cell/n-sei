@@ -1,5 +1,7 @@
 # HoraCerta
 
+🔗 **Deploy:** https://n-sei-red.vercel.app
+
 MVP de marketplace de expertise sênior por hora: conecta pequenos negócios
 locais (salões, restaurantes, lojas, clínicas) a profissionais seniores
 experientes (contadores, advogados, designers, engenheiros) para ajuda
