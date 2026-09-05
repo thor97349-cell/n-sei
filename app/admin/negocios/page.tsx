@@ -1,0 +1,66 @@
+import Link from "next/link";
+import { updateLeadStatus } from "@/app/actions";
+import StatusSelect from "@/components/StatusSelect";
+import { listBusinesses } from "@/lib/repo";
+
+export const dynamic = "force-dynamic";
+
+export default function AdminNegociosPage() {
+  const businesses = listBusinesses();
+
+  return (
+    <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
+      <Link href="/admin" className="text-sm text-slate-500 hover:text-slate-800">
+        ← Painel
+      </Link>
+      <h1 className="mt-2 text-2xl font-bold text-slate-900">
+        Negócios cadastrados ({businesses.length})
+      </h1>
+
+      <div className="mt-6 space-y-4">
+        {businesses.length === 0 && (
+          <p className="text-slate-500">Nenhum cadastro ainda.</p>
+        )}
+        {businesses.map((b) => (
+          <div
+            key={b.id}
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold text-slate-900">
+                  {b.business_name}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {b.business_type} · {b.num_employees} funcionários ·{" "}
+                  {b.city}
+                </p>
+                <p className="text-sm text-slate-500">
+                  Urgência: {b.urgency}
+                  {b.budget ? ` · Orçamento: ${b.budget}` : ""}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {b.contact_name} · {b.email} · {b.phone}
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-800">
+                  {b.help_needed}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {b.description}
+                </p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Cadastrado em {b.created_at}
+                </p>
+              </div>
+              <form action={updateLeadStatus} className="shrink-0">
+                <input type="hidden" name="type" value="business" />
+                <input type="hidden" name="id" value={b.id} />
+                <StatusSelect defaultValue={b.status} />
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
