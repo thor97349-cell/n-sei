@@ -93,15 +93,71 @@ export async function createBusiness(data: NewBusiness): Promise<number> {
   return Number(rows[0].id);
 }
 
-export async function listProfessionals(): Promise<Professional[]> {
+export interface ProfessionalFilters {
+  expertiseArea?: string;
+  city?: string;
+  status?: LeadStatus;
+}
+
+export interface BusinessFilters {
+  businessType?: string;
+  city?: string;
+  status?: LeadStatus;
+}
+
+export async function listProfessionals(
+  filters: ProfessionalFilters = {},
+): Promise<Professional[]> {
   const sql = await getSqlReady();
-  const rows = await sql`SELECT * FROM professionals ORDER BY created_at DESC`;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters.expertiseArea) {
+    params.push(filters.expertiseArea);
+    conditions.push(`expertise_area = $${params.length}`);
+  }
+  if (filters.city) {
+    params.push(`%${filters.city}%`);
+    conditions.push(`city ILIKE $${params.length}`);
+  }
+  if (filters.status) {
+    params.push(filters.status);
+    conditions.push(`status = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const rows = await sql.query(
+    `SELECT * FROM professionals ${where} ORDER BY created_at DESC`,
+    params,
+  );
   return rows.map(toProfessional);
 }
 
-export async function listBusinesses(): Promise<Business[]> {
+export async function listBusinesses(
+  filters: BusinessFilters = {},
+): Promise<Business[]> {
   const sql = await getSqlReady();
-  const rows = await sql`SELECT * FROM businesses ORDER BY created_at DESC`;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters.businessType) {
+    params.push(filters.businessType);
+    conditions.push(`business_type = $${params.length}`);
+  }
+  if (filters.city) {
+    params.push(`%${filters.city}%`);
+    conditions.push(`city ILIKE $${params.length}`);
+  }
+  if (filters.status) {
+    params.push(filters.status);
+    conditions.push(`status = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const rows = await sql.query(
+    `SELECT * FROM businesses ${where} ORDER BY created_at DESC`,
+    params,
+  );
   return rows.map(toBusiness);
 }
 

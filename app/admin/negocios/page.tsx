@@ -1,13 +1,32 @@
 import Link from "next/link";
 import { updateLeadStatus } from "@/app/actions";
+import AdminFilterBar from "@/components/AdminFilterBar";
 import StatusSelect from "@/components/StatusSelect";
-import { listBusinesses } from "@/lib/repo";
 import { formatDateTime } from "@/lib/format";
+import { listBusinesses } from "@/lib/repo";
+import { BUSINESS_TYPES, type LeadStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminNegociosPage() {
-  const businesses = await listBusinesses();
+export default async function AdminNegociosPage({
+  searchParams,
+}: PageProps<"/admin/negocios">) {
+  const params = await searchParams;
+  const businessType = typeof params.business_type === "string" ? params.business_type : "";
+  const city = typeof params.city === "string" ? params.city : "";
+  const status = typeof params.status === "string" ? params.status : "";
+
+  const businesses = await listBusinesses({
+    businessType: businessType || undefined,
+    city: city || undefined,
+    status: (status as LeadStatus) || undefined,
+  });
+
+  const query = new URLSearchParams({
+    ...(businessType && { business_type: businessType }),
+    ...(city && { city }),
+    ...(status && { status }),
+  }).toString();
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
@@ -18,9 +37,21 @@ export default async function AdminNegociosPage() {
         Negócios cadastrados ({businesses.length})
       </h1>
 
+      <AdminFilterBar
+        action="/admin/negocios"
+        exportHref={`/admin/negocios/export${query ? `?${query}` : ""}`}
+        categoryParam="business_type"
+        categoryLabel="Tipo de negócio"
+        categoryOptions={BUSINESS_TYPES}
+        categoryValue={businessType}
+        cityValue={city}
+        statusValue={status}
+        hasActiveFilters={Boolean(businessType || city || status)}
+      />
+
       <div className="mt-6 space-y-4">
         {businesses.length === 0 && (
-          <p className="text-slate-500">Nenhum cadastro ainda.</p>
+          <p className="text-slate-500">Nenhum cadastro encontrado.</p>
         )}
         {businesses.map((b) => (
           <div

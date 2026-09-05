@@ -58,7 +58,8 @@ criadas automaticamente na primeira consulta.
 - `/negocios` — cadastro de negócios (tipo de ajuda, urgência, orçamento)
 - `/admin` — painel interno para visualizar os cadastros e fazer o match
   manual, com controle de status de cada lead (novo, em contato, match
-  feito, fechado, sem interesse)
+  feito, fechado, sem interesse), filtros (área/tipo, cidade, status) e
+  exportação em CSV
 
 ## Painel interno (`/admin`)
 
@@ -70,6 +71,26 @@ ADMIN_PASSWORD=sua-senha-aqui
 
 Se `ADMIN_PASSWORD` não for definida, a senha padrão de desenvolvimento é
 `changeme123` — defina uma senha real antes de publicar em produção.
+
+## Alerta por e-mail de novo lead (opcional)
+
+Quando um profissional ou negócio se cadastra, o app pode enviar um e-mail
+de aviso automaticamente, usando [Resend](https://resend.com) (tem plano
+gratuito, sem cartão de crédito):
+
+1. Crie uma conta grátis em [resend.com](https://resend.com) e gere uma
+   **API Key** em Settings → API Keys.
+2. Na Vercel, em **Settings → Environment Variables**, adicione:
+   - `RESEND_API_KEY` — a chave gerada no passo anterior
+   - `ALERT_EMAIL_TO` — o e-mail que deve receber os avisos
+3. Redeploy.
+
+Sem verificar um domínio próprio no Resend (etapa mais avançada, não
+necessária pra começar), a conta grátis só permite enviar para o
+**mesmo e-mail usado no cadastro da conta Resend** — então use esse e-mail
+em `ALERT_EMAIL_TO`. Se essas variáveis não forem definidas, o app
+funciona normalmente e simplesmente não envia alerta (os cadastros
+continuam salvos e visíveis no painel `/admin` de qualquer forma).
 
 ## Modelo de negócio
 

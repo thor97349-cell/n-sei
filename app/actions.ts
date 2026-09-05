@@ -7,6 +7,7 @@ import {
   checkPassword,
   getExpectedSessionToken,
 } from "@/lib/auth";
+import { sendNewLeadAlert } from "@/lib/email";
 import {
   createBusiness,
   createProfessional,
@@ -63,6 +64,17 @@ export async function submitProfessional(formData: FormData) {
     linkedin_url: linkedin_url || undefined,
   });
 
+  await sendNewLeadAlert(
+    `Novo profissional cadastrado: ${name}`,
+    `${name} acabou de se cadastrar como profissional.\n\n` +
+      `Área: ${expertise_area}\n` +
+      `Experiência: ${years_experience} anos\n` +
+      `Valor da hora: R$ ${hourly_rate.toFixed(2)}\n` +
+      `Cidade: ${city}\n` +
+      `WhatsApp: ${phone}\n` +
+      `E-mail: ${email}`,
+  );
+
   redirect("/obrigado?tipo=profissional");
 }
 
@@ -107,6 +119,18 @@ export async function submitBusiness(formData: FormData) {
     urgency,
     budget: budget || undefined,
   });
+
+  await sendNewLeadAlert(
+    `Novo negócio cadastrado: ${business_name}`,
+    `${business_name} acabou de se cadastrar precisando de ajuda.\n\n` +
+      `Tipo de negócio: ${business_type}\n` +
+      `Precisa de: ${help_needed}\n` +
+      `Urgência: ${urgency}\n` +
+      `Cidade: ${city}\n` +
+      `Contato: ${contact_name}\n` +
+      `WhatsApp: ${phone}\n` +
+      `E-mail: ${email}`,
+  );
 
   redirect("/obrigado?tipo=negocio");
 }

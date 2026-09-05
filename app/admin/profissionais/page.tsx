@@ -1,13 +1,32 @@
 import Link from "next/link";
 import { updateLeadStatus } from "@/app/actions";
+import AdminFilterBar from "@/components/AdminFilterBar";
 import StatusSelect from "@/components/StatusSelect";
-import { listProfessionals } from "@/lib/repo";
 import { formatDateTime } from "@/lib/format";
+import { listProfessionals } from "@/lib/repo";
+import { EXPERTISE_AREAS, type LeadStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminProfissionaisPage() {
-  const professionals = await listProfessionals();
+export default async function AdminProfissionaisPage({
+  searchParams,
+}: PageProps<"/admin/profissionais">) {
+  const params = await searchParams;
+  const expertiseArea = typeof params.expertise_area === "string" ? params.expertise_area : "";
+  const city = typeof params.city === "string" ? params.city : "";
+  const status = typeof params.status === "string" ? params.status : "";
+
+  const professionals = await listProfessionals({
+    expertiseArea: expertiseArea || undefined,
+    city: city || undefined,
+    status: (status as LeadStatus) || undefined,
+  });
+
+  const query = new URLSearchParams({
+    ...(expertiseArea && { expertise_area: expertiseArea }),
+    ...(city && { city }),
+    ...(status && { status }),
+  }).toString();
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
@@ -18,9 +37,21 @@ export default async function AdminProfissionaisPage() {
         Profissionais cadastrados ({professionals.length})
       </h1>
 
+      <AdminFilterBar
+        action="/admin/profissionais"
+        exportHref={`/admin/profissionais/export${query ? `?${query}` : ""}`}
+        categoryParam="expertise_area"
+        categoryLabel="Área de expertise"
+        categoryOptions={EXPERTISE_AREAS}
+        categoryValue={expertiseArea}
+        cityValue={city}
+        statusValue={status}
+        hasActiveFilters={Boolean(expertiseArea || city || status)}
+      />
+
       <div className="mt-6 space-y-4">
         {professionals.length === 0 && (
-          <p className="text-slate-500">Nenhum cadastro ainda.</p>
+          <p className="text-slate-500">Nenhum cadastro encontrado.</p>
         )}
         {professionals.map((p) => (
           <div
