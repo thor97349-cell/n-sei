@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LEAD_STATUSES } from "@/lib/types";
 
 const selectClass =
-  "rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500";
+  "rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand";
 
 export default function AdminFilterBar({
   action,
@@ -82,7 +82,7 @@ export default function AdminFilterBar({
 
       <button
         type="submit"
-        className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
+        className="rounded-lg bg-ink px-4 py-1.5 text-sm font-semibold text-white hover:bg-ink/90"
       >
         Filtrar
       </button>
@@ -90,7 +90,7 @@ export default function AdminFilterBar({
       {hasActiveFilters && (
         <Link
           href={action}
-          className="text-sm text-slate-500 underline hover:text-slate-800"
+          className="text-sm text-slate-500 underline hover:text-ink"
         >
           Limpar filtros
         </Link>

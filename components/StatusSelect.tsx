@@ -12,7 +12,7 @@ export default function StatusSelect({
       name="status"
       defaultValue={defaultValue}
       onChange={(e) => e.currentTarget.form?.requestSubmit()}
-      className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+      className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
     >
       {LEAD_STATUSES.map((status) => (
         <option key={status} value={status}>

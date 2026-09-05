@@ -30,10 +30,10 @@ export default async function AdminProfissionaisPage({
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
-      <Link href="/admin" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link href="/admin" className="text-sm text-slate-500 hover:text-ink">
         ← Painel
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900">
+      <h1 className="mt-2 text-2xl font-bold text-ink">
         Profissionais cadastrados ({professionals.length})
       </h1>
 
@@ -60,7 +60,7 @@ export default async function AdminProfissionaisPage({
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-slate-900">{p.name}</p>
+                <p className="font-semibold text-ink">{p.name}</p>
                 <p className="text-sm text-slate-500">
                   {p.expertise_area} · {p.years_experience} anos de
                   experiência · R$ {p.hourly_rate.toFixed(2)}/h
@@ -79,7 +79,7 @@ export default async function AdminProfissionaisPage({
                     href={p.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-block text-sm text-amber-600 underline hover:text-amber-700"
+                    className="mt-1 inline-block text-sm text-brand-dark underline hover:text-ink"
                   >
                     Ver perfil / portfólio
                   </a>

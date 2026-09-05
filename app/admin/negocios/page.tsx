@@ -30,10 +30,10 @@ export default async function AdminNegociosPage({
 
   return (
     <main className="mx-auto max-w-5xl flex-1 px-6 py-12">
-      <Link href="/admin" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link href="/admin" className="text-sm text-slate-500 hover:text-ink">
         ← Painel
       </Link>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900">
+      <h1 className="mt-2 text-2xl font-bold text-ink">
         Negócios cadastrados ({businesses.length})
       </h1>
 
@@ -60,7 +60,7 @@ export default async function AdminNegociosPage({
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-ink">
                   {b.business_name}
                 </p>
                 <p className="text-sm text-slate-500">
@@ -74,7 +74,7 @@ export default async function AdminNegociosPage({
                 <p className="mt-1 text-sm text-slate-600">
                   {b.contact_name} · {b.email} · {b.phone}
                 </p>
-                <p className="mt-2 text-sm font-medium text-slate-800">
+                <p className="mt-2 text-sm font-medium text-ink">
                   {b.help_needed}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">

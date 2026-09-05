@@ -25,17 +25,17 @@ export default function FaqSection() {
   return (
     <section className="py-16">
       <div className="mx-auto max-w-2xl px-6">
-        <h2 className="text-center text-2xl font-bold text-slate-900">
+        <h2 className="text-center text-2xl font-bold text-ink">
           Perguntas frequentes
         </h2>
         <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
           {FAQS.map((faq) => (
             <details key={faq.question} className="group py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-slate-900">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
                 {faq.question}
                 <span
                   aria-hidden
-                  className="shrink-0 text-amber-600 transition-transform group-open:rotate-45"
+                  className="shrink-0 text-brand-dark transition-transform group-open:rotate-45"
                 >
                   +
                 </span>

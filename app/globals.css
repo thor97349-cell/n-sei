@@ -3,11 +3,20 @@
 :root {
   --background: #f8f7f4;
   --foreground: #1c2333;
+
+  /* HoraCerta brand palette: warm gold (experience, seniority) + deep
+     ink-green (trust, stability) instead of generic Tailwind slate/amber. */
+  --brand: #b6772e;
+  --brand-dark: #8f5a1f;
+  --ink: #1e2622;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-ink: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

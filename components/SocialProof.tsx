@@ -29,7 +29,7 @@ export default function SocialProof({
       <div className="mx-auto max-w-5xl px-6">
         {professionalsCount !== null && professionalsCount > 0 ? (
           <p className="mx-auto mb-12 max-w-xl text-center text-lg text-slate-700">
-            <span className="text-3xl font-bold text-slate-900">
+            <span className="text-3xl font-bold text-ink">
               {professionalsCount}
             </span>{" "}
             {professionalsCount === 1
@@ -55,7 +55,7 @@ export default function SocialProof({
                 “{t.quote}”
               </blockquote>
               <figcaption className="mt-4 text-sm">
-                <span className="font-semibold text-slate-900">{t.name}</span>
+                <span className="font-semibold text-ink">{t.name}</span>
                 <span className="text-slate-500"> · {t.role}</span>
               </figcaption>
             </figure>

@@ -27,7 +27,7 @@ export default async function ObrigadoPage({
       <SiteHeader />
       <main className="flex-1">
         <section className="mx-auto max-w-2xl px-6 py-24 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             Cadastro recebido! 🎉
           </h1>
           <p className="mt-4 text-slate-600">
@@ -39,7 +39,7 @@ export default async function ObrigadoPage({
           <ol className="mx-auto mt-8 max-w-md space-y-4 text-left">
             {steps.map((step, i) => (
               <li key={i} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">
                   {i + 1}
                 </span>
                 <span className="text-slate-700">{step}</span>
@@ -49,7 +49,7 @@ export default async function ObrigadoPage({
 
           <Link
             href="/"
-            className="mt-10 inline-block rounded-full bg-slate-900 px-6 py-3 font-semibold text-white hover:bg-slate-800"
+            className="mt-10 inline-block rounded-full bg-ink px-6 py-3 font-semibold text-white hover:bg-ink/90"
           >
             Voltar para o início
           </Link>

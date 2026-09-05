@@ -4,7 +4,7 @@ import { submitBusiness } from "@/app/actions";
 import { BUDGET_RANGES, BUSINESS_TYPES, URGENCY_LEVELS } from "@/lib/types";
 
 const inputClass =
-  "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500";
+  "mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand";
 const labelClass = "block text-sm font-medium text-slate-700";
 
 export default function NegociosPage() {
@@ -13,7 +13,7 @@ export default function NegociosPage() {
       <SiteHeader />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             Ajuda especializada, sem contratar ninguém fixo.
           </h1>
           <p className="mt-3 text-slate-600">
@@ -186,7 +186,7 @@ export default function NegociosPage() {
             </div>
             <button
               type="submit"
-              className="w-full rounded-full bg-amber-500 px-6 py-3 font-semibold text-white shadow-sm hover:bg-amber-600 sm:w-auto"
+              className="w-full rounded-full bg-brand px-6 py-3 font-semibold text-white shadow-sm hover:bg-brand-dark sm:w-auto"
             >
               Quero encontrar um profissional
             </button>

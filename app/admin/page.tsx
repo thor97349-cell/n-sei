@@ -10,13 +10,13 @@ export default async function AdminHomePage() {
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-ink">
           Painel de leads
         </h1>
         <form action={adminLogout}>
           <button
             type="submit"
-            className="text-sm font-medium text-slate-500 hover:text-slate-800"
+            className="text-sm font-medium text-slate-500 hover:text-ink"
           >
             Sair
           </button>
@@ -26,24 +26,24 @@ export default async function AdminHomePage() {
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <Link
           href="/admin/profissionais"
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-amber-400"
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand"
         >
-          <p className="text-sm font-semibold uppercase tracking-wide text-amber-600">
+          <p className="text-sm font-semibold uppercase tracking-wide text-brand-dark">
             Profissionais
           </p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
+          <p className="mt-2 text-3xl font-bold text-ink">
             {professionals}
           </p>
           <p className="mt-1 text-sm text-slate-500">cadastros recebidos</p>
         </Link>
         <Link
           href="/admin/negocios"
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-amber-400"
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:border-brand"
         >
-          <p className="text-sm font-semibold uppercase tracking-wide text-amber-600">
+          <p className="text-sm font-semibold uppercase tracking-wide text-brand-dark">
             Negócios
           </p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
+          <p className="mt-2 text-3xl font-bold text-ink">
             {businesses}
           </p>
           <p className="mt-1 text-sm text-slate-500">pedidos de ajuda</p>
