@@ -1,8 +1,21 @@
 import Link from "next/link";
+import FaqSection from "@/components/FaqSection";
+import HowItWorks from "@/components/HowItWorks";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import SocialProof from "@/components/SocialProof";
+import { counts } from "@/lib/repo";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  let professionalsCount: number | null = null;
+  try {
+    professionalsCount = (await counts()).professionals;
+  } catch {
+    professionalsCount = null;
+  }
+
   return (
     <>
       <SiteHeader />
@@ -65,54 +78,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="py-16">
-          <div className="mx-auto max-w-5xl px-6">
-            <h2 className="text-center text-2xl font-bold text-slate-900">
-              Como funciona
-            </h2>
-            <div className="mt-10 grid gap-8 sm:grid-cols-2">
-              <div>
-                <h3 className="font-semibold text-slate-900">
-                  Para negócios
-                </h3>
-                <ol className="mt-4 space-y-4">
-                  {[
-                    "Conte o tipo de ajuda que você precisa, a urgência e o orçamento.",
-                    "Nossa equipe entende sua necessidade e conecta você com o profissional certo pelo WhatsApp.",
-                    "Vocês combinam as horas e o valor diretamente — sem burocracia.",
-                  ].map((step, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                        {i + 1}
-                      </span>
-                      <span className="text-slate-700">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">
-                  Para profissionais
-                </h3>
-                <ol className="mt-4 space-y-4">
-                  {[
-                    "Cadastre sua área de expertise, experiência, valor da hora e disponibilidade.",
-                    "Avisamos você via WhatsApp quando surge um negócio que combina com seu perfil.",
-                    "Você decide se aceita, negocia direto e realiza o trabalho.",
-                  ].map((step, i) => (
-                    <li key={i} className="flex gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
-                        {i + 1}
-                      </span>
-                      <span className="text-slate-700">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HowItWorks />
+
+        <SocialProof professionalsCount={professionalsCount} />
+
+        <FaqSection />
 
         {/* Commission */}
         <section className="bg-white py-16">
