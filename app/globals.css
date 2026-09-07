@@ -4,10 +4,18 @@
   --background: #f7f8f6;
   --foreground: #16241f;
 
-  /* Justo brand palette: fair, calm teal-green (fairness, clarity) +
-     ink for contrast — distinct from a generic Tailwind slate/indigo look. */
-  --brand: #0f7a5c;
-  --brand-dark: #0b5c45;
+  /* Justo color system: a clear hierarchy instead of one green for
+     everything.
+     - brand: primary action color (buttons like "Criar projeto")
+     - success: reserved for completion/success only (badges, progress bar)
+     - alert: overdue tasks / warnings
+     - ink: near-black for text */
+  --brand: #4f46e5;
+  --brand-dark: #4338ca;
+  --success: #059669;
+  --success-dark: #047857;
+  --alert: #ea580c;
+  --alert-dark: #c2410c;
   --ink: #16241f;
 }
 
@@ -16,6 +24,10 @@
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
+  --color-success: var(--success);
+  --color-success-dark: var(--success-dark);
+  --color-alert: var(--alert);
+  --color-alert-dark: var(--alert-dark);
   --color-ink: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -25,3 +37,24 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+@keyframes toast-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  10%,
+  75% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+.toast-msg {
+  animation: toast-fade 3.5s ease forwards;
+}
+

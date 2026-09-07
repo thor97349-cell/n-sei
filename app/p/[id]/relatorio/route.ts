@@ -60,7 +60,8 @@ export async function GET(
 
   const ink = rgb(0.09, 0.14, 0.12);
   const gray = rgb(0.4, 0.42, 0.45);
-  const brand = rgb(0.06, 0.48, 0.36);
+  const brand = rgb(0.31, 0.27, 0.9);
+  const success = rgb(0.02, 0.588, 0.412);
 
   function drawText(
     text: string,
@@ -139,7 +140,7 @@ export async function GET(
       y,
       width: (barWidth * percent) / 100,
       height: barHeight,
-      color: brand,
+      color: success,
     });
     y -= 18;
 
@@ -149,12 +150,43 @@ export async function GET(
     } else {
       for (const task of completed) {
         if (!hasRoom()) break;
-        const lines = wrap(`• ${task.title}`, 9.5, font, barWidth - 20);
-        for (const line of lines) {
+        const titleLines = wrap(`• ${task.title}`, 9.5, font, barWidth - 20);
+        for (const line of titleLines) {
           if (!hasRoom()) break;
-          drawText(line, { size: 9.5, x: marginX + 10 });
+          drawText(line, { size: 9.5, f: bold, x: marginX + 10 });
           y -= 13;
         }
+
+        if (!hasRoom()) continue;
+        drawText(
+          `Prazo: ${formatDate(task.deadline)}  ·  Concluída em: ${formatDateTime(task.completed_at)}`,
+          { size: 8.5, color: gray, x: marginX + 16 },
+        );
+        y -= 12;
+
+        if (task.proof_text) {
+          const proofLines = wrap(
+            `Prova: ${task.proof_text}`,
+            8.5,
+            font,
+            barWidth - 32,
+          );
+          for (const line of proofLines) {
+            if (!hasRoom()) break;
+            drawText(line, { size: 8.5, color: gray, x: marginX + 16 });
+            y -= 12;
+          }
+        } else if (task.proof_image) {
+          if (hasRoom()) {
+            drawText("Prova: imagem anexada no sistema.", {
+              size: 8.5,
+              color: gray,
+              x: marginX + 16,
+            });
+            y -= 12;
+          }
+        }
+        y -= 6;
       }
     }
     y -= 10;

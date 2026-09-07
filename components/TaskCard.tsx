@@ -1,4 +1,6 @@
 import { updateTaskStatusAction } from "@/app/actions";
+import Avatar from "@/components/Avatar";
+import StatusIcon from "@/components/StatusIcon";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { TASK_STATUS_LABELS, type Task } from "@/lib/types";
 
@@ -19,7 +21,7 @@ function isUrl(value: string): boolean {
 
 export default function TaskCard({ task, isOwner }: TaskCardProps) {
   return (
-    <li className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold text-ink">{task.title}</p>
@@ -28,16 +30,20 @@ export default function TaskCard({ task, isOwner }: TaskCardProps) {
           )}
         </div>
         <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_BADGE[task.status]}`}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${STATUS_BADGE[task.status]}`}
         >
+          <StatusIcon status={task.status} className="h-3.5 w-3.5" />
           {TASK_STATUS_LABELS[task.status]}
         </span>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
-        Responsável: <span className="font-medium text-ink">{task.assignee_name}</span>
-        {" · "}Prazo: {formatDate(task.deadline)}
-      </p>
+      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+        <Avatar name={task.assignee_name} seed={task.assignee_id} size="sm" />
+        <span>
+          <span className="font-medium text-ink">{task.assignee_name}</span>
+          {" · "}Prazo: {formatDate(task.deadline)}
+        </span>
+      </div>
 
       {task.status === "concluida" && (
         <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
@@ -90,7 +96,7 @@ export default function TaskCard({ task, isOwner }: TaskCardProps) {
 
       {isOwner && task.status === "em_andamento" && (
         <details className="mt-3">
-          <summary className="cursor-pointer list-none text-sm font-semibold text-brand-dark">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-success-dark">
             Marcar como concluída
           </summary>
           <form
@@ -123,7 +129,7 @@ export default function TaskCard({ task, isOwner }: TaskCardProps) {
 
             <button
               type="submit"
-              className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-dark"
+              className="rounded-full bg-success px-4 py-1.5 text-sm font-semibold text-white hover:bg-success-dark"
             >
               Concluir tarefa
             </button>

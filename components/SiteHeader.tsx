@@ -4,7 +4,10 @@ export default function SiteHeader() {
   return (
     <header className="border-b border-black/5 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight text-ink">
+        <Link
+          href="/"
+          className="text-2xl font-extrabold tracking-tight text-ink"
+        >
           Justo
         </Link>
         <Link

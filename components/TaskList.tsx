@@ -17,16 +17,16 @@ export default function TaskList({ tasks, currentMemberId }: TaskListProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {TASK_STATUSES.map((status) => {
         const group = tasks.filter((task) => task.status === status);
         if (group.length === 0) return null;
         return (
           <section key={status}>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
               {TASK_STATUS_LABELS[status]} ({group.length})
             </h2>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {group.map((task) => (
                 <TaskCard
                   key={task.id}

@@ -7,6 +7,7 @@ import ProjectNav from "@/components/ProjectNav";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import TaskList from "@/components/TaskList";
+import Toast from "@/components/Toast";
 import { formatDate } from "@/lib/format";
 import { getCurrentMemberId } from "@/lib/member-session";
 import { getMember, getProjectById, listMembers, listTasks } from "@/lib/repo";
@@ -19,7 +20,7 @@ export default async function ProjectPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aba?: string; erro?: string }>;
+  searchParams: Promise<{ aba?: string; erro?: string; msg?: string }>;
 }) {
   const { id } = await params;
   const projectId = Number(id);
@@ -28,7 +29,7 @@ export default async function ProjectPage({
   const project = await getProjectById(projectId);
   if (!project) notFound();
 
-  const { aba, erro } = await searchParams;
+  const { aba, erro, msg } = await searchParams;
   const members = await listMembers(projectId);
 
   const currentMemberId = await getCurrentMemberId(projectId);
@@ -60,6 +61,7 @@ export default async function ProjectPage({
   return (
     <>
       <SiteHeader />
+      <Toast message={msg} />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
         <div>
           <h1 className="text-2xl font-bold text-ink">{project.name}</h1>

@@ -88,7 +88,9 @@ export async function createTaskAction(formData: FormData) {
     deadline: deadline || undefined,
   });
 
-  redirect(`/p/${projectId}?aba=tarefas`);
+  redirect(
+    `/p/${projectId}?aba=tarefas&msg=${encodeURIComponent("Tarefa criada!")}`,
+  );
 }
 
 export async function updateTaskStatusAction(formData: FormData) {
@@ -141,5 +143,6 @@ export async function updateTaskStatusAction(formData: FormData) {
     await updateTaskStatus(taskId, status);
   }
 
-  redirect(`/p/${projectId}?aba=tarefas`);
+  const msg = status === "concluida" ? "Tarefa concluída!" : "Tarefa iniciada!";
+  redirect(`/p/${projectId}?aba=tarefas&msg=${encodeURIComponent(msg)}`);
 }
