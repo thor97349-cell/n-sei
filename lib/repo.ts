@@ -1,217 +1,215 @@
+import { randomUUID } from "crypto";
 import { getSqlReady } from "./db";
-import type {
-  Business,
-  LeadStatus,
-  PaymentStatus,
-  Professional,
-} from "./types";
+import type { Member, Project, Task, TaskStatus } from "./types";
 
-export interface NewProfessional {
-  name: string;
-  email: string;
-  phone: string;
-  city: string;
-  expertise_area: string;
-  years_experience: number;
-  hourly_rate: number;
-  availability: string;
-  bio?: string;
-  linkedin_url?: string;
+function generateInviteToken(): string {
+  return randomUUID().replace(/-/g, "").slice(0, 12);
 }
 
-export interface NewBusiness {
-  business_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  city: string;
-  business_type: string;
-  num_employees: number;
-  help_needed: string;
-  description: string;
-  urgency: string;
-  budget?: string;
-  willingness_to_pay?: number;
-}
-
-// The Neon serverless driver can return numeric/bigint columns as strings,
-// so coerce explicitly rather than trusting the row shape.
-function toProfessional(row: Record<string, unknown>): Professional {
+function toProject(row: Record<string, unknown>): Project {
   return {
     id: Number(row.id),
     name: String(row.name),
-    email: String(row.email),
-    phone: String(row.phone),
-    city: String(row.city),
-    expertise_area: String(row.expertise_area),
-    years_experience: Number(row.years_experience),
-    hourly_rate: Number(row.hourly_rate),
-    availability: String(row.availability),
-    bio: row.bio == null ? null : String(row.bio),
-    linkedin_url: row.linkedin_url == null ? null : String(row.linkedin_url),
-    status: row.status as LeadStatus,
-    payment_status: row.payment_status as PaymentStatus,
+    description: row.description == null ? null : String(row.description),
+    deadline: row.deadline == null ? null : String(row.deadline),
+    invite_token: String(row.invite_token),
     created_at: String(row.created_at),
   };
 }
 
-function toBusiness(row: Record<string, unknown>): Business {
+function toMember(row: Record<string, unknown>): Member {
   return {
     id: Number(row.id),
-    business_name: String(row.business_name),
-    contact_name: String(row.contact_name),
+    project_id: Number(row.project_id),
+    name: String(row.name),
     email: String(row.email),
-    phone: String(row.phone),
-    city: String(row.city),
-    business_type: String(row.business_type),
-    num_employees: Number(row.num_employees),
-    help_needed: String(row.help_needed),
-    description: String(row.description),
-    urgency: String(row.urgency),
-    budget: row.budget == null ? null : String(row.budget),
-    willingness_to_pay:
-      row.willingness_to_pay == null ? null : Number(row.willingness_to_pay),
-    status: row.status as LeadStatus,
-    payment_status: row.payment_status as PaymentStatus,
     created_at: String(row.created_at),
   };
 }
 
-export async function createProfessional(
-  data: NewProfessional,
-): Promise<number> {
-  const sql = await getSqlReady();
-  const rows = await sql`
-    INSERT INTO professionals
-      (name, email, phone, city, expertise_area, years_experience, hourly_rate, availability, bio, linkedin_url)
-    VALUES
-      (${data.name}, ${data.email}, ${data.phone}, ${data.city}, ${data.expertise_area}, ${data.years_experience}, ${data.hourly_rate}, ${data.availability}, ${data.bio ?? null}, ${data.linkedin_url ?? null})
-    RETURNING id
-  `;
-  return Number(rows[0].id);
-}
-
-export async function createBusiness(data: NewBusiness): Promise<number> {
-  const sql = await getSqlReady();
-  const rows = await sql`
-    INSERT INTO businesses
-      (business_name, contact_name, email, phone, city, business_type, num_employees, help_needed, description, urgency, budget, willingness_to_pay)
-    VALUES
-      (${data.business_name}, ${data.contact_name}, ${data.email}, ${data.phone}, ${data.city}, ${data.business_type}, ${data.num_employees}, ${data.help_needed}, ${data.description}, ${data.urgency}, ${data.budget ?? null}, ${data.willingness_to_pay ?? null})
-    RETURNING id
-  `;
-  return Number(rows[0].id);
-}
-
-export interface ProfessionalFilters {
-  expertiseArea?: string;
-  city?: string;
-  status?: LeadStatus;
-}
-
-export interface BusinessFilters {
-  businessType?: string;
-  city?: string;
-  status?: LeadStatus;
-}
-
-export async function listProfessionals(
-  filters: ProfessionalFilters = {},
-): Promise<Professional[]> {
-  const sql = await getSqlReady();
-  const conditions: string[] = [];
-  const params: unknown[] = [];
-
-  if (filters.expertiseArea) {
-    params.push(filters.expertiseArea);
-    conditions.push(`expertise_area = $${params.length}`);
-  }
-  if (filters.city) {
-    params.push(`%${filters.city}%`);
-    conditions.push(`city ILIKE $${params.length}`);
-  }
-  if (filters.status) {
-    params.push(filters.status);
-    conditions.push(`status = $${params.length}`);
-  }
-
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const rows = await sql.query(
-    `SELECT * FROM professionals ${where} ORDER BY created_at DESC`,
-    params,
-  );
-  return rows.map(toProfessional);
-}
-
-export async function listBusinesses(
-  filters: BusinessFilters = {},
-): Promise<Business[]> {
-  const sql = await getSqlReady();
-  const conditions: string[] = [];
-  const params: unknown[] = [];
-
-  if (filters.businessType) {
-    params.push(filters.businessType);
-    conditions.push(`business_type = $${params.length}`);
-  }
-  if (filters.city) {
-    params.push(`%${filters.city}%`);
-    conditions.push(`city ILIKE $${params.length}`);
-  }
-  if (filters.status) {
-    params.push(filters.status);
-    conditions.push(`status = $${params.length}`);
-  }
-
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const rows = await sql.query(
-    `SELECT * FROM businesses ${where} ORDER BY created_at DESC`,
-    params,
-  );
-  return rows.map(toBusiness);
-}
-
-export async function updateProfessionalStatus(
-  id: number,
-  status: LeadStatus,
-): Promise<void> {
-  const sql = await getSqlReady();
-  await sql`UPDATE professionals SET status = ${status} WHERE id = ${id}`;
-}
-
-export async function updateBusinessStatus(
-  id: number,
-  status: LeadStatus,
-): Promise<void> {
-  const sql = await getSqlReady();
-  await sql`UPDATE businesses SET status = ${status} WHERE id = ${id}`;
-}
-
-export async function updateProfessionalPaymentStatus(
-  id: number,
-  paymentStatus: PaymentStatus,
-): Promise<void> {
-  const sql = await getSqlReady();
-  await sql`UPDATE professionals SET payment_status = ${paymentStatus} WHERE id = ${id}`;
-}
-
-export async function updateBusinessPaymentStatus(
-  id: number,
-  paymentStatus: PaymentStatus,
-): Promise<void> {
-  const sql = await getSqlReady();
-  await sql`UPDATE businesses SET payment_status = ${paymentStatus} WHERE id = ${id}`;
-}
-
-export async function counts(): Promise<{
-  professionals: number;
-  businesses: number;
-}> {
-  const sql = await getSqlReady();
-  const professionalRows = await sql`SELECT COUNT(*)::int AS n FROM professionals`;
-  const businessRows = await sql`SELECT COUNT(*)::int AS n FROM businesses`;
+function toTask(row: Record<string, unknown>): Task {
   return {
-    professionals: Number(professionalRows[0].n),
-    businesses: Number(businessRows[0].n),
+    id: Number(row.id),
+    project_id: Number(row.project_id),
+    title: String(row.title),
+    description: row.description == null ? null : String(row.description),
+    assignee_id: Number(row.assignee_id),
+    assignee_name: String(row.assignee_name ?? ""),
+    deadline: row.deadline == null ? null : String(row.deadline),
+    status: row.status as TaskStatus,
+    proof_text: row.proof_text == null ? null : String(row.proof_text),
+    proof_image: row.proof_image == null ? null : String(row.proof_image),
+    completed_at: row.completed_at == null ? null : String(row.completed_at),
+    created_at: String(row.created_at),
   };
+}
+
+export interface NewProject {
+  name: string;
+  description?: string;
+  deadline?: string;
+  creatorName: string;
+  creatorEmail: string;
+}
+
+export async function createProject(
+  data: NewProject,
+): Promise<{ projectId: number; memberId: number }> {
+  const sql = await getSqlReady();
+  const inviteToken = generateInviteToken();
+
+  const projectRows = await sql`
+    INSERT INTO projects (name, description, deadline, invite_token)
+    VALUES (${data.name}, ${data.description ?? null}, ${data.deadline ?? null}, ${inviteToken})
+    RETURNING id
+  `;
+  const projectId = Number(projectRows[0].id);
+
+  const memberRows = await sql`
+    INSERT INTO members (project_id, name, email)
+    VALUES (${projectId}, ${data.creatorName}, ${data.creatorEmail.toLowerCase()})
+    RETURNING id
+  `;
+  const memberId = Number(memberRows[0].id);
+
+  return { projectId, memberId };
+}
+
+export async function getProjectById(id: number): Promise<Project | null> {
+  const sql = await getSqlReady();
+  const rows = await sql`SELECT * FROM projects WHERE id = ${id}`;
+  return rows.length ? toProject(rows[0]) : null;
+}
+
+export async function getProjectByToken(
+  token: string,
+): Promise<Project | null> {
+  const sql = await getSqlReady();
+  const rows = await sql`SELECT * FROM projects WHERE invite_token = ${token}`;
+  return rows.length ? toProject(rows[0]) : null;
+}
+
+export async function listMembers(projectId: number): Promise<Member[]> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    SELECT * FROM members WHERE project_id = ${projectId} ORDER BY created_at ASC
+  `;
+  return rows.map(toMember);
+}
+
+export async function getMember(
+  projectId: number,
+  memberId: number,
+): Promise<Member | null> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    SELECT * FROM members WHERE project_id = ${projectId} AND id = ${memberId}
+  `;
+  return rows.length ? toMember(rows[0]) : null;
+}
+
+// Members join with just name + e-mail (no password): matching the e-mail
+// used before re-identifies the same person instead of creating a duplicate.
+export async function findOrCreateMember(
+  projectId: number,
+  name: string,
+  email: string,
+): Promise<Member> {
+  const sql = await getSqlReady();
+  const normalizedEmail = email.toLowerCase();
+
+  const existing = await sql`
+    SELECT * FROM members WHERE project_id = ${projectId} AND email = ${normalizedEmail}
+  `;
+  if (existing.length) {
+    if (String(existing[0].name) !== name) {
+      const updated = await sql`
+        UPDATE members SET name = ${name}
+        WHERE id = ${Number(existing[0].id)}
+        RETURNING *
+      `;
+      return toMember(updated[0]);
+    }
+    return toMember(existing[0]);
+  }
+
+  const rows = await sql`
+    INSERT INTO members (project_id, name, email)
+    VALUES (${projectId}, ${name}, ${normalizedEmail})
+    RETURNING *
+  `;
+  return toMember(rows[0]);
+}
+
+export interface NewTask {
+  projectId: number;
+  title: string;
+  description?: string;
+  assigneeId: number;
+  deadline?: string;
+}
+
+export async function createTask(data: NewTask): Promise<number> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    INSERT INTO tasks (project_id, title, description, assignee_id, deadline)
+    VALUES (${data.projectId}, ${data.title}, ${data.description ?? null}, ${data.assigneeId}, ${data.deadline ?? null})
+    RETURNING id
+  `;
+  return Number(rows[0].id);
+}
+
+export async function listTasks(projectId: number): Promise<Task[]> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    SELECT tasks.*, members.name AS assignee_name
+    FROM tasks
+    JOIN members ON members.id = tasks.assignee_id
+    WHERE tasks.project_id = ${projectId}
+    ORDER BY tasks.created_at ASC
+  `;
+  return rows.map(toTask);
+}
+
+export async function getTask(
+  projectId: number,
+  taskId: number,
+): Promise<Task | null> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    SELECT tasks.*, members.name AS assignee_name
+    FROM tasks
+    JOIN members ON members.id = tasks.assignee_id
+    WHERE tasks.project_id = ${projectId} AND tasks.id = ${taskId}
+  `;
+  return rows.length ? toTask(rows[0]) : null;
+}
+
+export interface TaskCompletion {
+  proofText?: string;
+  proofImage?: string;
+}
+
+export async function updateTaskStatus(
+  taskId: number,
+  status: TaskStatus,
+  completion?: TaskCompletion,
+): Promise<void> {
+  const sql = await getSqlReady();
+  if (status === "concluida") {
+    await sql`
+      UPDATE tasks
+      SET status = ${status},
+          proof_text = ${completion?.proofText ?? null},
+          proof_image = ${completion?.proofImage ?? null},
+          completed_at = now()
+      WHERE id = ${taskId}
+    `;
+  } else {
+    await sql`
+      UPDATE tasks
+      SET status = ${status}, completed_at = NULL
+      WHERE id = ${taskId}
+    `;
+  }
 }

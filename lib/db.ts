@@ -33,55 +33,39 @@ export function ensureSchema(): Promise<void> {
     const sql = getSql();
     schemaReady = (async () => {
       await sql`
-        CREATE TABLE IF NOT EXISTS professionals (
+        CREATE TABLE IF NOT EXISTS projects (
           id SERIAL PRIMARY KEY,
           name TEXT NOT NULL,
-          email TEXT NOT NULL,
-          phone TEXT NOT NULL,
-          city TEXT NOT NULL,
-          expertise_area TEXT NOT NULL,
-          years_experience INTEGER NOT NULL,
-          hourly_rate DOUBLE PRECISION NOT NULL,
-          availability TEXT NOT NULL,
-          bio TEXT,
-          linkedin_url TEXT,
-          status TEXT NOT NULL DEFAULT 'novo',
-          payment_status TEXT NOT NULL DEFAULT 'pendente',
+          description TEXT,
+          deadline DATE,
+          invite_token TEXT NOT NULL UNIQUE,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `;
-      // Tables already existed in production before these columns were added.
       await sql`
-        ALTER TABLE professionals ADD COLUMN IF NOT EXISTS linkedin_url TEXT
-      `;
-      await sql`
-        ALTER TABLE professionals ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pendente'
-      `;
-      await sql`
-        CREATE TABLE IF NOT EXISTS businesses (
+        CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
-          business_name TEXT NOT NULL,
-          contact_name TEXT NOT NULL,
+          project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
           email TEXT NOT NULL,
-          phone TEXT NOT NULL,
-          city TEXT NOT NULL,
-          business_type TEXT NOT NULL,
-          num_employees INTEGER NOT NULL,
-          help_needed TEXT NOT NULL,
-          description TEXT NOT NULL,
-          urgency TEXT NOT NULL,
-          budget TEXT,
-          willingness_to_pay DOUBLE PRECISION,
-          status TEXT NOT NULL DEFAULT 'novo',
-          payment_status TEXT NOT NULL DEFAULT 'pendente',
-          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          UNIQUE (project_id, email)
         )
       `;
       await sql`
-        ALTER TABLE businesses ADD COLUMN IF NOT EXISTS willingness_to_pay DOUBLE PRECISION
-      `;
-      await sql`
-        ALTER TABLE businesses ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pendente'
+        CREATE TABLE IF NOT EXISTS tasks (
+          id SERIAL PRIMARY KEY,
+          project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          title TEXT NOT NULL,
+          description TEXT,
+          assignee_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          deadline DATE,
+          status TEXT NOT NULL DEFAULT 'pendente',
+          proof_text TEXT,
+          proof_image TEXT,
+          completed_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
       `;
     })();
   }

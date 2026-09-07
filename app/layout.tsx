@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HoraCerta — Marketplace de expertise sênior por hora",
+  title: "Justo — prove sua contribuição em trabalhos em grupo",
   description:
-    "Conectamos pequenos negócios a profissionais seniores experientes para ajuda pontual por hora, sem contrato fixo.",
+    "Divida tarefas, acompanhe o progresso de cada colega e gere um relatório de contribuição para trabalhos em grupo escolares.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

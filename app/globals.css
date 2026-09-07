@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7f4;
-  --foreground: #1c2333;
+  --background: #f7f8f6;
+  --foreground: #16241f;
 
-  /* HoraCerta brand palette: warm gold (experience, seniority) + deep
-     ink-green (trust, stability) instead of generic Tailwind slate/amber. */
-  --brand: #b6772e;
-  --brand-dark: #8f5a1f;
-  --ink: #1e2622;
+  /* Justo brand palette: fair, calm teal-green (fairness, clarity) +
+     ink for contrast — distinct from a generic Tailwind slate/indigo look. */
+  --brand: #0f7a5c;
+  --brand-dark: #0b5c45;
+  --ink: #16241f;
 }
 
 @theme inline {
