@@ -61,10 +61,34 @@ export function ensureSchema(): Promise<void> {
           assignee_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
           deadline DATE,
           status TEXT NOT NULL DEFAULT 'pendente',
+          weight INTEGER NOT NULL DEFAULT 3,
+          proof_type TEXT,
           proof_text TEXT,
-          proof_image TEXT,
+          proof_file TEXT,
+          proof_file_name TEXT,
           completed_at TIMESTAMPTZ,
+          status_changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `;
+      // Tables already existed before these columns were added.
+      await sql`
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS weight INTEGER NOT NULL DEFAULT 3
+      `;
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_type TEXT`;
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_file TEXT`;
+      await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS proof_file_name TEXT`;
+      await sql`
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status_changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS task_reactions (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          reaction TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          UNIQUE (task_id, member_id)
         )
       `;
     })();

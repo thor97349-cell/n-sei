@@ -8,6 +8,40 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   concluida: "Concluída",
 };
 
+export const TASK_WEIGHTS = [1, 2, 3, 4, 5] as const;
+
+export type TaskWeight = (typeof TASK_WEIGHTS)[number];
+
+export const TASK_WEIGHT_LABELS: Record<TaskWeight, string> = {
+  1: "Rápida",
+  2: "Pequena",
+  3: "Média",
+  4: "Grande",
+  5: "Muito grande",
+};
+
+export const PROOF_TYPES = ["nota", "link", "arquivo"] as const;
+
+export type ProofType = (typeof PROOF_TYPES)[number];
+
+export const PROOF_TYPE_LABELS: Record<ProofType, string> = {
+  nota: "Nota",
+  link: "Link externo",
+  arquivo: "Arquivo",
+};
+
+export const REACTIONS = ["confirma", "contesta"] as const;
+
+export type ReactionType = (typeof REACTIONS)[number];
+
+export interface TaskReaction {
+  id: number;
+  task_id: number;
+  member_id: number;
+  reaction: ReactionType;
+  created_at: string;
+}
+
 export interface Project {
   id: number;
   name: string;
@@ -34,15 +68,13 @@ export interface Task {
   assignee_name: string;
   deadline: string | null;
   status: TaskStatus;
+  weight: TaskWeight;
+  proof_type: ProofType | null;
   proof_text: string | null;
-  proof_image: string | null;
+  proof_file: string | null;
+  proof_file_name: string | null;
   completed_at: string | null;
+  status_changed_at: string;
   created_at: string;
 }
 
-export interface MemberStats {
-  member: Member;
-  assigned: number;
-  completed: number;
-  percent: number;
-}

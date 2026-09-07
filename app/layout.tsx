@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Justo — prove sua contribuição em trabalhos em grupo",
+  title: "Justo — transparência para trabalhos em grupo",
   description:
-    "Divida tarefas, acompanhe o progresso de cada colega e gere um relatório de contribuição para trabalhos em grupo escolares.",
+    "O sistema de transparência do seu grupo: registra o peso de cada tarefa, guarda evidências e deixa os colegas confirmarem quem realmente contribuiu.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

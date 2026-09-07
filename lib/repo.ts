@@ -1,6 +1,15 @@
 import { randomUUID } from "crypto";
 import { getSqlReady } from "./db";
-import type { Member, Project, Task, TaskStatus } from "./types";
+import type {
+  Member,
+  ProofType,
+  Project,
+  ReactionType,
+  Task,
+  TaskReaction,
+  TaskStatus,
+  TaskWeight,
+} from "./types";
 
 function generateInviteToken(): string {
   return randomUUID().replace(/-/g, "").slice(0, 12);
@@ -37,9 +46,24 @@ function toTask(row: Record<string, unknown>): Task {
     assignee_name: String(row.assignee_name ?? ""),
     deadline: row.deadline == null ? null : String(row.deadline),
     status: row.status as TaskStatus,
+    weight: Number(row.weight) as TaskWeight,
+    proof_type: row.proof_type == null ? null : (row.proof_type as ProofType),
     proof_text: row.proof_text == null ? null : String(row.proof_text),
-    proof_image: row.proof_image == null ? null : String(row.proof_image),
+    proof_file: row.proof_file == null ? null : String(row.proof_file),
+    proof_file_name:
+      row.proof_file_name == null ? null : String(row.proof_file_name),
     completed_at: row.completed_at == null ? null : String(row.completed_at),
+    status_changed_at: String(row.status_changed_at),
+    created_at: String(row.created_at),
+  };
+}
+
+function toTaskReaction(row: Record<string, unknown>): TaskReaction {
+  return {
+    id: Number(row.id),
+    task_id: Number(row.task_id),
+    member_id: Number(row.member_id),
+    reaction: row.reaction as ReactionType,
     created_at: String(row.created_at),
   };
 }
@@ -147,13 +171,14 @@ export interface NewTask {
   description?: string;
   assigneeId: number;
   deadline?: string;
+  weight: TaskWeight;
 }
 
 export async function createTask(data: NewTask): Promise<number> {
   const sql = await getSqlReady();
   const rows = await sql`
-    INSERT INTO tasks (project_id, title, description, assignee_id, deadline)
-    VALUES (${data.projectId}, ${data.title}, ${data.description ?? null}, ${data.assigneeId}, ${data.deadline ?? null})
+    INSERT INTO tasks (project_id, title, description, assignee_id, deadline, weight)
+    VALUES (${data.projectId}, ${data.title}, ${data.description ?? null}, ${data.assigneeId}, ${data.deadline ?? null}, ${data.weight})
     RETURNING id
   `;
   return Number(rows[0].id);
@@ -186,8 +211,10 @@ export async function getTask(
 }
 
 export interface TaskCompletion {
+  proofType?: ProofType;
   proofText?: string;
-  proofImage?: string;
+  proofFile?: string;
+  proofFileName?: string;
 }
 
 export async function updateTaskStatus(
@@ -200,16 +227,46 @@ export async function updateTaskStatus(
     await sql`
       UPDATE tasks
       SET status = ${status},
+          proof_type = ${completion?.proofType ?? null},
           proof_text = ${completion?.proofText ?? null},
-          proof_image = ${completion?.proofImage ?? null},
-          completed_at = now()
+          proof_file = ${completion?.proofFile ?? null},
+          proof_file_name = ${completion?.proofFileName ?? null},
+          completed_at = now(),
+          status_changed_at = now()
       WHERE id = ${taskId}
     `;
   } else {
     await sql`
       UPDATE tasks
-      SET status = ${status}, completed_at = NULL
+      SET status = ${status}, completed_at = NULL, status_changed_at = now()
       WHERE id = ${taskId}
     `;
   }
+}
+
+export async function setTaskReaction(
+  taskId: number,
+  memberId: number,
+  reaction: ReactionType,
+): Promise<void> {
+  const sql = await getSqlReady();
+  await sql`
+    INSERT INTO task_reactions (task_id, member_id, reaction)
+    VALUES (${taskId}, ${memberId}, ${reaction})
+    ON CONFLICT (task_id, member_id)
+    DO UPDATE SET reaction = ${reaction}, created_at = now()
+  `;
+}
+
+export async function listTaskReactions(
+  projectId: number,
+): Promise<TaskReaction[]> {
+  const sql = await getSqlReady();
+  const rows = await sql`
+    SELECT task_reactions.*
+    FROM task_reactions
+    JOIN tasks ON tasks.id = task_reactions.task_id
+    WHERE tasks.project_id = ${projectId}
+  `;
+  return rows.map(toTaskReaction);
 }

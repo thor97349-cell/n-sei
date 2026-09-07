@@ -10,7 +10,13 @@ import TaskList from "@/components/TaskList";
 import Toast from "@/components/Toast";
 import { formatDate } from "@/lib/format";
 import { getCurrentMemberId } from "@/lib/member-session";
-import { getMember, getProjectById, listMembers, listTasks } from "@/lib/repo";
+import {
+  getMember,
+  getProjectById,
+  listMembers,
+  listTaskReactions,
+  listTasks,
+} from "@/lib/repo";
 import { getOrigin } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +60,7 @@ export default async function ProjectPage({
   }
 
   const tasks = await listTasks(projectId);
+  const reactions = await listTaskReactions(projectId);
   const activeTab = aba === "progresso" ? "progresso" : "tarefas";
   const origin = await getOrigin();
   const inviteUrl = `${origin}/entrar/${project.invite_token}`;
@@ -94,10 +101,18 @@ export default async function ProjectPage({
           {activeTab === "tarefas" ? (
             <>
               <NewTaskForm projectId={projectId} members={members} />
-              <TaskList tasks={tasks} currentMemberId={currentMember.id} />
+              <TaskList
+                tasks={tasks}
+                reactions={reactions}
+                currentMemberId={currentMember.id}
+              />
             </>
           ) : (
-            <ProgressDashboard members={members} tasks={tasks} />
+            <ProgressDashboard
+              members={members}
+              tasks={tasks}
+              reactions={reactions}
+            />
           )}
         </div>
       </main>

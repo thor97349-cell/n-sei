@@ -1,24 +1,27 @@
 import Avatar from "@/components/Avatar";
+import {
+  CONTRIBUTION_LEVEL_BADGE,
+  CONTRIBUTION_LEVEL_LABELS,
+  computeMemberContribution,
+} from "@/lib/contribution";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { isTaskOverdue } from "@/lib/tasks";
-import type { Member, Task } from "@/lib/types";
+import type { Member, Task, TaskReaction } from "@/lib/types";
 
 interface ProgressDashboardProps {
   members: Member[];
   tasks: Task[];
+  reactions: TaskReaction[];
 }
 
 export default function ProgressDashboard({
   members,
   tasks,
+  reactions,
 }: ProgressDashboardProps) {
   const stats = members.map((member) => {
-    const assigned = tasks.filter((t) => t.assignee_id === member.id);
-    const completed = assigned.filter((t) => t.status === "concluida");
-    const percent = assigned.length
-      ? Math.round((completed.length / assigned.length) * 100)
-      : 0;
-    return { member, assigned: assigned.length, completed: completed.length, percent };
+    const memberTasks = tasks.filter((t) => t.assignee_id === member.id);
+    return { member, contribution: computeMemberContribution(memberTasks) };
   });
 
   const overdueTasks = tasks.filter(isTaskOverdue);
@@ -62,27 +65,32 @@ export default function ProgressDashboard({
           Contribuição por pessoa
         </h2>
         <div className="mt-3 space-y-3">
-          {stats.map(({ member, assigned, completed, percent }) => (
-            <div
+          {stats.map(({ member, contribution }) => (
+            <details
               key={member.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-slate-200 bg-white shadow-sm"
             >
-              <div className="flex items-center justify-between">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
                 <div className="flex items-center gap-2">
                   <Avatar name={member.name} seed={member.id} />
                   <p className="font-semibold text-ink">{member.name}</p>
                 </div>
-                <p className="text-sm text-slate-500">
-                  {completed}/{assigned} tarefas ({percent}%)
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${CONTRIBUTION_LEVEL_BADGE[contribution.level]}`}
+                >
+                  {CONTRIBUTION_LEVEL_LABELS[contribution.level]}
+                </span>
+              </summary>
+              <div className="space-y-1 border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
+                <p>
+                  {contribution.completedCount}/{contribution.assignedCount}{" "}
+                  tarefas concluídas ({contribution.completedWeight}/
+                  {contribution.assignedWeight} pontos de peso)
                 </p>
+                <p>{contribution.evidenceCount} tarefa(s) com evidência anexada</p>
+                <p>{contribution.activeDays} dia(s) de participação ativa</p>
               </div>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className="h-full rounded-full bg-success"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-            </div>
+            </details>
           ))}
         </div>
       </section>
@@ -97,20 +105,34 @@ export default function ProgressDashboard({
           </p>
         ) : (
           <ol className="mt-3 space-y-4 border-l-2 border-slate-200 pl-4">
-            {timeline.map((task) => (
-              <li key={task.id} className="flex items-start gap-2">
-                <Avatar name={task.assignee_name} seed={task.assignee_id} size="sm" />
-                <div>
-                  <p className="text-sm text-slate-500">
-                    {formatDateTime(task.completed_at)}
-                  </p>
-                  <p className="text-ink">
-                    <span className="font-semibold">{task.assignee_name}</span>{" "}
-                    concluiu &ldquo;{task.title}&rdquo;
-                  </p>
-                </div>
-              </li>
-            ))}
+            {timeline.map((task) => {
+              const taskReactions = reactions.filter((r) => r.task_id === task.id);
+              const confirmCount = taskReactions.filter(
+                (r) => r.reaction === "confirma",
+              ).length;
+              const contestCount = taskReactions.filter(
+                (r) => r.reaction === "contesta",
+              ).length;
+              return (
+                <li key={task.id} className="flex items-start gap-2">
+                  <Avatar name={task.assignee_name} seed={task.assignee_id} size="sm" />
+                  <div>
+                    <p className="text-sm text-slate-500">
+                      {formatDateTime(task.completed_at)}
+                    </p>
+                    <p className="text-ink">
+                      <span className="font-semibold">{task.assignee_name}</span>{" "}
+                      concluiu &ldquo;{task.title}&rdquo;
+                    </p>
+                    {(confirmCount > 0 || contestCount > 0) && (
+                      <p className="text-xs text-slate-500">
+                        {confirmCount} confirmaram · {contestCount} contestaram
+                      </p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>

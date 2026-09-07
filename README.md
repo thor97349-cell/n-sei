@@ -1,8 +1,10 @@
 # Justo
 
-Ferramenta web para ajudar estudantes a dividir tarefas em trabalhos em
-grupo e provar a contribuição individual de cada um — para acabar com a
-injustiça de nota quando 1 ou 2 pessoas fazem a maior parte do trabalho.
+O sistema de transparência para trabalhos em grupo escolares: registra o
+peso de cada tarefa, guarda evidência de quem fez o quê, deixa o grupo
+confirmar ou contestar cada conclusão e classifica a contribuição de cada
+membro — para acabar com a injustiça de nota quando 1 ou 2 pessoas fazem a
+maior parte do trabalho.
 
 ## Stack
 
@@ -64,18 +66,30 @@ criadas automaticamente na primeira consulta.
    mesmo e-mail de novo (em outro aparelho, por exemplo) identifica a
    mesma pessoa em vez de criar um membro duplicado.
 4. **Dividir tarefas (aba "Tarefas")** — qualquer membro pode criar uma
-   tarefa com título, descrição, responsável e prazo.
-5. **Marcar progresso** — cada membro só pode iniciar/concluir as tarefas
-   das quais é responsável. Ao concluir, pode anexar uma prova opcional:
-   texto (link ou explicação do que foi feito) e/ou uma imagem (print,
-   até 2MB).
-6. **Acompanhar contribuição (aba "Progresso")** — mostra, por membro, o
-   percentual de tarefas concluídas com barra de progresso e uma linha do
-   tempo de quando cada tarefa foi concluída e por quem.
-7. **Relatório PDF (`/p/[id]/relatorio`)** — gera na hora um PDF de uma
-   página com o nome do projeto, o prazo e, para cada membro, o
-   percentual de conclusão e a lista de tarefas concluídas — pronto para
-   anexar ao trabalho ou mostrar ao professor.
+   tarefa com título, descrição, responsável, prazo e **peso** (1 a 5 —
+   "rápida" a "muito grande"). O peso é o que conta na contribuição de
+   quem concluir, não a simples contagem de tarefas.
+5. **Marcar progresso e evidência** — cada membro só pode iniciar/concluir
+   as tarefas das quais é responsável. Ao concluir, escolhe um tipo de
+   evidência: nota manual, link externo (Google Docs, Drive, GitHub,
+   Canva...) ou arquivo anexado (até 2MB) — ou nenhuma. Criação, mudança de
+   status e conclusão são registradas automaticamente com data/hora, sem
+   o usuário precisar digitar nada disso.
+6. **Confirmar ou contestar** — depois que alguém marca uma tarefa como
+   concluída, qualquer outro membro (menos quem a concluiu) pode confirmar
+   ou contestar com um clique. Sem campo de comentário — só um registro
+   simples de "X confirmaram, Y contestaram", sem julgar quem está certo.
+7. **Acompanhar contribuição (aba "Progresso")** — classifica cada membro
+   em alta / moderada / baixa contribuição, calculado a partir do peso das
+   tarefas concluídas e da proporção com evidência anexada. Também
+   destaca tarefas atrasadas e mostra uma linha do tempo de conclusões. Ao
+   clicar num membro, expande um resumo (tarefas concluídas, evidências
+   anexadas, dias de participação ativa).
+8. **Relatório PDF (`/p/[id]/relatorio`)** — gera na hora um PDF de uma
+   página com o nome do projeto, o prazo e, para cada membro, o nível de
+   contribuição, os pontos de peso concluídos e a lista de tarefas
+   concluídas com prazo, data de conclusão, evidência e confirmações —
+   pronto para anexar ao trabalho ou mostrar ao professor.
 
 ## Identificação sem login
 

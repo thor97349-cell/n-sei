@@ -1,5 +1,5 @@
 import { createTaskAction } from "@/app/actions";
-import type { Member } from "@/lib/types";
+import { TASK_WEIGHTS, TASK_WEIGHT_LABELS, type Member } from "@/lib/types";
 
 interface NewTaskFormProps {
   projectId: number;
@@ -79,6 +79,28 @@ export default function NewTaskForm({ projectId, members }: NewTaskFormProps) {
               className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="weight" className="block text-sm font-medium text-slate-700">
+            Peso da tarefa
+          </label>
+          <select
+            id="weight"
+            name="weight"
+            defaultValue={3}
+            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+          >
+            {TASK_WEIGHTS.map((weight) => (
+              <option key={weight} value={weight}>
+                {weight} — {TASK_WEIGHT_LABELS[weight]}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-400">
+            Quanto maior o peso, mais essa tarefa conta na contribuição de
+            quem a concluir.
+          </p>
         </div>
 
         <button

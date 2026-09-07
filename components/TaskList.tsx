@@ -1,12 +1,22 @@
 import TaskCard from "@/components/TaskCard";
-import { TASK_STATUSES, TASK_STATUS_LABELS, type Task } from "@/lib/types";
+import {
+  TASK_STATUSES,
+  TASK_STATUS_LABELS,
+  type Task,
+  type TaskReaction,
+} from "@/lib/types";
 
 interface TaskListProps {
   tasks: Task[];
+  reactions: TaskReaction[];
   currentMemberId: number | null;
 }
 
-export default function TaskList({ tasks, currentMemberId }: TaskListProps) {
+export default function TaskList({
+  tasks,
+  reactions,
+  currentMemberId,
+}: TaskListProps) {
   if (tasks.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
@@ -32,6 +42,8 @@ export default function TaskList({ tasks, currentMemberId }: TaskListProps) {
                   key={task.id}
                   task={task}
                   isOwner={task.assignee_id === currentMemberId}
+                  currentMemberId={currentMemberId}
+                  reactions={reactions.filter((r) => r.task_id === task.id)}
                 />
               ))}
             </ul>

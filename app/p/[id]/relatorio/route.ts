@@ -1,7 +1,9 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { NextResponse } from "next/server";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { getProjectById, listMembers, listTasks } from "@/lib/repo";
+import { CONTRIBUTION_LEVEL_LABELS, computeMemberContribution } from "@/lib/contribution";
+import { getProjectById, listMembers, listTaskReactions, listTasks } from "@/lib/repo";
+import { PROOF_TYPE_LABELS, TASK_WEIGHT_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -38,14 +40,13 @@ export async function GET(
 
   const members = await listMembers(projectId);
   const tasks = await listTasks(projectId);
+  const reactions = await listTaskReactions(projectId);
 
   const stats = members.map((member) => {
-    const assigned = tasks.filter((t) => t.assignee_id === member.id);
-    const completed = assigned.filter((t) => t.status === "concluida");
-    const percent = assigned.length
-      ? Math.round((completed.length / assigned.length) * 100)
-      : 0;
-    return { member, assigned, completed, percent };
+    const memberTasks = tasks.filter((t) => t.assignee_id === member.id);
+    const completed = memberTasks.filter((t) => t.status === "concluida");
+    const contribution = computeMemberContribution(memberTasks);
+    return { member, completed, contribution };
   });
 
   const doc = await PDFDocument.create();
@@ -62,6 +63,9 @@ export async function GET(
   const gray = rgb(0.4, 0.42, 0.45);
   const brand = rgb(0.31, 0.27, 0.9);
   const success = rgb(0.02, 0.588, 0.412);
+  const amber = rgb(0.961, 0.62, 0.043);
+  const alert = rgb(0.918, 0.345, 0.047);
+  const levelColor = { alta: success, moderada: amber, baixa: alert };
 
   function drawText(
     text: string,
@@ -115,16 +119,27 @@ export async function GET(
   });
   y -= 20;
 
-  for (const { member, assigned, completed, percent } of stats) {
+  for (const { member, completed, contribution } of stats) {
     if (!hasRoom()) break;
 
+    const percent = contribution.assignedWeight
+      ? Math.round((contribution.completedWeight / contribution.assignedWeight) * 100)
+      : 0;
+    const color = levelColor[contribution.level];
+
     drawText(`${member.name}`, { size: 12, f: bold });
-    drawText(`${completed.length}/${assigned.length} tarefas (${percent}%)`, {
-      size: 10,
-      color: gray,
-      x: pageWidth - marginX - 130,
+    drawText(CONTRIBUTION_LEVEL_LABELS[contribution.level], {
+      size: 9,
+      f: bold,
+      color,
+      x: pageWidth - marginX - 150,
     });
-    y -= 14;
+    y -= 13;
+    drawText(
+      `${contribution.completedWeight}/${contribution.assignedWeight} pontos (${percent}%) · ${completed.length}/${contribution.assignedCount} tarefas`,
+      { size: 8, color: gray, x: pageWidth - marginX - 210 },
+    );
+    y -= 13;
 
     const barWidth = pageWidth - marginX * 2;
     const barHeight = 6;
@@ -140,7 +155,7 @@ export async function GET(
       y,
       width: (barWidth * percent) / 100,
       height: barHeight,
-      color: success,
+      color,
     });
     y -= 18;
 
@@ -159,14 +174,15 @@ export async function GET(
 
         if (!hasRoom()) continue;
         drawText(
-          `Prazo: ${formatDate(task.deadline)}  ·  Concluída em: ${formatDateTime(task.completed_at)}`,
+          `Peso: ${TASK_WEIGHT_LABELS[task.weight]} (${task.weight})  ·  Prazo: ${formatDate(task.deadline)}  ·  Concluída em: ${formatDateTime(task.completed_at)}`,
           { size: 8.5, color: gray, x: marginX + 16 },
         );
         y -= 12;
 
-        if (task.proof_text) {
+        if (task.proof_type === "nota" || task.proof_type === "link") {
+          const label = PROOF_TYPE_LABELS[task.proof_type];
           const proofLines = wrap(
-            `Prova: ${task.proof_text}`,
+            `Prova (${label}): ${task.proof_text ?? ""}`,
             8.5,
             font,
             barWidth - 32,
@@ -176,15 +192,33 @@ export async function GET(
             drawText(line, { size: 8.5, color: gray, x: marginX + 16 });
             y -= 12;
           }
-        } else if (task.proof_image) {
+        } else if (task.proof_type === "arquivo") {
           if (hasRoom()) {
-            drawText("Prova: imagem anexada no sistema.", {
-              size: 8.5,
-              color: gray,
-              x: marginX + 16,
-            });
+            drawText(
+              `Prova (arquivo): ${task.proof_file_name ?? "anexado no sistema"}`,
+              { size: 8.5, color: gray, x: marginX + 16 },
+            );
             y -= 12;
           }
+        } else if (hasRoom()) {
+          drawText("Sem prova anexada.", {
+            size: 8.5,
+            color: gray,
+            x: marginX + 16,
+          });
+          y -= 12;
+        }
+
+        const taskReactions = reactions.filter((r) => r.task_id === task.id);
+        const confirmCount = taskReactions.filter((r) => r.reaction === "confirma").length;
+        const contestCount = taskReactions.filter((r) => r.reaction === "contesta").length;
+        if ((confirmCount > 0 || contestCount > 0) && hasRoom()) {
+          drawText(`${confirmCount} confirmaram · ${contestCount} contestaram`, {
+            size: 8.5,
+            color: gray,
+            x: marginX + 16,
+          });
+          y -= 12;
         }
         y -= 6;
       }
