@@ -1,7 +1,12 @@
+import { redirect } from "next/navigation";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import JoinForm from "@/components/JoinForm";
-import { getProjectByToken, listMembers } from "@/lib/repo";
+import SignInGate from "@/components/SignInGate";
+import { getSessionUser } from "@/lib/auth";
+import { findOrCreateMember, getProjectByToken, listMembers } from "@/lib/repo";
+import { getOrigin } from "@/lib/url";
+
+export const dynamic = "force-dynamic";
 
 export default async function EntrarPage({
   params,
@@ -29,14 +34,25 @@ export default async function EntrarPage({
     );
   }
 
+  const user = await getSessionUser();
+
+  if (user) {
+    await findOrCreateMember(project.id, user.name, user.email);
+    redirect(
+      `/p/${project.id}?msg=${encodeURIComponent(`Bem-vindo(a), ${user.name}!`)}`,
+    );
+  }
+
   const members = await listMembers(project.id);
+  const origin = await getOrigin();
+  const callbackUrl = `${origin}/entrar/${token}`;
 
   return (
     <>
       <SiteHeader />
       <main className="flex-1 px-6 py-12">
-        <JoinForm
-          token={token}
+        <SignInGate
+          callbackUrl={callbackUrl}
           projectName={project.name}
           members={members}
         />

@@ -13,6 +13,7 @@ maior parte do trabalho.
   — funciona em serverless/edge, incluindo o ambiente da Vercel
 - [pdf-lib](https://pdf-lib.js.org) para gerar o relatório de contribuição
   em PDF direto no servidor
+- [Auth.js](https://authjs.dev) (`next-auth` v5) com login via Google
 
 > **Por que Postgres em vez de SQLite?** O pedido original sugeria SQLite
 > via `better-sqlite3`, mas cada projeto no Justo é acessado por **vários
@@ -33,21 +34,50 @@ maior parte do trabalho.
    **Storage** do projeto, clique em **Create Database** e escolha
    **Postgres (Neon)**. Ao conectar ao projeto, a variável `DATABASE_URL`
    é criada automaticamente.
-4. Clique em **Deploy**. Ao final você recebe uma URL pública
+4. Configure o login com Google — veja a seção abaixo — e adicione
+   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `AUTH_SECRET` em
+   **Settings → Environment Variables**.
+5. Clique em **Deploy**. Ao final você recebe uma URL pública
    (`algumacoisa.vercel.app`) para acessar no navegador.
 
 Sem o passo 3, o site sobe normalmente, mas criar um projeto falha ao
-salvar — o app não guarda nada em disco (não funcionaria em uma função
-serverless), por isso depende do Postgres.
+salvar. Sem o passo 4, o botão "Entrar com Google" quebra — nenhuma tela
+que depende de estar logado funciona sem isso.
+
+## Configurando o login com Google
+
+O Justo usa [Auth.js](https://authjs.dev) com o provedor Google. Isso exige
+criar um app OAuth no Google — só quem administra o projeto precisa fazer
+isso uma vez:
+
+1. Acesse o [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   e crie um projeto (ou use um existente).
+2. Configure a **tela de consentimento OAuth** (OAuth consent screen) —
+   tipo "Externo" funciona para uso geral; preencha nome do app e e-mail
+   de contato.
+3. Em **Credentials → Create Credentials → OAuth client ID**, escolha
+   **Web application** e adicione as **Authorized redirect URIs**:
+   - `http://localhost:3000/api/auth/callback/google` (desenvolvimento local)
+   - `https://SEU-DOMINIO.vercel.app/api/auth/callback/google` (produção —
+     troque pelo domínio real do deploy)
+4. Copie o **Client ID** e o **Client Secret** gerados.
+5. Defina as variáveis de ambiente (local em `.env.local`, na Vercel em
+   **Settings → Environment Variables**):
+   ```bash
+   GOOGLE_CLIENT_ID="seu-client-id"
+   GOOGLE_CLIENT_SECRET="seu-client-secret"
+   AUTH_SECRET="uma-string-aleatoria-longa"
+   ```
+   Gere o `AUTH_SECRET` com `npx auth secret` ou `openssl rand -base64 32`.
 
 ## Rodando localmente
 
-Requer uma `DATABASE_URL` de Postgres (por exemplo, um banco Neon próprio
-criado em neon.tech):
+Requer uma `DATABASE_URL` de Postgres e as variáveis do Google acima, em
+um arquivo `.env.local` (não é commitado):
 
 ```bash
 npm install
-DATABASE_URL="postgres://..." npm run dev
+npm run dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000). As tabelas são
@@ -57,14 +87,13 @@ criadas automaticamente na primeira consulta.
 
 1. **Landing page (`/`)** — explica o problema e a solução, com um botão
    para criar um projeto.
-2. **Criar projeto (`/criar`)** — nome do trabalho, descrição, prazo final
-   e os dados de quem está criando (nome + e-mail, sem senha). Quem cria
-   já entra como o primeiro membro do projeto.
+2. **Criar projeto (`/criar`)** — pede login com Google, depois nome do
+   trabalho, descrição e prazo final. Quem cria já entra como o primeiro
+   membro do projeto, com o nome e e-mail vindos da conta Google.
 3. **Convidar membros** — dentro do projeto, um link de convite
    (`/entrar/[token]`) pode ser compartilhado por WhatsApp. Quem recebe o
-   link só precisa informar nome e e-mail para entrar — sem senha. Usar o
-   mesmo e-mail de novo (em outro aparelho, por exemplo) identifica a
-   mesma pessoa em vez de criar um membro duplicado.
+   link entra com a própria conta Google e já é adicionado ao projeto
+   automaticamente — sem formulário pra preencher.
 4. **Dividir tarefas (aba "Tarefas")** — qualquer membro pode criar uma
    tarefa com título, descrição, responsável, prazo e **peso** (1 a 5 —
    "rápida" a "muito grande"). O peso é o que conta na contribuição de
@@ -91,21 +120,25 @@ criadas automaticamente na primeira consulta.
    concluídas com prazo, data de conclusão, evidência e confirmações —
    pronto para anexar ao trabalho ou mostrar ao professor.
 
-## Identificação sem login
+## Identificação com login Google
 
-Não há sistema de contas com senha. Ao entrar num projeto (pelo link de
-convite ou direto pela URL do projeto), a pessoa informa nome + e-mail; um
-cookie local guarda, por projeto, qual membro é você nesse navegador. Isso
-é intencionalmente simples — como o público-alvo são estudantes acessando
-por um link compartilhado no WhatsApp, criar conta com senha seria atrito
-desnecessário para um MVP de baixo risco (não há dados sensíveis
-envolvidos).
+A identidade de cada membro vem da própria conta Google (nome + e-mail
+verificados) — ninguém digita quem é, então ninguém consegue se passar por
+outra pessoa do grupo (o problema do modelo anterior, baseado em nome +
+e-mail digitados). A sessão é gerenciada pelo Auth.js; ao visitar um
+projeto logado, a pessoa é automaticamente adicionada como membro (mesmo
+comportamento de baixo atrito de antes, só que com identidade real). Usar
+a mesma conta Google de novo, em outro aparelho, continua reconhecendo a
+mesma pessoa.
 
 ## Estrutura
 
 - `/` — landing page
-- `/criar` — formulário de criação de projeto
-- `/entrar/[token]` — página de convite (nome + e-mail para entrar)
+- `/criar` — cria o projeto (exige login com Google)
+- `/entrar/[token]` — página de convite (exige login com Google; entra e
+  já é adicionado ao projeto automaticamente)
 - `/p/[id]` — painel do projeto (abas Tarefas / Progresso), com o link de
   convite para compartilhar
 - `/p/[id]/relatorio` — gera e baixa o relatório em PDF
+- `/api/auth/[...nextauth]` — rotas do Auth.js (login/logout/callback do
+  Google)

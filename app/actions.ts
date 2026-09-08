@@ -1,13 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getCurrentMemberId, setCurrentMember } from "@/lib/member-session";
+import { getSessionUser, signIn, signOut } from "@/lib/auth";
 import {
   createProject as createProjectRepo,
   createTask as createTaskRepo,
   findOrCreateMember,
-  getProjectById,
-  getProjectByToken,
   getTask,
   setTaskReaction,
   updateTaskStatus,
@@ -23,7 +21,6 @@ import {
   type TaskWeight,
 } from "@/lib/types";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_RE = /^https?:\/\/.+/i;
 const MAX_PROOF_FILE_BYTES = 2 * 1024 * 1024;
 
@@ -32,54 +29,37 @@ function str(formData: FormData, field: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+export async function signInWithGoogle(formData: FormData) {
+  const callbackUrl = str(formData, "callback_url") || "/";
+  await signIn("google", { redirectTo: callbackUrl });
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
+}
+
 export async function createProjectAction(formData: FormData) {
   const name = str(formData, "name");
   const description = str(formData, "description");
   const deadline = str(formData, "deadline");
-  const creatorName = str(formData, "creator_name");
-  const creatorEmail = str(formData, "creator_email");
 
-  if (!name || !creatorName || !creatorEmail || !EMAIL_RE.test(creatorEmail)) {
-    throw new Error("Preencha o nome do projeto e os seus dados corretamente.");
+  const user = await getSessionUser();
+  if (!user) {
+    throw new Error("Entre com sua conta Google antes de criar um projeto.");
+  }
+  if (!name) {
+    throw new Error("Preencha o nome do projeto.");
   }
 
-  const { projectId, memberId } = await createProjectRepo({
+  const { projectId } = await createProjectRepo({
     name,
     description: description || undefined,
     deadline: deadline || undefined,
-    creatorName,
-    creatorEmail,
+    creatorName: user.name,
+    creatorEmail: user.email,
   });
 
-  await setCurrentMember(projectId, memberId);
-
   redirect(`/p/${projectId}?msg=${encodeURIComponent("Projeto criado!")}`);
-}
-
-export async function joinProjectAction(formData: FormData) {
-  const token = str(formData, "token");
-  const projectIdInput = str(formData, "project_id");
-  const name = str(formData, "name");
-  const email = str(formData, "email");
-
-  if (!name || !email || !EMAIL_RE.test(email)) {
-    throw new Error("Preencha seu nome e um e-mail válido.");
-  }
-
-  const project = token
-    ? await getProjectByToken(token)
-    : await getProjectById(Number(projectIdInput));
-
-  if (!project) {
-    throw new Error("Projeto não encontrado. Confira o link de convite.");
-  }
-
-  const member = await findOrCreateMember(project.id, name, email);
-  await setCurrentMember(project.id, member.id);
-
-  redirect(
-    `/p/${project.id}?msg=${encodeURIComponent(`Bem-vindo(a), ${member.name}!`)}`,
-  );
 }
 
 export async function createTaskAction(formData: FormData) {
@@ -122,12 +102,15 @@ export async function updateTaskStatusAction(formData: FormData) {
     throw new Error("Dados inválidos.");
   }
 
-  const currentMemberId = await getCurrentMemberId(projectId);
+  const user = await getSessionUser();
   const task = await getTask(projectId, taskId);
   if (!task) {
     throw new Error("Tarefa não encontrada.");
   }
-  if (task.assignee_id !== currentMemberId) {
+  const currentMember = user
+    ? await findOrCreateMember(projectId, user.name, user.email)
+    : null;
+  if (!currentMember || task.assignee_id !== currentMember.id) {
     redirect(
       `/p/${projectId}?aba=tarefas&erro=${encodeURIComponent(
         "Só quem é responsável pela tarefa pode atualizar o status dela.",
@@ -196,7 +179,7 @@ export async function reactToTaskAction(formData: FormData) {
     throw new Error("Dados inválidos.");
   }
 
-  const currentMemberId = await getCurrentMemberId(projectId);
+  const user = await getSessionUser();
   const task = await getTask(projectId, taskId);
   if (!task) {
     throw new Error("Tarefa não encontrada.");
@@ -204,14 +187,16 @@ export async function reactToTaskAction(formData: FormData) {
   if (task.status !== "concluida") {
     throw new Error("Só é possível confirmar ou contestar uma tarefa concluída.");
   }
-  if (!currentMemberId) {
+  if (!user) {
     redirect(
       `/p/${projectId}?aba=tarefas&erro=${encodeURIComponent(
-        "Identifique-se no projeto antes de confirmar ou contestar uma tarefa.",
+        "Entre com sua conta Google antes de confirmar ou contestar uma tarefa.",
       )}`,
     );
   }
-  if (currentMemberId === task.assignee_id) {
+
+  const currentMember = await findOrCreateMember(projectId, user.name, user.email);
+  if (currentMember.id === task.assignee_id) {
     redirect(
       `/p/${projectId}?aba=tarefas&erro=${encodeURIComponent(
         "Quem concluiu a tarefa não pode confirmar ou contestar a própria tarefa.",
@@ -219,7 +204,7 @@ export async function reactToTaskAction(formData: FormData) {
     );
   }
 
-  await setTaskReaction(taskId, currentMemberId, reaction);
+  await setTaskReaction(taskId, currentMember.id, reaction);
 
   const msg = reaction === "confirma" ? "Você confirmou a tarefa." : "Você contestou a tarefa.";
   redirect(`/p/${projectId}?aba=tarefas&msg=${encodeURIComponent(msg)}`);

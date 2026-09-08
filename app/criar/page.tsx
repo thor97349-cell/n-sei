@@ -1,8 +1,36 @@
 import { createProjectAction } from "@/app/actions";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import { getSessionUser } from "@/lib/auth";
+import { getOrigin } from "@/lib/url";
 
-export default function CriarProjetoPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CriarProjetoPage() {
+  const user = await getSessionUser();
+  const origin = await getOrigin();
+
+  if (!user) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="flex flex-1 items-center justify-center px-6 py-16 text-center">
+          <div>
+            <h1 className="text-xl font-bold text-ink">Criar projeto</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Entre com sua conta Google para criar um projeto.
+            </p>
+            <div className="mt-6">
+              <GoogleSignInButton callbackUrl={`${origin}/criar`} />
+            </div>
+          </div>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
   return (
     <>
       <SiteHeader />
@@ -10,8 +38,9 @@ export default function CriarProjetoPage() {
         <div className="mx-auto w-full max-w-md">
           <h1 className="text-2xl font-bold text-ink">Criar projeto</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Depois de criar, você recebe um link para convidar o resto do
-            grupo.
+            Você entra como <span className="font-medium text-ink">{user.name}</span>{" "}
+            ({user.email}). Depois de criar, você recebe um link para
+            convidar o resto do grupo.
           </p>
 
           <form
@@ -59,42 +88,6 @@ export default function CriarProjetoPage() {
                 id="deadline"
                 name="deadline"
                 type="date"
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-              />
-            </div>
-
-            <hr className="border-slate-200" />
-
-            <p className="text-sm font-semibold text-slate-700">Seus dados</p>
-
-            <div>
-              <label
-                htmlFor="creator_name"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Seu nome
-              </label>
-              <input
-                id="creator_name"
-                name="creator_name"
-                type="text"
-                required
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="creator_email"
-                className="block text-sm font-medium text-slate-700"
-              >
-                Seu e-mail
-              </label>
-              <input
-                id="creator_email"
-                name="creator_email"
-                type="email"
-                required
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
               />
             </div>

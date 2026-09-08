@@ -1,17 +1,17 @@
 import { notFound } from "next/navigation";
 import InviteBox from "@/components/InviteBox";
 import NewTaskForm from "@/components/NewTaskForm";
-import JoinForm from "@/components/JoinForm";
+import SignInGate from "@/components/SignInGate";
 import ProgressDashboard from "@/components/ProgressDashboard";
 import ProjectNav from "@/components/ProjectNav";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import TaskList from "@/components/TaskList";
 import Toast from "@/components/Toast";
+import { getSessionUser } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import { getCurrentMemberId } from "@/lib/member-session";
 import {
-  getMember,
+  findOrCreateMember,
   getProjectById,
   listMembers,
   listTaskReactions,
@@ -37,19 +37,18 @@ export default async function ProjectPage({
 
   const { aba, erro, msg } = await searchParams;
   const members = await listMembers(projectId);
+  const origin = await getOrigin();
+  const projectUrl = `${origin}/p/${projectId}`;
 
-  const currentMemberId = await getCurrentMemberId(projectId);
-  const currentMember = currentMemberId
-    ? await getMember(projectId, currentMemberId)
-    : null;
+  const user = await getSessionUser();
 
-  if (!currentMember) {
+  if (!user) {
     return (
       <>
         <SiteHeader />
         <main className="flex-1 px-6 py-12">
-          <JoinForm
-            projectId={projectId}
+          <SignInGate
+            callbackUrl={projectUrl}
             projectName={project.name}
             members={members}
           />
@@ -59,10 +58,11 @@ export default async function ProjectPage({
     );
   }
 
+  const currentMember = await findOrCreateMember(projectId, user.name, user.email);
+
   const tasks = await listTasks(projectId);
   const reactions = await listTaskReactions(projectId);
   const activeTab = aba === "progresso" ? "progresso" : "tarefas";
-  const origin = await getOrigin();
   const inviteUrl = `${origin}/entrar/${project.invite_token}`;
 
   return (

@@ -2,6 +2,8 @@ import Link from "next/link";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <>
