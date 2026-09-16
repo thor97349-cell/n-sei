@@ -1,7 +1,6 @@
 import { GameState } from "@/lib/nexus/types";
 import { ViewId } from "@/lib/nexus/views";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import TopNav from "./TopNav";
 import TopographicBackground from "../TopographicBackground";
 
 export default function AppShell({
@@ -20,16 +19,17 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-screen bg-slate-950">
+    <div className="relative min-h-screen bg-slate-950">
       <div className="fixed inset-0 z-0">
         <TopographicBackground />
       </div>
-      <Sidebar xp={state.xp} active={active} onNavigate={onNavigate} streakDays={streakDays} />
-      <div className="relative z-10 flex-1 flex flex-col min-w-0">
-        <Topbar
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <TopNav
           companyName={state.companyName}
           sectorId={state.sectorId}
           month={state.month}
+          xp={state.xp}
+          streakDays={streakDays}
           active={active}
           onNavigate={onNavigate}
           onRestart={onRestart}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { GameState } from "@/lib/nexus/types";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/nexus/format";
 import { generateAdvice } from "@/lib/nexus/advisor";
-import StatCard from "../StatCard";
+import Sparkline from "../Sparkline";
 import MetricChart from "../MetricChart";
 import EventLog from "../EventLog";
 import { ViewId } from "@/lib/nexus/views";
@@ -50,6 +50,17 @@ const TONE_BORDER: Record<string, string> = {
   neutral: "border-slate-700",
 };
 
+function DeltaTag({ deltaPercent: dp }: { deltaPercent?: number }) {
+  const hasDelta = dp !== undefined && Number.isFinite(dp);
+  if (!hasDelta) return null;
+  const isGood = dp! >= 0;
+  return (
+    <span className={`text-xs font-medium shrink-0 ${isGood ? "text-emerald-400" : "text-rose-400"}`}>
+      {isGood ? "↑" : "↓"} {Math.abs(dp!).toFixed(1)}%
+    </span>
+  );
+}
+
 export default function OverviewView({
   state,
   onNavigate,
@@ -65,85 +76,97 @@ export default function OverviewView({
   const windowed = range === "all" ? state.history : state.history.slice(-range);
   const advice = generateAdvice(state)[0];
 
+  const secondaryMetrics = [
+    { label: "Receita mensal", value: formatCurrency(last.revenue), delta: deltaPercent(last.revenue, prev?.revenue) },
+    { label: "Clientes ativos", value: formatNumber(last.customers), delta: deltaPercent(last.customers, prev?.customers) },
+    { label: "Market share", value: formatPercent(last.marketShare), delta: deltaPercent(last.marketShare, prev?.marketShare) },
+  ];
+
   return (
-    <div className="space-y-6">
-      {state.pendingCrossroad && (
-        <button
-          onClick={() => onNavigate("decisions")}
-          className="w-full flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-left hover:bg-amber-400/15 transition-colors"
-        >
-          <span className="text-sm text-amber-200">
-            ⚡ <strong>{state.pendingCrossroad.title}</strong> precisa da sua decisão antes de avançar.
-          </span>
-          <span className="text-xs text-amber-300 shrink-0">Decidir →</span>
-        </button>
-      )}
-      {state.pendingMiniGame && (
-        <button
-          onClick={() => onNavigate("decisions")}
-          className="w-full flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-left hover:bg-amber-400/15 transition-colors"
-        >
-          <span className="text-sm text-amber-200">
-            🎯 <strong>{state.pendingMiniGame.title}</strong> disponível antes de avançar.
-          </span>
-          <span className="text-xs text-amber-300 shrink-0">Jogar →</span>
-        </button>
-      )}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">
-            {timeGreeting()}, {state.founderName}.
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">{goalSubtitle(state)}</p>
-        </div>
-        <div className="flex gap-1 rounded-lg bg-slate-800/60 p-0.5">
-          {RANGE_OPTIONS.map((opt) => (
+    <div className="space-y-5">
+      {(state.pendingCrossroad || state.pendingMiniGame) && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          {state.pendingCrossroad && (
             <button
-              key={opt.label}
-              onClick={() => setRange(opt.id)}
-              className={`rounded-md px-3 py-1.5 text-xs transition-colors ${
-                range === opt.id ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
-              }`}
+              onClick={() => onNavigate("decisions")}
+              className="flex-1 flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-left hover:bg-amber-400/15 transition-colors"
             >
-              {opt.label}
+              <span className="text-sm text-amber-200">
+                ⚡ <strong>{state.pendingCrossroad.title}</strong> precisa da sua decisão.
+              </span>
+              <span className="text-xs text-amber-300 shrink-0">Decidir →</span>
             </button>
+          )}
+          {state.pendingMiniGame && (
+            <button
+              onClick={() => onNavigate("decisions")}
+              className="flex-1 flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-left hover:bg-amber-400/15 transition-colors"
+            >
+              <span className="text-sm text-amber-200">
+                🎯 <strong>{state.pendingMiniGame.title}</strong> disponível.
+              </span>
+              <span className="text-xs text-amber-300 shrink-0">Jogar →</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      <div>
+        <h1 className="text-2xl font-semibold text-white">
+          {timeGreeting()}, {state.founderName}.
+        </h1>
+        <p className="text-slate-400 text-sm mt-1">{goalSubtitle(state)}</p>
+      </div>
+
+      <div className="grid lg:grid-cols-[1.3fr_1fr] gap-4">
+        <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900/80 to-slate-900/30 p-5">
+          <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Lucro mensal</div>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <span className="text-4xl font-semibold text-white font-mono break-all">
+              {formatCurrency(last.profit)}
+            </span>
+            <DeltaTag deltaPercent={deltaPercent(last.profit, prev?.profit)} />
+          </div>
+          <div className="mt-4">
+            <Sparkline points={state.history.slice(-12).map((h) => h.profit)} color="#f59e0b" />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 divide-y divide-slate-800">
+          {secondaryMetrics.map((m) => (
+            <div key={m.label} className="flex items-center justify-between gap-3 px-5 py-3.5 min-w-0">
+              <span className="text-sm text-slate-400">{m.label}</span>
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="text-sm font-mono text-white break-all">{m.value}</span>
+                <DeltaTag deltaPercent={m.delta} />
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="Receita mensal"
-          value={formatCurrency(last.revenue)}
-          deltaPercent={deltaPercent(last.revenue, prev?.revenue)}
-          points={state.history.slice(-12).map((h) => h.revenue)}
-        />
-        <StatCard
-          label="Lucro mensal"
-          value={formatCurrency(last.profit)}
-          deltaPercent={deltaPercent(last.profit, prev?.profit)}
-          points={state.history.slice(-12).map((h) => h.profit)}
-        />
-        <StatCard
-          label="Clientes ativos"
-          value={formatNumber(last.customers)}
-          deltaPercent={deltaPercent(last.customers, prev?.customers)}
-          points={state.history.slice(-12).map((h) => h.customers)}
-        />
-        <StatCard
-          label="Market share"
-          value={formatPercent(last.marketShare)}
-          deltaPercent={deltaPercent(last.marketShare, prev?.marketShare)}
-          points={state.history.slice(-12).map((h) => h.marketShare)}
-        />
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="text-sm text-slate-400">Evolução</div>
+          <div className="flex gap-1 rounded-lg bg-slate-800/60 p-0.5">
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => setRange(opt.id)}
+                className={`rounded-md px-3 py-1.5 text-xs transition-colors ${
+                  range === opt.id ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <MetricChart history={windowed} />
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_320px] gap-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <MetricChart history={windowed} />
-        </div>
-
-        <div className={`rounded-xl border bg-slate-900/50 p-4 flex flex-col ${TONE_BORDER[advice.tone]}`}>
+      <div className="grid lg:grid-cols-[320px_1fr] gap-4">
+        <div className={`rounded-2xl border bg-slate-900/50 p-4 flex flex-col ${TONE_BORDER[advice.tone]}`}>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-amber-400 mb-2">
             🧠 Consultor IA
           </div>
@@ -164,11 +187,11 @@ export default function OverviewView({
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-        <div className="text-sm text-slate-400 mb-2">Eventos recentes</div>
-        <EventLog log={state.log} limit={6} maxHeight="max-h-56" />
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className="text-sm text-slate-400 mb-2">Eventos recentes</div>
+          <EventLog log={state.log} limit={6} maxHeight="max-h-56" />
+        </div>
       </div>
     </div>
   );
