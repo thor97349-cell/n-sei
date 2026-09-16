@@ -30,31 +30,31 @@ export default function DecisionsView({
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
           <div className="text-sm text-slate-400">Resumo antes de decidir — mês {state.month}</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Caixa</div>
-              <div className="text-white font-mono">{formatCurrency(state.cash)}</div>
+              <div className="text-white font-mono break-all">{formatCurrency(state.cash)}</div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Clientes</div>
-              <div className="text-white font-mono">{formatNumber(state.customers)}</div>
+              <div className="text-white font-mono break-all">{formatNumber(state.customers)}</div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Market share</div>
-              <div className="text-white font-mono">{formatPercent(last.marketShare)}</div>
+              <div className="text-white font-mono break-all">{formatPercent(last.marketShare)}</div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Reputação</div>
-              <div className="text-white font-mono">{Math.round(state.reputation)}/100</div>
+              <div className="text-white font-mono break-all">{Math.round(state.reputation)}/100</div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Lucro último mês</div>
-              <div className={`font-mono ${last.profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              <div className={`font-mono break-all ${last.profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {formatCurrency(last.profit)}
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-slate-500 text-xs">Preço de referência</div>
-              <div className="text-white font-mono">{formatCurrency(SECTORS[state.sectorId].referencePrice)}</div>
+              <div className="text-white font-mono break-all">{formatCurrency(SECTORS[state.sectorId].referencePrice)}</div>
             </div>
           </div>
           <p className="text-xs text-slate-500 pt-2 border-t border-slate-800">

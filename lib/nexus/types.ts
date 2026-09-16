@@ -98,6 +98,7 @@ export interface GameState {
   cash: number;
   customers: number;
   marketSize: number;
+  marketCeiling: number; // teto de mercado: crescimento orgânico desacelera perto dele (satura, não é infinito)
   reputation: number; // 0-100
   xp: number;
   level: number;
@@ -114,6 +115,7 @@ export interface GameState {
   unitCostAdjustment: number; // ajuste permanente no custo variável por cliente (ex: negociação com fornecedor)
   investmentRaised: boolean;
   lastExpansionMonth: number | null;
+  expansionsUsed: number;
   createdAt: number;
   updatedAt: number;
 }

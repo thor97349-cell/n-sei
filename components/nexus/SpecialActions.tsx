@@ -3,6 +3,7 @@ import { formatCurrency } from "@/lib/nexus/format";
 import {
   EXPANSION_COOLDOWN_MONTHS,
   EXPANSION_LEVEL,
+  EXPANSION_MAX_USES,
   INVESTMENT_LEVEL,
   canExpandMarket,
   canRaiseInvestment,
@@ -40,8 +41,9 @@ export default function SpecialActions({
           {!expansionUnlocked && <span className="text-xs text-slate-500">Nível {EXPANSION_LEVEL}+</span>}
         </div>
         <p className="text-xs text-slate-400 mb-3">
-          Investe em expansão para crescer o mercado endereçável em 15% permanentemente. Cooldown de{" "}
-          {EXPANSION_COOLDOWN_MONTHS} meses.
+          Investe em expansão para elevar o teto de crescimento do mercado em 15% permanentemente. Cooldown
+          de {EXPANSION_COOLDOWN_MONTHS} meses, máximo de {EXPANSION_MAX_USES} usos por empresa — depois disso,
+          crescer exige otimizar margem e reputação, não só investir mais.
         </p>
         {expansionUnlocked && (
           <button
@@ -49,9 +51,11 @@ export default function SpecialActions({
             onClick={onExpand}
             className="w-full rounded-lg bg-amber-500 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {expansionCooling
-              ? `Em cooldown até o mês ${(state.lastExpansionMonth ?? 0) + EXPANSION_COOLDOWN_MONTHS}`
-              : `Expandir por ${formatCurrency(expansionCost(state))}`}
+            {state.expansionsUsed >= EXPANSION_MAX_USES
+              ? "Limite de expansões atingido"
+              : expansionCooling
+                ? `Em cooldown até o mês ${(state.lastExpansionMonth ?? 0) + EXPANSION_COOLDOWN_MONTHS}`
+                : `Expandir por ${formatCurrency(expansionCost(state))} (${state.expansionsUsed}/${EXPANSION_MAX_USES})`}
           </button>
         )}
       </div>

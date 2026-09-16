@@ -23,6 +23,7 @@ export default function DecisionPanel({
   disabled: boolean;
 }) {
   const [decisions, setDecisions] = useState<Decisions>(initial);
+  const [cooling, setCooling] = useState(false);
 
   const staffCost =
     decisions.staff.sales * sector.salaries.sales +
@@ -36,6 +37,15 @@ export default function DecisionPanel({
       ...d,
       staff: { ...d.staff, [role]: Math.max(0, d.staff[role] + delta) },
     }));
+  }
+
+  // Evita que segurar Enter/clique dispare dezenas de meses de uma vez —
+  // o botão desabilita assim que clicado e só reabilita depois de um instante.
+  function handleAdvanceClick() {
+    if (cooling || disabled) return;
+    setCooling(true);
+    onAdvance(decisions);
+    setTimeout(() => setCooling(false), 500);
   }
 
   return (
@@ -110,7 +120,7 @@ export default function DecisionPanel({
                 >
                   −
                 </button>
-                <span className="w-5 text-center font-mono text-white">{decisions.staff[role]}</span>
+                <span className="min-w-[2rem] text-center font-mono text-white">{decisions.staff[role]}</span>
                 <button
                   onClick={() => updateStaff(role, 1)}
                   className="w-7 h-7 rounded border border-slate-700 text-slate-300 hover:border-slate-500"
@@ -129,8 +139,8 @@ export default function DecisionPanel({
       </div>
 
       <button
-        disabled={disabled}
-        onClick={() => onAdvance(decisions)}
+        disabled={disabled || cooling}
+        onClick={handleAdvanceClick}
         className="w-full rounded-lg bg-amber-500 py-3 font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         Avançar para o próximo mês →

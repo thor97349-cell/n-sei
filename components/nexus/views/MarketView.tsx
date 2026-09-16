@@ -24,8 +24,8 @@ export default function MarketView({ state }: { state: GameState }) {
             <div className="text-white font-mono">{formatNumber(state.marketSize)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-xs mb-0.5">Crescimento/mês</div>
-            <div className="text-white font-mono">{formatPercent(sector.marketGrowth)}</div>
+            <div className="text-slate-500 text-xs mb-0.5">Teto de mercado maduro</div>
+            <div className="text-white font-mono">{formatNumber(state.marketCeiling)}</div>
           </div>
           <div>
             <div className="text-slate-500 text-xs mb-0.5">Preço de referência</div>
@@ -36,6 +36,10 @@ export default function MarketView({ state }: { state: GameState }) {
             <div className="text-white font-mono">{formatPercent(last.marketShare)}</div>
           </div>
         </div>
+        <p className="text-xs text-slate-500 mt-3">
+          O mercado cresce mais rápido quando está longe do teto e desacelera perto dele — como um mercado
+          real que amadurece, em vez de crescer para sempre.
+        </p>
       </div>
 
       <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">

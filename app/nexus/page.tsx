@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Onboarding, { OnboardingResult } from "@/components/nexus/Onboarding";
 import GameSelect from "@/components/nexus/GameSelect";
 import GameOverScreen from "@/components/nexus/GameOverScreen";
@@ -42,6 +42,7 @@ export default function NexusPage() {
   const [loadedFromStorage, setLoadedFromStorage] = useState(false);
   const [activeView, setActiveView] = useState<ViewId>("overview");
   const [streakDays, setStreakDays] = useState(0);
+  const lastAdvanceAtRef = useRef(0);
 
   if (isClient && !loadedFromStorage) {
     setLoadedFromStorage(true);
@@ -92,6 +93,12 @@ export default function NexusPage() {
   }
 
   function handleAdvance(decisions: Decisions) {
+    // Segunda camada de proteção contra spam (segurar Enter/clique repetido),
+    // independente do cooldown visual do próprio botão.
+    const now = Date.now();
+    if (now - lastAdvanceAtRef.current < 400) return;
+    lastAdvanceAtRef.current = now;
+
     const { streak, isNewDay } = registerPlaySession();
     setStreakDays(streak.streakDays);
     setState((prev) => {

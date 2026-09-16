@@ -13,6 +13,7 @@ const BANKRUPTCY_THRESHOLD = -INITIAL_CASH * 0.5;
 const REFERRAL_RATE = 0.035;
 const RIVAL_REPUTATION = 60;
 const RIVAL_MARKETING_MULTIPLIER = 15;
+const MARKET_CEILING_MULTIPLIER = 6;
 
 export function createNewGame(params: {
   companyName: string;
@@ -56,6 +57,7 @@ export function createNewGame(params: {
     cash: INITIAL_CASH,
     customers: startingCustomers,
     marketSize: sector.marketSize,
+    marketCeiling: Math.round(sector.marketSize * MARKET_CEILING_MULTIPLIER),
     reputation: 55,
     xp: 0,
     level: 1,
@@ -83,6 +85,7 @@ export function createNewGame(params: {
     unitCostAdjustment: 0,
     investmentRaised: false,
     lastExpansionMonth: null,
+    expansionsUsed: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -124,7 +127,13 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const repFactor = 0.5 + (state.reputation / 100) * 1.0; // 0.5 - 1.5
   const churnRepFactor = 1.5 - (state.reputation / 100) * 1.0; // 0.5 - 1.5
 
-  const newMarketSize = Math.round(state.marketSize * (1 + sector.marketGrowth) * mods.marketSizeMultiplier);
+  // Crescimento saturante: o mercado se aproxima de um teto (marketCeiling) em vez de
+  // compor exponencialmente para sempre — mercados reais amadurecem e desaceleram.
+  const growthRoom = Math.max(0, state.marketCeiling - state.marketSize);
+  const newMarketSize = Math.min(
+    state.marketCeiling,
+    Math.round(state.marketSize + growthRoom * sector.marketGrowth * mods.marketSizeMultiplier),
+  );
 
   // Concorrente simulada: entidade própria da partida (não são dados de outros
   // jogadores), disputa o mesmo mercado com uma estratégia estável de preço na
@@ -259,14 +268,18 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
 
 export const EXPANSION_LEVEL = 3;
 export const EXPANSION_COOLDOWN_MONTHS = 6;
+export const EXPANSION_MAX_USES = 5;
 export const INVESTMENT_LEVEL = 5;
 
 export function expansionCost(state: GameState): number {
-  return Math.round(SECTORS[state.sectorId].cacBase * 300);
+  const base = SECTORS[state.sectorId].cacBase * 300;
+  // cada uso fica mais caro — evita que a ação vire um multiplicador infinito
+  return Math.round(base * Math.pow(1.4, state.expansionsUsed));
 }
 
 export function canExpandMarket(state: GameState): boolean {
   if (state.level < EXPANSION_LEVEL) return false;
+  if (state.expansionsUsed >= EXPANSION_MAX_USES) return false;
   if (state.lastExpansionMonth !== null && state.month - state.lastExpansionMonth < EXPANSION_COOLDOWN_MONTHS) {
     return false;
   }
@@ -276,17 +289,18 @@ export function canExpandMarket(state: GameState): boolean {
 export function expandMarket(state: GameState): GameState {
   if (!canExpandMarket(state)) return state;
   const cost = expansionCost(state);
-  const newMarketSize = Math.round(state.marketSize * 1.15);
+  const newCeiling = Math.round(state.marketCeiling * 1.15);
   const next: GameState = {
     ...state,
     cash: state.cash - cost,
-    marketSize: newMarketSize,
+    marketCeiling: newCeiling,
     lastExpansionMonth: state.month,
+    expansionsUsed: state.expansionsUsed + 1,
     log: [
       ...state.log,
       {
         month: state.month,
-        text: `${state.companyName} investiu em expansão de mercado: tamanho do mercado cresceu para ${newMarketSize.toLocaleString("pt-BR")}.`,
+        text: `${state.companyName} investiu em expansão de mercado: o teto de crescimento do mercado subiu para ${newCeiling.toLocaleString("pt-BR")} (${state.expansionsUsed + 1}/${EXPANSION_MAX_USES} expansões usadas).`,
         tone: "good",
       },
     ],
