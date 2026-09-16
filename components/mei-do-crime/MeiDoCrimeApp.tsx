@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useGameEngine } from "@/lib/imperio-sombras/engine/useGameEngine";
-import { formatarNumero } from "@/lib/imperio-sombras/format";
+import { useGameEngine } from "@/lib/mei-do-crime/engine/useGameEngine";
+import { formatarNumero } from "@/lib/mei-do-crime/format";
 import AbaConexoes from "./AbaConexoes";
 import AbaDistritos from "./AbaDistritos";
 import AbaEstatisticas from "./AbaEstatisticas";
@@ -26,7 +26,7 @@ const ABAS: { id: Aba; nome: string; icone: string }[] = [
   { id: "estatisticas", nome: "Império", icone: "👑" },
 ];
 
-export default function ImperioSombrasApp() {
+export default function MeiDoCrimeApp() {
   const {
     state,
     carregado,
@@ -49,7 +49,7 @@ export default function ImperioSombrasApp() {
   if (!carregado) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-zinc-950 text-white/60">
-        Carregando o império...
+        Carregando o MEI...
       </div>
     );
   }
@@ -64,10 +64,10 @@ export default function ImperioSombrasApp() {
         <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-              🌑 Império das Sombras
+              🧾 MEI do Crime
             </h1>
             <p className="text-xs text-white/40">
-              Expanda seu domínio, gerencie o risco e torne-se uma lenda das sombras.
+              Formalize a operação, gerencie o risco e vire referência no ramo — sem nunca emitir nota.
             </p>
           </div>
           <SeletorVelocidade velocidade={state.velocidade} onDefinir={definirVelocidade} />

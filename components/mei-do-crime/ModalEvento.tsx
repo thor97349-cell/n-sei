@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { CONEXOES } from "@/lib/imperio-sombras/data/conexoes";
-import { EVENTOS_POR_ID } from "@/lib/imperio-sombras/data/eventos";
-import { getDistritoDef, podeAfordarCusto } from "@/lib/imperio-sombras/engine/selectors";
-import { formatarCusto } from "@/lib/imperio-sombras/format";
-import type { EventoAtivo, GameState, Recursos } from "@/lib/imperio-sombras/types";
+import { CONEXOES } from "@/lib/mei-do-crime/data/conexoes";
+import { EVENTOS_POR_ID } from "@/lib/mei-do-crime/data/eventos";
+import { getDistritoDef, podeAfordarCusto } from "@/lib/mei-do-crime/engine/selectors";
+import { formatarCusto } from "@/lib/mei-do-crime/format";
+import type { EventoAtivo, GameState, Recursos } from "@/lib/mei-do-crime/types";
 import BarraProgresso from "./BarraProgresso";
 
 const CONEXAO_RESOLVE_EVENTO = CONEXOES.find(

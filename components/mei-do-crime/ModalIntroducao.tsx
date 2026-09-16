@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DIFICULDADES } from "@/lib/imperio-sombras/constants";
-import type { Dificuldade } from "@/lib/imperio-sombras/types";
+import { DIFICULDADES } from "@/lib/mei-do-crime/constants";
+import type { Dificuldade } from "@/lib/mei-do-crime/types";
 
 export default function ModalIntroducao({
   onIniciar,
@@ -15,11 +15,11 @@ export default function ModalIntroducao({
     <div className="flex min-h-dvh items-center justify-center bg-zinc-950 p-4 text-white">
       <div className="w-full max-w-lg space-y-6 py-8">
         <div className="text-center">
-          <div className="mb-2 text-4xl">🌑</div>
-          <h1 className="text-2xl font-bold">Império das Sombras</h1>
+          <div className="mb-2 text-4xl">🧾</div>
+          <h1 className="text-2xl font-bold">MEI do Crime</h1>
           <p className="mt-2 text-sm text-white/60">
-            Construa seu domínio pelas sombras: tome distritos, gerencie o risco,
-            pague suas dívidas e torne-se uma lenda do submundo — ou um alvo fácil.
+            Abra o CNPJ da operação: tome distritos, gerencie o risco, pague o
+            agiota em dia e vire referência no ramo — mesmo sem nota fiscal.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function ModalIntroducao({
           onClick={() => onIniciar(selecionada)}
           className="w-full rounded-lg bg-fuchsia-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-fuchsia-600"
         >
-          Começar a construir o império
+          Começar a construir o negócio
         </button>
       </div>
     </div>

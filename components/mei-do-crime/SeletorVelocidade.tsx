@@ -1,4 +1,4 @@
-import { VELOCIDADES } from "@/lib/imperio-sombras/constants";
+import { VELOCIDADES } from "@/lib/mei-do-crime/constants";
 
 export default function SeletorVelocidade({
   velocidade,

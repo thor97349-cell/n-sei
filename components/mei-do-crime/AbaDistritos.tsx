@@ -1,5 +1,5 @@
-import { DISTRITOS } from "@/lib/imperio-sombras/data/distritos";
-import type { GameState } from "@/lib/imperio-sombras/types";
+import { DISTRITOS } from "@/lib/mei-do-crime/data/distritos";
+import type { GameState } from "@/lib/mei-do-crime/types";
 import CartaoDistrito from "./CartaoDistrito";
 
 interface AbaDistritosProps {

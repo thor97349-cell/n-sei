@@ -1,7 +1,7 @@
 import type { ConfigDificuldade, Dificuldade, OfertaEmprestimo } from "./types";
 
-export const SAVE_KEY = "imperio-sombras:save:v2";
-export const VERSAO_ESTADO = 2;
+export const SAVE_KEY = "mei-do-crime:save:v3";
+export const VERSAO_ESTADO = 3;
 
 export const TICK_MS = 1000;
 export const EVENTO_MIN_INTERVALO_MS = 25_000;
@@ -42,7 +42,7 @@ export const DIFICULDADES: Record<Dificuldade, ConfigDificuldade> = {
   facil: {
     id: "facil",
     nome: "Fácil",
-    descricao: "Para sentir o poder das sombras sem tanta pressão. Risco, juros e eventos mais brandos.",
+    descricao: "Para sentir o poder da operação sem tanta pressão. Risco, juros e eventos mais brandos.",
     multiplicadorRisco: 0.7,
     multiplicadorEventoNegativo: 0.7,
     multiplicadorJuros: 0.65,
@@ -51,7 +51,7 @@ export const DIFICULDADES: Record<Dificuldade, ConfigDificuldade> = {
   normal: {
     id: "normal",
     nome: "Normal",
-    descricao: "A experiência completa do Império das Sombras, equilibrada entre risco e recompensa.",
+    descricao: "A experiência completa do MEI do Crime, equilibrada entre risco e recompensa.",
     multiplicadorRisco: 1,
     multiplicadorEventoNegativo: 1,
     multiplicadorJuros: 1,

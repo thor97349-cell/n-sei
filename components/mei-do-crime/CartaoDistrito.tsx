@@ -1,11 +1,11 @@
-import { CUSTO_REFORCO_SEGURANCA } from "@/lib/imperio-sombras/constants";
-import { formatarCusto, formatarNumero } from "@/lib/imperio-sombras/format";
+import { CUSTO_REFORCO_SEGURANCA } from "@/lib/mei-do-crime/constants";
+import { formatarCusto, formatarNumero } from "@/lib/mei-do-crime/format";
 import {
   custoDesbloqueio,
   custoInvestimento,
   rendaEfetivaDistrito,
-} from "@/lib/imperio-sombras/engine/selectors";
-import type { DistritoDef, DistritoState, GameState } from "@/lib/imperio-sombras/types";
+} from "@/lib/mei-do-crime/engine/selectors";
+import type { DistritoDef, DistritoState, GameState } from "@/lib/mei-do-crime/types";
 import BarraProgresso from "./BarraProgresso";
 
 interface CartaoDistritoProps {

@@ -1,6 +1,6 @@
-import { custoUpgrade, podeAfordarCusto } from "@/lib/imperio-sombras/engine/selectors";
-import { formatarCusto, formatarNumero } from "@/lib/imperio-sombras/format";
-import type { GameState, UpgradeDef } from "@/lib/imperio-sombras/types";
+import { custoUpgrade, podeAfordarCusto } from "@/lib/mei-do-crime/engine/selectors";
+import { formatarCusto, formatarNumero } from "@/lib/mei-do-crime/format";
+import type { GameState, UpgradeDef } from "@/lib/mei-do-crime/types";
 
 const DESCRICAO_EFEITO: Record<string, (v: number) => string> = {
   multiplicador_dinheiro: (v) => `+${(v * 100).toFixed(0)}% dinheiro`,

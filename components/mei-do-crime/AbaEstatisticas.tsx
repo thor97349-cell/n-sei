@@ -1,11 +1,11 @@
-import { DIFICULDADES, TITULOS_IMPERIO } from "@/lib/imperio-sombras/constants";
+import { DIFICULDADES, TITULOS_IMPERIO } from "@/lib/mei-do-crime/constants";
 import {
   getPontuacaoImperio,
   getProximoTitulo,
   getTituloAtual,
-} from "@/lib/imperio-sombras/engine/selectors";
-import { formatarDuracao, formatarNumero } from "@/lib/imperio-sombras/format";
-import type { GameState } from "@/lib/imperio-sombras/types";
+} from "@/lib/mei-do-crime/engine/selectors";
+import { formatarDuracao, formatarNumero } from "@/lib/mei-do-crime/format";
+import type { GameState } from "@/lib/mei-do-crime/types";
 import BarraProgresso from "./BarraProgresso";
 
 export default function AbaEstatisticas({
@@ -80,7 +80,7 @@ export default function AbaEstatisticas({
         <button
           type="button"
           onClick={() => {
-            if (window.confirm("Reiniciar o Império das Sombras do zero?")) {
+            if (window.confirm("Reiniciar o MEI do Crime do zero?")) {
               onReiniciar();
             }
           }}

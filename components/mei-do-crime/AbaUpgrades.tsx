@@ -1,5 +1,5 @@
-import { UPGRADES } from "@/lib/imperio-sombras/data/upgrades";
-import type { CategoriaUpgrade, GameState } from "@/lib/imperio-sombras/types";
+import { UPGRADES } from "@/lib/mei-do-crime/data/upgrades";
+import type { CategoriaUpgrade, GameState } from "@/lib/mei-do-crime/types";
 import CartaoUpgrade from "./CartaoUpgrade";
 
 const CATEGORIAS: { id: CategoriaUpgrade; nome: string }[] = [

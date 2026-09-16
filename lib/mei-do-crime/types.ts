@@ -1,4 +1,4 @@
-// Tipos centrais do Império das Sombras.
+// Tipos centrais do MEI do Crime.
 // O estado persistido guarda apenas dados dinâmicos (números, ids, flags);
 // a definição estática de distritos/upgrades/eventos vive em `data/*`.
 

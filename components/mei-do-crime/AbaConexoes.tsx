@@ -1,5 +1,5 @@
-import { CONEXOES } from "@/lib/imperio-sombras/data/conexoes";
-import type { GameState } from "@/lib/imperio-sombras/types";
+import { CONEXOES } from "@/lib/mei-do-crime/data/conexoes";
+import type { GameState } from "@/lib/mei-do-crime/types";
 import CartaoConexao from "./CartaoConexao";
 
 interface AbaConexoesProps {

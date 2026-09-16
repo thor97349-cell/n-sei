@@ -103,7 +103,7 @@ export function criarEstadoInicial(dificuldade: Dificuldade = DIFICULDADE_PADRAO
 
   estado = adicionarLog(
     estado,
-    "O império nasce nas sombras. Que comece a expansão.",
+    "CNPJ do MEI aberto, nota fiscal jamais emitida. Que comece a expansão.",
     "info",
     agora,
   );
@@ -406,7 +406,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
       novoEstado = adicionarLog(
         novoEstado,
-        `${def.icone} ${def.nome} agora faz parte do império das sombras.`,
+        `${def.icone} ${def.nome} agora faz parte da operação.`,
         "positivo",
         agora,
       );

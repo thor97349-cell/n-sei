@@ -1,5 +1,5 @@
-import { formatarNumero } from "@/lib/imperio-sombras/format";
-import type { Recursos } from "@/lib/imperio-sombras/types";
+import { formatarNumero } from "@/lib/mei-do-crime/format";
+import type { Recursos } from "@/lib/mei-do-crime/types";
 
 const ITENS: { chave: keyof Recursos; icone: string; nome: string; cor: string }[] = [
   { chave: "dinheiro", icone: "💰", nome: "Dinheiro", cor: "text-amber-400" },

@@ -1,6 +1,6 @@
-import { podeAfordarCusto } from "@/lib/imperio-sombras/engine/selectors";
-import { formatarCusto, formatarDuracao } from "@/lib/imperio-sombras/format";
-import type { ConexaoDef, ConexaoState, GameState } from "@/lib/imperio-sombras/types";
+import { podeAfordarCusto } from "@/lib/mei-do-crime/engine/selectors";
+import { formatarCusto, formatarDuracao } from "@/lib/mei-do-crime/format";
+import type { ConexaoDef, ConexaoState, GameState } from "@/lib/mei-do-crime/types";
 
 interface CartaoConexaoProps {
   def: ConexaoDef;

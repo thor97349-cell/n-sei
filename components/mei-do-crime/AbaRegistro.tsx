@@ -1,4 +1,4 @@
-import type { LogEntry } from "@/lib/imperio-sombras/types";
+import type { LogEntry } from "@/lib/mei-do-crime/types";
 
 const COR_TIPO: Record<LogEntry["tipo"], string> = {
   info: "text-white/60",

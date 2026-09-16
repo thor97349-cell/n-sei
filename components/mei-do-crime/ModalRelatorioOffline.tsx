@@ -1,5 +1,5 @@
-import { formatarDuracao, formatarNumero } from "@/lib/imperio-sombras/format";
-import type { RelatorioOffline } from "@/lib/imperio-sombras/types";
+import { formatarDuracao, formatarNumero } from "@/lib/mei-do-crime/format";
+import type { RelatorioOffline } from "@/lib/mei-do-crime/types";
 
 export default function ModalRelatorioOffline({
   relatorio,
