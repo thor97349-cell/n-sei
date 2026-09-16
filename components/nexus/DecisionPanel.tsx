@@ -52,7 +52,7 @@ export default function DecisionPanel({
           step={1}
           value={decisions.price}
           onChange={(e) => setDecisions((d) => ({ ...d, price: Number(e.target.value) }))}
-          className="w-full accent-cyan-400"
+          className="w-full accent-amber-400"
         />
         <div className="text-[11px] text-slate-500 mt-1">
           Referência de mercado: {formatCurrency(sector.referencePrice)}
@@ -71,7 +71,7 @@ export default function DecisionPanel({
           step={50}
           value={decisions.marketingSpend}
           onChange={(e) => setDecisions((d) => ({ ...d, marketingSpend: Number(e.target.value) }))}
-          className="w-full accent-cyan-400"
+          className="w-full accent-amber-400"
         />
       </div>
 
@@ -87,7 +87,7 @@ export default function DecisionPanel({
           step={100}
           value={decisions.rndSpend}
           onChange={(e) => setDecisions((d) => ({ ...d, rndSpend: Number(e.target.value) }))}
-          className="w-full accent-cyan-400"
+          className="w-full accent-amber-400"
         />
         <div className="text-[11px] text-slate-500 mt-1">Melhora reputação/qualidade ao longo do tempo.</div>
       </div>
@@ -131,7 +131,7 @@ export default function DecisionPanel({
       <button
         disabled={disabled}
         onClick={() => onAdvance(decisions)}
-        className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-slate-950 hover:bg-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="w-full rounded-lg bg-amber-500 py-3 font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
       >
         Avançar para o próximo mês →
       </button>

@@ -26,7 +26,9 @@ export default function StatCard({
         )}
       </div>
       <div className="text-xl font-semibold text-white font-mono mb-2">{value}</div>
-      {points && points.length > 1 && <Sparkline points={points} color={isGood ? "#34d399" : "#22d3ee"} />}
+      {points && points.length > 1 && (
+        <Sparkline points={points} color={!hasDelta ? "#f59e0b" : isGood ? "#34d399" : "#fb7185"} />
+      )}
     </div>
   );
 }

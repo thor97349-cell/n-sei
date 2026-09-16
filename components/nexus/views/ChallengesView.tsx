@@ -14,7 +14,7 @@ export default function ChallengesView({ state }: { state: GameState }) {
         </div>
         <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 to-indigo-400"
+            className="h-full bg-gradient-to-r from-amber-400 to-orange-400"
             style={{ width: `${(unlockedCount / milestones.length) * 100}%` }}
           />
         </div>

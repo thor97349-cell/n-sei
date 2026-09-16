@@ -1,9 +1,13 @@
-import { SECTORS } from "./sectors";
+import { pickRivalName, SECTORS } from "./sectors";
 import { Decisions, GameState, GoalId, HistoryEntry, InterestTag, LogEntry, SectorId } from "./types";
 import { emptyModifiers, rollEvent } from "./events";
 import { checkMilestones, levelForXp } from "./xp";
 
-const BANKRUPTCY_THRESHOLD = -5000;
+export const INITIAL_CASH = 40000;
+const BANKRUPTCY_THRESHOLD = -INITIAL_CASH * 0.5;
+const REFERRAL_RATE = 0.035;
+const RIVAL_REPUTATION = 60;
+const RIVAL_MARKETING_MULTIPLIER = 15;
 
 export function createNewGame(params: {
   companyName: string;
@@ -15,14 +19,15 @@ export function createNewGame(params: {
   const { companyName, founderName, sectorId, interests, goal } = params;
   const sector = SECTORS[sectorId];
   const startingCustomers = Math.round(sector.marketSize * 0.003);
-  const startingStaff = { sales: 1, support: 1, product: 1 };
+  const startingStaff = { sales: 0, support: 0, product: 0 };
+  const startingRivalCustomers = Math.round(startingCustomers * 2.2);
   const initialHistory: HistoryEntry = {
     month: 0,
     revenue: startingCustomers * sector.referencePrice,
     profit: 0,
     customers: startingCustomers,
     marketShare: startingCustomers / sector.marketSize,
-    cash: 20000,
+    cash: INITIAL_CASH,
     reputation: 55,
     variableCosts: 0,
     staffCosts: 0,
@@ -30,6 +35,8 @@ export function createNewGame(params: {
     marketingSpend: 0,
     rndSpend: 0,
     staff: startingStaff,
+    rivalCustomers: startingRivalCustomers,
+    rivalMarketShare: startingRivalCustomers / sector.marketSize,
   };
 
   return {
@@ -39,7 +46,7 @@ export function createNewGame(params: {
     goal,
     sectorId,
     month: 0,
-    cash: 20000,
+    cash: INITIAL_CASH,
     customers: startingCustomers,
     marketSize: sector.marketSize,
     reputation: 55,
@@ -51,6 +58,7 @@ export function createNewGame(params: {
       rndSpend: 0,
       staff: startingStaff,
     },
+    rival: { name: pickRivalName(sectorId), customers: startingRivalCustomers },
     history: [initialHistory],
     log: [
       {
@@ -83,14 +91,36 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const repFactor = 0.5 + (state.reputation / 100) * 1.0; // 0.5 - 1.5
   const churnRepFactor = 1.5 - (state.reputation / 100) * 1.0; // 0.5 - 1.5
 
+  const newMarketSize = Math.round(state.marketSize * (1 + sector.marketGrowth) * mods.marketSizeMultiplier);
+
+  // Concorrente simulada: entidade própria da partida (não são dados de outros
+  // jogadores), disputa o mesmo mercado com uma estratégia estável de preço na
+  // referência do setor. Sua expansão consome o espaço que sobra para você.
+  const rivalRepFactor = 0.5 + (RIVAL_REPUTATION / 100) * 1.0;
+  const rivalEffectiveCac = sector.cacBase / rivalRepFactor;
+  const rivalMarketingSpend = sector.cacBase * RIVAL_MARKETING_MULTIPLIER;
+  const rivalRawLeads = rivalMarketingSpend / rivalEffectiveCac;
+  const rivalSaturation = 1 / (1 + rivalRawLeads / 500);
+  const rivalReferral = state.rival.customers * REFERRAL_RATE * (RIVAL_REPUTATION / 100);
+  const rivalNewRaw = rivalRawLeads * rivalSaturation * rivalRepFactor * mods.demandMultiplier + rivalReferral;
+  const remainingMarketForRival = Math.max(newMarketSize - state.customers - state.rival.customers, 0);
+  const rivalNewCustomers = Math.min(rivalNewRaw, remainingMarketForRival);
+  const rivalChurnRate = clamp(sector.churnBase * (1.5 - RIVAL_REPUTATION / 100) * mods.churnMultiplier, 0.01, 0.6);
+  const rivalChurned = state.rival.customers * rivalChurnRate;
+  const rivalCustomersAfter = clamp(
+    Math.round(state.rival.customers - rivalChurned + rivalNewCustomers),
+    0,
+    newMarketSize,
+  );
+
   const effectiveCac = sector.cacBase / repFactor;
   const rawLeads = decisions.marketingSpend / effectiveCac;
   const saturation = 1 / (1 + rawLeads / 500);
-  let newCustomers = rawLeads * saturation * priceDemandFactor * repFactor * mods.demandMultiplier;
+  const referralGrowth = state.customers * REFERRAL_RATE * (state.reputation / 100);
+  let newCustomers =
+    rawLeads * saturation * priceDemandFactor * repFactor * mods.demandMultiplier + referralGrowth;
 
-  const newMarketSize = Math.round(state.marketSize * (1 + sector.marketGrowth) * mods.marketSizeMultiplier);
-
-  const remainingMarket = Math.max(newMarketSize - state.customers, 0);
+  const remainingMarket = Math.max(newMarketSize - state.customers - rivalCustomersAfter, 0);
   newCustomers = Math.min(newCustomers, remainingMarket);
 
   const churnRate = clamp(sector.churnBase * churnPriceFactor * churnRepFactor * mods.churnMultiplier, 0.01, 0.6);
@@ -113,11 +143,18 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const productEffect = Math.min(decisions.staff.product * 4, 20);
   const rndEffect = Math.min(decisions.rndSpend / 500, 15);
   const overpricingPenalty = Math.max(0, priceRatio - 1) * 20;
-  const target = clamp(50 + supportEffect + productEffect + rndEffect - overpricingPenalty, 0, 100);
+  const supportGap = Math.max(0, customersAfter - decisions.staff.support * 300);
+  const overloadPenalty = clamp(supportGap / 40, 0, 30);
+  const target = clamp(
+    50 + supportEffect + productEffect + rndEffect - overpricingPenalty - overloadPenalty,
+    0,
+    100,
+  );
   let reputation = state.reputation + (target - state.reputation) * 0.25 + mods.reputationDelta;
   reputation = clamp(reputation, 0, 100);
 
   const marketShare = newMarketSize > 0 ? customersAfter / newMarketSize : 0;
+  const rivalMarketShare = newMarketSize > 0 ? rivalCustomersAfter / newMarketSize : 0;
 
   const month = state.month + 1;
   const historyEntry: HistoryEntry = {
@@ -134,12 +171,22 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
     marketingSpend: decisions.marketingSpend,
     rndSpend: decisions.rndSpend,
     staff: decisions.staff,
+    rivalCustomers: rivalCustomersAfter,
+    rivalMarketShare,
   };
 
   const log: LogEntry[] = [
     ...state.log,
     { month, text: event.text(state.companyName), tone: event.tone },
   ];
+
+  const wasAhead = state.customers >= state.rival.customers;
+  const isAhead = customersAfter >= rivalCustomersAfter;
+  if (wasAhead && !isAhead) {
+    log.push({ month, text: `${state.rival.name} ultrapassou você em número de clientes.`, tone: "bad" });
+  } else if (!wasAhead && isAhead) {
+    log.push({ month, text: `Você ultrapassou ${state.rival.name} em número de clientes!`, tone: "good" });
+  }
 
   const next: GameState = {
     ...state,
@@ -149,6 +196,7 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
     marketSize: newMarketSize,
     reputation,
     decisions,
+    rival: { ...state.rival, customers: rivalCustomersAfter },
     history: [...state.history, historyEntry],
     log,
   };

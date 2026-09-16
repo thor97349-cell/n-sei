@@ -1,4 +1,4 @@
-export default function Sparkline({ points, color = "#22d3ee" }: { points: number[]; color?: string }) {
+export default function Sparkline({ points, color = "#f59e0b" }: { points: number[]; color?: string }) {
   if (points.length < 2) {
     return <div className="h-6" />;
   }

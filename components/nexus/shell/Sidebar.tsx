@@ -13,7 +13,7 @@ export default function Sidebar({
   const { level, currentXp, neededXp } = xpProgress(xp);
 
   return (
-    <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-950/60 px-4 py-6">
+    <aside className="relative z-10 hidden md:flex w-60 shrink-0 flex-col border-r border-slate-800 bg-slate-950/90 px-4 py-6">
       <div className="mb-6 px-1">
         <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Nível de fundador</div>
         <div className="flex items-baseline gap-2">
@@ -24,7 +24,7 @@ export default function Sidebar({
         </div>
         <div className="mt-2 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-cyan-400 to-indigo-400"
+            className="h-full bg-gradient-to-r from-amber-400 to-orange-400"
             style={{ width: `${Math.min(100, (currentXp / neededXp) * 100)}%` }}
           />
         </div>
@@ -45,7 +45,7 @@ export default function Sidebar({
                     onClick={() => onNavigate(item.id)}
                     className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors text-left ${
                       isActive
-                        ? "bg-cyan-400/10 text-cyan-300"
+                        ? "bg-amber-400/10 text-amber-300"
                         : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
                     }`}
                   >

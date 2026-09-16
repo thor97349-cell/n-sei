@@ -56,6 +56,13 @@ export interface HistoryEntry {
   marketingSpend: number;
   rndSpend: number;
   staff: StaffCounts;
+  rivalCustomers: number;
+  rivalMarketShare: number;
+}
+
+export interface Rival {
+  name: string;
+  customers: number;
 }
 
 export interface LogEntry {
@@ -78,6 +85,7 @@ export interface GameState {
   xp: number;
   level: number;
   decisions: Decisions;
+  rival: Rival;
   history: HistoryEntry[];
   log: LogEntry[];
   milestonesUnlocked: string[];

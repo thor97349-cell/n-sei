@@ -122,7 +122,7 @@ export default function OverviewView({
         </div>
 
         <div className={`rounded-xl border bg-slate-900/50 p-4 flex flex-col ${TONE_BORDER[advice.tone]}`}>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-cyan-400 mb-2">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-amber-400 mb-2">
             🧠 Consultor IA
           </div>
           <div className="text-white font-medium mb-1.5">{advice.title}</div>
@@ -130,7 +130,7 @@ export default function OverviewView({
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => onNavigate("advisor")}
-              className="flex-1 rounded-lg bg-cyan-500 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-400"
+              className="flex-1 rounded-lg bg-amber-500 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
             >
               Ver tudo
             </button>

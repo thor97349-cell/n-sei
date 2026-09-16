@@ -24,7 +24,7 @@ export default function CompanyView({ state }: { state: GameState }) {
             Objetivo: {goalLabel(state.goal)}
           </span>
           {state.interests.map((i) => (
-            <span key={i} className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs text-cyan-300">
+            <span key={i} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-300">
               {interestLabel(i)}
             </span>
           ))}

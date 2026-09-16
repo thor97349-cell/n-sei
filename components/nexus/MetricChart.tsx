@@ -7,11 +7,11 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/nexus/format"
 type MetricId = "revenue" | "profit" | "customers" | "marketShare" | "cash";
 
 const ALL_METRICS: Record<MetricId, { label: string; accessor: (h: HistoryEntry) => number; format: (v: number) => string; color: string }> = {
-  revenue: { label: "Receita", accessor: (h) => h.revenue, format: formatCurrency, color: "#22d3ee" },
+  revenue: { label: "Receita", accessor: (h) => h.revenue, format: formatCurrency, color: "#f59e0b" },
   profit: { label: "Lucro", accessor: (h) => h.profit, format: formatCurrency, color: "#34d399" },
   customers: { label: "Clientes", accessor: (h) => h.customers, format: formatNumber, color: "#a78bfa" },
   marketShare: { label: "Market share", accessor: (h) => h.marketShare, format: formatPercent, color: "#f472b6" },
-  cash: { label: "Caixa", accessor: (h) => h.cash, format: formatCurrency, color: "#fbbf24" },
+  cash: { label: "Caixa", accessor: (h) => h.cash, format: formatCurrency, color: "#38bdf8" },
 };
 
 export default function MetricChart({

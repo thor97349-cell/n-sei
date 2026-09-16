@@ -36,11 +36,11 @@ export const SECTORS: Record<SectorId, SectorConfig> = {
     tagline: "Assinatura de refeições/insumos. Fidelidade local, logística pesada.",
     referencePrice: 39,
     unitCost: 21,
-    fixedCosts: 4100,
+    fixedCosts: 3000,
     marketSize: 22000,
     marketGrowth: 0.008,
     churnBase: 0.09,
-    cacBase: 24,
+    cacBase: 18,
     salaries: { sales: 3000, support: 2400, product: 3600 },
   },
   servicos: {
@@ -60,3 +60,17 @@ export const SECTORS: Record<SectorId, SectorConfig> = {
 };
 
 export const SECTOR_LIST = Object.values(SECTORS);
+
+// Nomes fictícios para a concorrente simulada de cada setor (NPC dentro da própria
+// partida — não representa empresas reais nem dados de outros jogadores).
+export const RIVAL_NAMES: Record<SectorId, string[]> = {
+  saas: ["Orbita Systems", "NimbusWorks", "Ledgerly", "Fluxo Digital"],
+  ecommerce: ["Compra Certa", "ShopLoop", "Varejo Direto", "Entrega Fácil"],
+  food: ["Sabor Express", "Refeição Local", "GostoSo", "Cozinha Rápida"],
+  servicos: ["Consultoria Prime", "Grupo Aliança", "Especialistas Reunidos", "MentorPro"],
+};
+
+export function pickRivalName(sectorId: SectorId): string {
+  const options = RIVAL_NAMES[sectorId];
+  return options[Math.floor(Math.random() * options.length)];
+}

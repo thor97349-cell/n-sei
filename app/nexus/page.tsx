@@ -73,14 +73,16 @@ export default function NexusPage() {
 
   return (
     <AppShell state={state} active={activeView} onNavigate={setActiveView} onRestart={handleRestart}>
-      {activeView === "overview" && <OverviewView state={state} onNavigate={setActiveView} />}
-      {activeView === "company" && <CompanyView state={state} />}
-      {activeView === "market" && <MarketView state={state} />}
-      {activeView === "finance" && <FinanceView state={state} />}
-      {activeView === "decisions" && <DecisionsView state={state} onAdvance={handleAdvance} />}
-      {activeView === "challenges" && <ChallengesView state={state} />}
-      {activeView === "advisor" && <AdvisorView state={state} />}
-      {activeView === "learn" && <LearnView />}
+      <div key={activeView} className="nexus-view-transition">
+        {activeView === "overview" && <OverviewView state={state} onNavigate={setActiveView} />}
+        {activeView === "company" && <CompanyView state={state} />}
+        {activeView === "market" && <MarketView state={state} />}
+        {activeView === "finance" && <FinanceView state={state} />}
+        {activeView === "decisions" && <DecisionsView state={state} onAdvance={handleAdvance} />}
+        {activeView === "challenges" && <ChallengesView state={state} />}
+        {activeView === "advisor" && <AdvisorView state={state} />}
+        {activeView === "learn" && <LearnView />}
+      </div>
     </AppShell>
   );
 }
