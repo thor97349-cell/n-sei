@@ -128,6 +128,7 @@ export interface GameState {
   history: HistoryEntry[];
   log: LogEntry[];
   milestonesUnlocked: string[];
+  miniGamesEnabled: boolean;
   gameOver: boolean;
   gameOverReason: GameOverReason;
   pendingCrossroad: CrossroadPrompt | null;

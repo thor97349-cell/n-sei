@@ -5,6 +5,7 @@ import { SECTOR_LIST } from "@/lib/nexus/sectors";
 import { FounderTraitId, GoalId, InterestTag, SectorId } from "@/lib/nexus/types";
 import { GOAL_OPTIONS, INTEREST_OPTIONS } from "@/lib/nexus/options";
 import { FOUNDER_TRAITS } from "@/lib/nexus/traits";
+import { getPreferences, setPreferences } from "@/lib/nexus/preferences";
 import VertexMark from "./VertexMark";
 import TopographicBackground from "./TopographicBackground";
 
@@ -15,6 +16,7 @@ export interface OnboardingResult {
   sectorId: SectorId;
   interests: InterestTag[];
   goal: GoalId;
+  miniGamesEnabled: boolean;
 }
 
 const TOTAL_STEPS = 5;
@@ -59,6 +61,7 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
   const [founderName, setFounderName] = useState("");
   const [founderTrait, setFounderTrait] = useState<FounderTraitId | null>(null);
   const [sectorId, setSectorId] = useState<SectorId | null>(null);
+  const [miniGamesEnabled, setMiniGamesEnabled] = useState(() => getPreferences().miniGamesEnabled);
 
   function toggleInterest(id: InterestTag) {
     setInterests((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
@@ -260,6 +263,29 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
         })}
       </div>
 
+      <button
+        onClick={() => setMiniGamesEnabled((v) => !v)}
+        className="w-full flex items-center justify-between rounded-lg border border-slate-700 px-4 py-3 mb-8 text-left hover:border-slate-500 transition-colors"
+      >
+        <span>
+          <span className="text-white text-sm font-medium block">Mini-games ocasionais</span>
+          <span className="text-xs text-slate-400">
+            Desafios de pitch e quiz relâmpago aparecem de vez em quando durante a partida. Dá pra mudar depois em Ajustes.
+          </span>
+        </span>
+        <span
+          className={`shrink-0 ml-4 w-11 h-6 rounded-full relative transition-colors ${
+            miniGamesEnabled ? "bg-amber-500" : "bg-slate-700"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              miniGamesEnabled ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+        </span>
+      </button>
+
       <div className="flex gap-3">
         <button
           onClick={() => setStep(4)}
@@ -269,12 +295,11 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
         </button>
         <button
           disabled={!canFinish}
-          onClick={() =>
-            sectorId &&
-            goal &&
-            founderTrait &&
-            onComplete({ companyName, founderName, founderTrait, sectorId, interests, goal })
-          }
+          onClick={() => {
+            if (!sectorId || !goal || !founderTrait) return;
+            setPreferences({ miniGamesEnabled });
+            onComplete({ companyName, founderName, founderTrait, sectorId, interests, goal, miniGamesEnabled });
+          }}
           className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 font-medium text-slate-950 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
         >
           Abrir a empresa →

@@ -24,8 +24,9 @@ export function createNewGame(params: {
   sectorId: SectorId;
   interests: InterestTag[];
   goal: GoalId;
+  miniGamesEnabled?: boolean;
 }): GameState {
-  const { companyName, founderName, founderTrait, sectorId, interests, goal } = params;
+  const { companyName, founderName, founderTrait, sectorId, interests, goal, miniGamesEnabled = true } = params;
   const trait = getTrait(founderTrait);
   const sector = SECTORS[sectorId];
   const startingCash = Math.round(INITIAL_CASH * trait.cashMultiplier);
@@ -84,6 +85,7 @@ export function createNewGame(params: {
       },
     ],
     milestonesUnlocked: [],
+    miniGamesEnabled,
     gameOver: false,
     gameOverReason: null,
     pendingCrossroad: null,
@@ -274,7 +276,7 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const crossroad = rollCrossroad(next);
   if (crossroad) {
     next.pendingCrossroad = toPrompt(crossroad);
-  } else {
+  } else if (next.miniGamesEnabled) {
     next.pendingMiniGame = rollMiniGame(next);
   }
 
@@ -395,6 +397,10 @@ export function resolvePitchGame(state: GameState, stopPosition: number): GameSt
     updatedAt: Date.now(),
   };
   return applyMilestones(next);
+}
+
+export function setMiniGamesEnabled(state: GameState, enabled: boolean): GameState {
+  return { ...state, miniGamesEnabled: enabled, updatedAt: Date.now() };
 }
 
 export function resolveQuizGame(state: GameState, selectedIndex: number): GameState {

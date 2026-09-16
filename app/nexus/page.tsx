@@ -14,6 +14,7 @@ import ChallengesView from "@/components/nexus/views/ChallengesView";
 import AdvisorView from "@/components/nexus/views/AdvisorView";
 import LearnView from "@/components/nexus/views/LearnView";
 import RecordsView from "@/components/nexus/views/RecordsView";
+import SettingsView from "@/components/nexus/views/SettingsView";
 import {
   createNewGame,
   advanceMonth,
@@ -23,7 +24,9 @@ import {
   applyDailyBonus,
   resolvePitchGame,
   resolveQuizGame,
+  setMiniGamesEnabled,
 } from "@/lib/nexus/engine";
+import { setPreferences } from "@/lib/nexus/preferences";
 import { loadActiveGame, listSaves, saveGame, setActiveId, loadSave, deleteSave } from "@/lib/nexus/storage";
 import { getStreak, registerPlaySession, DAILY_BONUS_XP } from "@/lib/nexus/streak";
 import { GameState, Decisions } from "@/lib/nexus/types";
@@ -137,6 +140,11 @@ export default function NexusPage() {
     setState((prev) => (prev ? resolveQuizGame(prev, selectedIndex) : prev));
   }
 
+  function handleToggleMiniGames(enabled: boolean) {
+    setPreferences({ miniGamesEnabled: enabled });
+    setState((prev) => (prev ? setMiniGamesEnabled(prev, enabled) : prev));
+  }
+
   if (!isClient) {
     return <div className="min-h-screen bg-slate-950" />;
   }
@@ -185,6 +193,7 @@ export default function NexusPage() {
         {activeView === "advisor" && <AdvisorView state={state} />}
         {activeView === "records" && <RecordsView saves={recordSaves} />}
         {activeView === "learn" && <LearnView />}
+        {activeView === "settings" && <SettingsView state={state} onToggleMiniGames={handleToggleMiniGames} />}
       </div>
     </AppShell>
   );

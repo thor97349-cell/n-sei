@@ -7,7 +7,8 @@ export type ViewId =
   | "challenges"
   | "records"
   | "advisor"
-  | "learn";
+  | "learn"
+  | "settings";
 
 export interface NavItem {
   id: ViewId;
@@ -43,6 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "advisor", label: "Consultor IA", icon: "🧠" },
       { id: "learn", label: "Aprender", icon: "📘" },
+      { id: "settings", label: "Ajustes", icon: "⚙️" },
     ],
   },
 ];
