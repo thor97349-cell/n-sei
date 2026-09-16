@@ -324,6 +324,25 @@ export function raiseInvestment(state: GameState): GameState {
   return applyMilestones(next);
 }
 
+export function applyDailyBonus(state: GameState, xpBonus: number, streakDays: number): GameState {
+  const xp = state.xp + xpBonus;
+  const next: GameState = {
+    ...state,
+    xp,
+    level: levelForXp(xp),
+    log: [
+      ...state.log,
+      {
+        month: state.month,
+        text: `🔥 ${streakDays} ${streakDays === 1 ? "dia seguido" : "dias seguidos"} jogando! Bônus de +${xpBonus} XP.`,
+        tone: "good",
+      },
+    ],
+    updatedAt: Date.now(),
+  };
+  return applyMilestones(next);
+}
+
 export function resolveCrossroad(state: GameState, optionId: string): GameState {
   const prompt = state.pendingCrossroad;
   if (!prompt) return state;

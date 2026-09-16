@@ -5,6 +5,7 @@ export type ViewId =
   | "finance"
   | "decisions"
   | "challenges"
+  | "records"
   | "advisor"
   | "learn";
 
@@ -34,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "decisions", label: "Decisões", icon: "🎛️" },
       { id: "challenges", label: "Desafios", icon: "🏆" },
+      { id: "records", label: "Recordes", icon: "🥇" },
     ],
   },
   {

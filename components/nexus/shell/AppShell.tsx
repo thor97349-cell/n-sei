@@ -9,12 +9,14 @@ export default function AppShell({
   active,
   onNavigate,
   onRestart,
+  streakDays,
   children,
 }: {
   state: GameState;
   active: ViewId;
   onNavigate: (view: ViewId) => void;
   onRestart: () => void;
+  streakDays: number;
   children: React.ReactNode;
 }) {
   return (
@@ -22,7 +24,7 @@ export default function AppShell({
       <div className="fixed inset-0 z-0">
         <TopographicBackground />
       </div>
-      <Sidebar xp={state.xp} active={active} onNavigate={onNavigate} />
+      <Sidebar xp={state.xp} active={active} onNavigate={onNavigate} streakDays={streakDays} />
       <div className="relative z-10 flex-1 flex flex-col min-w-0">
         <Topbar
           companyName={state.companyName}

@@ -13,8 +13,10 @@ import DecisionsView from "@/components/nexus/views/DecisionsView";
 import ChallengesView from "@/components/nexus/views/ChallengesView";
 import AdvisorView from "@/components/nexus/views/AdvisorView";
 import LearnView from "@/components/nexus/views/LearnView";
-import { createNewGame, advanceMonth, resolveCrossroad, expandMarket, raiseInvestment } from "@/lib/nexus/engine";
+import RecordsView from "@/components/nexus/views/RecordsView";
+import { createNewGame, advanceMonth, resolveCrossroad, expandMarket, raiseInvestment, applyDailyBonus } from "@/lib/nexus/engine";
 import { loadActiveGame, listSaves, saveGame, setActiveId, loadSave, deleteSave } from "@/lib/nexus/storage";
+import { getStreak, registerPlaySession, DAILY_BONUS_XP } from "@/lib/nexus/streak";
 import { GameState, Decisions } from "@/lib/nexus/types";
 import { ViewId } from "@/lib/nexus/views";
 
@@ -39,9 +41,11 @@ export default function NexusPage() {
   const [screen, setScreen] = useState<Screen>("select");
   const [loadedFromStorage, setLoadedFromStorage] = useState(false);
   const [activeView, setActiveView] = useState<ViewId>("overview");
+  const [streakDays, setStreakDays] = useState(0);
 
   if (isClient && !loadedFromStorage) {
     setLoadedFromStorage(true);
+    setStreakDays(getStreak().streakDays);
     const active = loadActiveGame();
     if (active) {
       setState(active);
@@ -88,7 +92,13 @@ export default function NexusPage() {
   }
 
   function handleAdvance(decisions: Decisions) {
-    setState((prev) => (prev ? advanceMonth(prev, decisions) : prev));
+    const { streak, isNewDay } = registerPlaySession();
+    setStreakDays(streak.streakDays);
+    setState((prev) => {
+      if (!prev) return prev;
+      const advanced = advanceMonth(prev, decisions);
+      return isNewDay ? applyDailyBonus(advanced, DAILY_BONUS_XP, streak.streakDays) : advanced;
+    });
   }
 
   function handleResolveCrossroad(optionId: string) {
@@ -121,8 +131,16 @@ export default function NexusPage() {
     return <GameOverScreen state={state} onRestart={goToSelect} />;
   }
 
+  const recordSaves = (() => {
+    const all = listSaves();
+    const idx = all.findIndex((s) => s.id === state.id);
+    if (idx >= 0) all[idx] = state;
+    else all.push(state);
+    return all;
+  })();
+
   return (
-    <AppShell state={state} active={activeView} onNavigate={setActiveView} onRestart={goToSelect}>
+    <AppShell state={state} active={activeView} onNavigate={setActiveView} onRestart={goToSelect} streakDays={streakDays}>
       <div key={activeView} className="nexus-view-transition">
         {activeView === "overview" && <OverviewView state={state} onNavigate={setActiveView} />}
         {activeView === "company" && <CompanyView state={state} />}
@@ -139,6 +157,7 @@ export default function NexusPage() {
         )}
         {activeView === "challenges" && <ChallengesView state={state} />}
         {activeView === "advisor" && <AdvisorView state={state} />}
+        {activeView === "records" && <RecordsView saves={recordSaves} />}
         {activeView === "learn" && <LearnView />}
       </div>
     </AppShell>

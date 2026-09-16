@@ -5,10 +5,12 @@ export default function Sidebar({
   xp,
   active,
   onNavigate,
+  streakDays,
 }: {
   xp: number;
   active: ViewId;
   onNavigate: (view: ViewId) => void;
+  streakDays: number;
 }) {
   const { level, currentXp, neededXp } = xpProgress(xp);
 
@@ -28,6 +30,11 @@ export default function Sidebar({
             style={{ width: `${Math.min(100, (currentXp / neededXp) * 100)}%` }}
           />
         </div>
+        {streakDays > 0 && (
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-300">
+            🔥 {streakDays} {streakDays === 1 ? "dia seguido" : "dias seguidos"}
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto">
