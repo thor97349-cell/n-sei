@@ -97,15 +97,7 @@ export interface PitchMiniGamePrompt {
   targetWidth: number; // 0-100
 }
 
-export interface QuizMiniGamePrompt {
-  type: "quiz";
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-}
-
-export type MiniGamePrompt = PitchMiniGamePrompt | QuizMiniGamePrompt;
+export type MiniGamePrompt = PitchMiniGamePrompt;
 
 export interface GameState {
   id: string;

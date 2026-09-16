@@ -5,7 +5,6 @@ import DecisionPanel from "../DecisionPanel";
 import CrossroadCard from "../CrossroadCard";
 import SpecialActions from "../SpecialActions";
 import PitchMiniGame from "../PitchMiniGame";
-import QuizMiniGame from "../QuizMiniGame";
 
 export default function DecisionsView({
   state,
@@ -14,7 +13,6 @@ export default function DecisionsView({
   onExpandMarket,
   onRaiseInvestment,
   onResolvePitch,
-  onResolveQuiz,
 }: {
   state: GameState;
   onAdvance: (decisions: Decisions) => void;
@@ -22,7 +20,6 @@ export default function DecisionsView({
   onExpandMarket: () => void;
   onRaiseInvestment: () => void;
   onResolvePitch: (stopPosition: number) => void;
-  onResolveQuiz: (selectedIndex: number) => void;
 }) {
   const last = state.history.at(-1)!;
 
@@ -30,12 +27,8 @@ export default function DecisionsView({
     return <CrossroadCard prompt={state.pendingCrossroad} onResolve={onResolveCrossroad} />;
   }
 
-  if (state.pendingMiniGame?.type === "pitch") {
+  if (state.pendingMiniGame) {
     return <PitchMiniGame prompt={state.pendingMiniGame} onResolve={onResolvePitch} />;
-  }
-
-  if (state.pendingMiniGame?.type === "quiz") {
-    return <QuizMiniGame prompt={state.pendingMiniGame} onResolve={onResolveQuiz} />;
   }
 
   return (

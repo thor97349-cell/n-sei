@@ -403,28 +403,6 @@ export function setMiniGamesEnabled(state: GameState, enabled: boolean): GameSta
   return { ...state, miniGamesEnabled: enabled, updatedAt: Date.now() };
 }
 
-export function resolveQuizGame(state: GameState, selectedIndex: number): GameState {
-  const prompt = state.pendingMiniGame;
-  if (!prompt || prompt.type !== "quiz") return state;
-
-  const correct = selectedIndex === prompt.correctIndex;
-  const xpBonus = correct ? 25 : 0;
-  const text = correct
-    ? `✅ Resposta certa! ${prompt.explanation} (+${xpBonus} XP)`
-    : `❌ Não dessa vez. ${prompt.explanation}`;
-
-  const xp = state.xp + xpBonus;
-  const next: GameState = {
-    ...state,
-    pendingMiniGame: null,
-    xp,
-    level: levelForXp(xp),
-    log: [...state.log, { month: state.month, text, tone: correct ? "good" : "neutral" }],
-    updatedAt: Date.now(),
-  };
-  return applyMilestones(next);
-}
-
 export function resolveCrossroad(state: GameState, optionId: string): GameState {
   const prompt = state.pendingCrossroad;
   if (!prompt) return state;

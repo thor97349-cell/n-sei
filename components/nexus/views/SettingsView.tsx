@@ -19,10 +19,10 @@ export default function SettingsView({
         className="w-full flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/50 p-5 text-left hover:border-slate-700 transition-colors"
       >
         <span>
-          <span className="text-white font-medium block mb-1">Mini-games ocasionais</span>
+          <span className="text-white font-medium block mb-1">Desafio de Pitch</span>
           <span className="text-sm text-slate-400">
-            Desafios de pitch (timing) e quiz relâmpago que aparecem de vez em quando ao avançar o mês.
-            Desativar não afeta encruzilhadas, que continuam aparecendo normalmente.
+            De vez em quando, ao avançar o mês, aparece um desafio de timing (pitch/negociação).
+            Desativar não afeta encruzilhadas nem eventos de mercado, que continuam normalmente.
           </span>
         </span>
         <span

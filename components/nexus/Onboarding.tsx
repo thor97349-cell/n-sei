@@ -268,9 +268,9 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
         className="w-full flex items-center justify-between rounded-lg border border-slate-700 px-4 py-3 mb-8 text-left hover:border-slate-500 transition-colors"
       >
         <span>
-          <span className="text-white text-sm font-medium block">Mini-games ocasionais</span>
+          <span className="text-white text-sm font-medium block">Desafio de Pitch ocasional</span>
           <span className="text-xs text-slate-400">
-            Desafios de pitch e quiz relâmpago aparecem de vez em quando durante a partida. Dá pra mudar depois em Ajustes.
+            Um desafio de timing (pitch/negociação) aparece de vez em quando durante a partida. Dá pra mudar depois em Ajustes.
           </span>
         </span>
         <span

@@ -23,7 +23,6 @@ import {
   raiseInvestment,
   applyDailyBonus,
   resolvePitchGame,
-  resolveQuizGame,
   setMiniGamesEnabled,
 } from "@/lib/nexus/engine";
 import { setPreferences } from "@/lib/nexus/preferences";
@@ -136,10 +135,6 @@ export default function NexusPage() {
     setState((prev) => (prev ? resolvePitchGame(prev, stopPosition) : prev));
   }
 
-  function handleResolveQuiz(selectedIndex: number) {
-    setState((prev) => (prev ? resolveQuizGame(prev, selectedIndex) : prev));
-  }
-
   function handleToggleMiniGames(enabled: boolean) {
     setPreferences({ miniGamesEnabled: enabled });
     setState((prev) => (prev ? setMiniGamesEnabled(prev, enabled) : prev));
@@ -186,7 +181,6 @@ export default function NexusPage() {
             onExpandMarket={handleExpandMarket}
             onRaiseInvestment={handleRaiseInvestment}
             onResolvePitch={handleResolvePitch}
-            onResolveQuiz={handleResolveQuiz}
           />
         )}
         {activeView === "challenges" && <ChallengesView state={state} />}
