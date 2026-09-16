@@ -79,6 +79,27 @@ export const MILESTONES: Milestone[] = [
     hint: "Leve a reputação acima de 90/100.",
     check: (s) => s.reputation >= 90,
   },
+  {
+    id: "first_crossroad",
+    xp: 30,
+    label: "Primeira decisão de encruzilhada",
+    hint: "Resolva seu primeiro evento de decisão.",
+    check: (s) => s.resolvedCrossroads.length >= 1,
+  },
+  {
+    id: "market_expansion",
+    xp: 70,
+    label: "Primeira expansão de mercado",
+    hint: "Use a ação de expansão de mercado (nível 3+).",
+    check: (s) => s.lastExpansionMonth !== null,
+  },
+  {
+    id: "investment_raised",
+    xp: 90,
+    label: "Primeira rodada de investimento",
+    hint: "Capte uma rodada de investimento (nível 5+).",
+    check: (s) => s.investmentRaised,
+  },
 ];
 
 // XP necessário cumulativo para alcançar cada nível (progressão crescente).

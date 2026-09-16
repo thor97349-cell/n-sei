@@ -47,7 +47,7 @@ export default function Topbar({
           ))}
         </select>
         <button onClick={onRestart} className="text-xs text-slate-500 hover:text-slate-300 whitespace-nowrap">
-          Nova empresa
+          Minhas empresas
         </button>
       </div>
     </header>

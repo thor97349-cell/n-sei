@@ -71,7 +71,24 @@ export interface LogEntry {
   tone: "neutral" | "good" | "bad";
 }
 
+export interface CrossroadOption {
+  id: string;
+  label: string;
+  description: string;
+  value?: number;
+}
+
+export interface CrossroadPrompt {
+  id: string;
+  title: string;
+  description: string;
+  options: CrossroadOption[];
+}
+
+export type GameOverReason = "bankruptcy" | "acquired" | null;
+
 export interface GameState {
+  id: string;
   companyName: string;
   founderName: string;
   interests: InterestTag[];
@@ -90,4 +107,13 @@ export interface GameState {
   log: LogEntry[];
   milestonesUnlocked: string[];
   gameOver: boolean;
+  gameOverReason: GameOverReason;
+  pendingCrossroad: CrossroadPrompt | null;
+  resolvedCrossroads: string[];
+  permanentOverhead: number; // custo fixo mensal extra, acumulado por decisões (aportes, aumentos, etc.)
+  unitCostAdjustment: number; // ajuste permanente no custo variável por cliente (ex: negociação com fornecedor)
+  investmentRaised: boolean;
+  lastExpansionMonth: number | null;
+  createdAt: number;
+  updatedAt: number;
 }
