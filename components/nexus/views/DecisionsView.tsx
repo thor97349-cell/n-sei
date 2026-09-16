@@ -4,6 +4,8 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/nexus/format"
 import DecisionPanel from "../DecisionPanel";
 import CrossroadCard from "../CrossroadCard";
 import SpecialActions from "../SpecialActions";
+import PitchMiniGame from "../PitchMiniGame";
+import QuizMiniGame from "../QuizMiniGame";
 
 export default function DecisionsView({
   state,
@@ -11,17 +13,29 @@ export default function DecisionsView({
   onResolveCrossroad,
   onExpandMarket,
   onRaiseInvestment,
+  onResolvePitch,
+  onResolveQuiz,
 }: {
   state: GameState;
   onAdvance: (decisions: Decisions) => void;
   onResolveCrossroad: (optionId: string) => void;
   onExpandMarket: () => void;
   onRaiseInvestment: () => void;
+  onResolvePitch: (stopPosition: number) => void;
+  onResolveQuiz: (selectedIndex: number) => void;
 }) {
   const last = state.history.at(-1)!;
 
   if (state.pendingCrossroad) {
     return <CrossroadCard prompt={state.pendingCrossroad} onResolve={onResolveCrossroad} />;
+  }
+
+  if (state.pendingMiniGame?.type === "pitch") {
+    return <PitchMiniGame prompt={state.pendingMiniGame} onResolve={onResolvePitch} />;
+  }
+
+  if (state.pendingMiniGame?.type === "quiz") {
+    return <QuizMiniGame prompt={state.pendingMiniGame} onResolve={onResolveQuiz} />;
   }
 
   return (

@@ -78,6 +78,19 @@ export default function OverviewView({
           <span className="text-xs text-amber-300 shrink-0">Decidir →</span>
         </button>
       )}
+      {state.pendingMiniGame && (
+        <button
+          onClick={() => onNavigate("decisions")}
+          className="w-full flex items-center justify-between gap-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-left hover:bg-amber-400/15 transition-colors"
+        >
+          <span className="text-sm text-amber-200">
+            {state.pendingMiniGame.type === "pitch" ? "🎯" : "🧠"}{" "}
+            <strong>{state.pendingMiniGame.type === "pitch" ? state.pendingMiniGame.title : "Quiz relâmpago"}</strong>{" "}
+            disponível antes de avançar.
+          </span>
+          <span className="text-xs text-amber-300 shrink-0">Jogar →</span>
+        </button>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-white">

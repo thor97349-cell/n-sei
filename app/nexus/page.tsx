@@ -14,7 +14,16 @@ import ChallengesView from "@/components/nexus/views/ChallengesView";
 import AdvisorView from "@/components/nexus/views/AdvisorView";
 import LearnView from "@/components/nexus/views/LearnView";
 import RecordsView from "@/components/nexus/views/RecordsView";
-import { createNewGame, advanceMonth, resolveCrossroad, expandMarket, raiseInvestment, applyDailyBonus } from "@/lib/nexus/engine";
+import {
+  createNewGame,
+  advanceMonth,
+  resolveCrossroad,
+  expandMarket,
+  raiseInvestment,
+  applyDailyBonus,
+  resolvePitchGame,
+  resolveQuizGame,
+} from "@/lib/nexus/engine";
 import { loadActiveGame, listSaves, saveGame, setActiveId, loadSave, deleteSave } from "@/lib/nexus/storage";
 import { getStreak, registerPlaySession, DAILY_BONUS_XP } from "@/lib/nexus/streak";
 import { GameState, Decisions } from "@/lib/nexus/types";
@@ -120,6 +129,14 @@ export default function NexusPage() {
     setState((prev) => (prev ? raiseInvestment(prev) : prev));
   }
 
+  function handleResolvePitch(stopPosition: number) {
+    setState((prev) => (prev ? resolvePitchGame(prev, stopPosition) : prev));
+  }
+
+  function handleResolveQuiz(selectedIndex: number) {
+    setState((prev) => (prev ? resolveQuizGame(prev, selectedIndex) : prev));
+  }
+
   if (!isClient) {
     return <div className="min-h-screen bg-slate-950" />;
   }
@@ -160,6 +177,8 @@ export default function NexusPage() {
             onResolveCrossroad={handleResolveCrossroad}
             onExpandMarket={handleExpandMarket}
             onRaiseInvestment={handleRaiseInvestment}
+            onResolvePitch={handleResolvePitch}
+            onResolveQuiz={handleResolveQuiz}
           />
         )}
         {activeView === "challenges" && <ChallengesView state={state} />}

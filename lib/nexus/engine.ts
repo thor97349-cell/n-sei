@@ -1,8 +1,10 @@
 import { pickRivalName, SECTORS } from "./sectors";
-import { Decisions, GameState, GoalId, HistoryEntry, InterestTag, LogEntry, SectorId } from "./types";
+import { Decisions, FounderTraitId, GameState, GoalId, HistoryEntry, InterestTag, LogEntry, SectorId } from "./types";
 import { emptyModifiers, rollEvent } from "./events";
 import { checkMilestones, levelForXp } from "./xp";
 import { buildCrossroads, rollCrossroad, toPrompt } from "./crossroads";
+import { getTrait } from "./traits";
+import { rollMiniGame } from "./minigames";
 
 function makeId(): string {
   return `game_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -18,12 +20,16 @@ const MARKET_CEILING_MULTIPLIER = 6;
 export function createNewGame(params: {
   companyName: string;
   founderName: string;
+  founderTrait: FounderTraitId;
   sectorId: SectorId;
   interests: InterestTag[];
   goal: GoalId;
 }): GameState {
-  const { companyName, founderName, sectorId, interests, goal } = params;
+  const { companyName, founderName, founderTrait, sectorId, interests, goal } = params;
+  const trait = getTrait(founderTrait);
   const sector = SECTORS[sectorId];
+  const startingCash = Math.round(INITIAL_CASH * trait.cashMultiplier);
+  const startingReputation = clamp(55 + trait.startingReputationBonus, 0, 100);
   const startingCustomers = Math.round(sector.marketSize * 0.003);
   const startingStaff = { sales: 0, support: 0, product: 0 };
   const startingRivalCustomers = Math.round(startingCustomers * 2.2);
@@ -33,8 +39,8 @@ export function createNewGame(params: {
     profit: 0,
     customers: startingCustomers,
     marketShare: startingCustomers / sector.marketSize,
-    cash: INITIAL_CASH,
-    reputation: 55,
+    cash: startingCash,
+    reputation: startingReputation,
     variableCosts: 0,
     staffCosts: 0,
     fixedCosts: sector.fixedCosts,
@@ -50,15 +56,16 @@ export function createNewGame(params: {
     id: makeId(),
     companyName: companyName.trim() || "Minha Empresa",
     founderName: founderName.trim() || "Fundador(a)",
+    founderTrait,
     interests,
     goal,
     sectorId,
     month: 0,
-    cash: INITIAL_CASH,
+    cash: startingCash,
     customers: startingCustomers,
     marketSize: sector.marketSize,
     marketCeiling: Math.round(sector.marketSize * MARKET_CEILING_MULTIPLIER),
-    reputation: 55,
+    reputation: startingReputation,
     xp: 0,
     level: 1,
     decisions: {
@@ -81,6 +88,7 @@ export function createNewGame(params: {
     gameOverReason: null,
     pendingCrossroad: null,
     resolvedCrossroads: [],
+    pendingMiniGame: null,
     permanentOverhead: 0,
     unitCostAdjustment: 0,
     investmentRaised: false,
@@ -113,9 +121,10 @@ function applyMilestones(state: GameState): GameState {
 }
 
 export function advanceMonth(state: GameState, decisions: Decisions): GameState {
-  if (state.gameOver || state.pendingCrossroad) return state;
+  if (state.gameOver || state.pendingCrossroad || state.pendingMiniGame) return state;
 
   const sector = SECTORS[state.sectorId];
+  const trait = getTrait(state.founderTrait);
   const mods = emptyModifiers();
   const event = rollEvent();
   event.apply(mods);
@@ -155,7 +164,7 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
     newMarketSize,
   );
 
-  const effectiveCac = sector.cacBase / repFactor;
+  const effectiveCac = (sector.cacBase * trait.cacMultiplier) / repFactor;
   const rawLeads = decisions.marketingSpend / effectiveCac;
   const saturation = 1 / (1 + rawLeads / 500);
   const referralGrowth = state.customers * REFERRAL_RATE * (state.reputation / 100);
@@ -165,12 +174,16 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const remainingMarket = Math.max(newMarketSize - state.customers - rivalCustomersAfter, 0);
   newCustomers = Math.min(newCustomers, remainingMarket);
 
-  const churnRate = clamp(sector.churnBase * churnPriceFactor * churnRepFactor * mods.churnMultiplier, 0.01, 0.6);
+  const churnRate = clamp(
+    sector.churnBase * churnPriceFactor * churnRepFactor * mods.churnMultiplier * trait.churnMultiplier,
+    0.01,
+    0.6,
+  );
   const churned = state.customers * churnRate;
 
   const customersAfter = clamp(Math.round(state.customers - churned + newCustomers), 0, newMarketSize);
 
-  const effectiveUnitCost = Math.max(1, sector.unitCost + state.unitCostAdjustment);
+  const effectiveUnitCost = Math.max(1, sector.unitCost * trait.unitCostMultiplier + state.unitCostAdjustment);
   const revenue = customersAfter * decisions.price;
   const variableCosts = customersAfter * effectiveUnitCost;
   const staffCosts =
@@ -261,6 +274,8 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
   const crossroad = rollCrossroad(next);
   if (crossroad) {
     next.pendingCrossroad = toPrompt(crossroad);
+  } else {
+    next.pendingMiniGame = rollMiniGame(next);
   }
 
   return next;
@@ -352,6 +367,53 @@ export function applyDailyBonus(state: GameState, xpBonus: number, streakDays: n
         tone: "good",
       },
     ],
+    updatedAt: Date.now(),
+  };
+  return applyMilestones(next);
+}
+
+export function resolvePitchGame(state: GameState, stopPosition: number): GameState {
+  const prompt = state.pendingMiniGame;
+  if (!prompt || prompt.type !== "pitch") return state;
+
+  const distance = Math.abs(stopPosition - prompt.targetCenter);
+  const halfWidth = prompt.targetWidth / 2;
+  const accuracy = clamp(1 - distance / halfWidth, 0, 1);
+  const cashBonus = Math.round(500 + accuracy * 3500);
+  const reputationBonus = Math.round(accuracy * 8);
+
+  const tone: LogEntry["tone"] = accuracy >= 0.8 ? "good" : accuracy >= 0.4 ? "neutral" : "bad";
+  const quality = accuracy >= 0.8 ? "impecável" : accuracy >= 0.4 ? "razoável" : "fraco";
+  const text = `${prompt.title}: resultado ${quality}. +${cashBonus.toLocaleString("pt-BR")} em caixa${reputationBonus > 0 ? `, +${reputationBonus} de reputação` : ""}.`;
+
+  const next: GameState = {
+    ...state,
+    pendingMiniGame: null,
+    cash: state.cash + cashBonus,
+    reputation: clamp(state.reputation + reputationBonus, 0, 100),
+    log: [...state.log, { month: state.month, text, tone }],
+    updatedAt: Date.now(),
+  };
+  return applyMilestones(next);
+}
+
+export function resolveQuizGame(state: GameState, selectedIndex: number): GameState {
+  const prompt = state.pendingMiniGame;
+  if (!prompt || prompt.type !== "quiz") return state;
+
+  const correct = selectedIndex === prompt.correctIndex;
+  const xpBonus = correct ? 25 : 0;
+  const text = correct
+    ? `✅ Resposta certa! ${prompt.explanation} (+${xpBonus} XP)`
+    : `❌ Não dessa vez. ${prompt.explanation}`;
+
+  const xp = state.xp + xpBonus;
+  const next: GameState = {
+    ...state,
+    pendingMiniGame: null,
+    xp,
+    level: levelForXp(xp),
+    log: [...state.log, { month: state.month, text, tone: correct ? "good" : "neutral" }],
     updatedAt: Date.now(),
   };
   return applyMilestones(next);

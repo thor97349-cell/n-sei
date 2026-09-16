@@ -42,6 +42,8 @@ export type InterestTag =
 
 export type GoalId = "build" | "learn" | "compete" | "invest";
 
+export type FounderTraitId = "executive" | "bootstrapper" | "growth_hacker" | "engineer" | "salesperson";
+
 export interface HistoryEntry {
   month: number;
   revenue: number;
@@ -87,10 +89,29 @@ export interface CrossroadPrompt {
 
 export type GameOverReason = "bankruptcy" | "acquired" | null;
 
+export interface PitchMiniGamePrompt {
+  type: "pitch";
+  title: string;
+  description: string;
+  targetCenter: number; // 0-100
+  targetWidth: number; // 0-100
+}
+
+export interface QuizMiniGamePrompt {
+  type: "quiz";
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export type MiniGamePrompt = PitchMiniGamePrompt | QuizMiniGamePrompt;
+
 export interface GameState {
   id: string;
   companyName: string;
   founderName: string;
+  founderTrait: FounderTraitId;
   interests: InterestTag[];
   goal: GoalId;
   sectorId: SectorId;
@@ -111,6 +132,7 @@ export interface GameState {
   gameOverReason: GameOverReason;
   pendingCrossroad: CrossroadPrompt | null;
   resolvedCrossroads: string[];
+  pendingMiniGame: MiniGamePrompt | null;
   permanentOverhead: number; // custo fixo mensal extra, acumulado por decisões (aportes, aumentos, etc.)
   unitCostAdjustment: number; // ajuste permanente no custo variável por cliente (ex: negociação com fornecedor)
   investmentRaised: boolean;

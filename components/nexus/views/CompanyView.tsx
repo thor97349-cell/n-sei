@@ -2,6 +2,7 @@ import { GameState } from "@/lib/nexus/types";
 import { SECTORS } from "@/lib/nexus/sectors";
 import { formatCurrency } from "@/lib/nexus/format";
 import { interestLabel, goalLabel } from "@/lib/nexus/options";
+import { getTrait } from "@/lib/nexus/traits";
 
 const STAFF_LABELS: Record<string, string> = { sales: "Vendas", support: "Suporte", product: "Produto" };
 
@@ -22,6 +23,9 @@ export default function CompanyView({ state }: { state: GameState }) {
         <div className="flex flex-wrap gap-1.5 mt-3">
           <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300">
             Objetivo: {goalLabel(state.goal)}
+          </span>
+          <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300">
+            {getTrait(state.founderTrait).emoji} {getTrait(state.founderTrait).name}
           </span>
           {state.interests.map((i) => (
             <span key={i} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs text-amber-300">

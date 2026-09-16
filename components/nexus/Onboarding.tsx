@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import { SECTOR_LIST } from "@/lib/nexus/sectors";
-import { GoalId, InterestTag, SectorId } from "@/lib/nexus/types";
+import { FounderTraitId, GoalId, InterestTag, SectorId } from "@/lib/nexus/types";
 import { GOAL_OPTIONS, INTEREST_OPTIONS } from "@/lib/nexus/options";
+import { FOUNDER_TRAITS } from "@/lib/nexus/traits";
 import VertexMark from "./VertexMark";
 import TopographicBackground from "./TopographicBackground";
 
 export interface OnboardingResult {
   companyName: string;
   founderName: string;
+  founderTrait: FounderTraitId;
   sectorId: SectorId;
   interests: InterestTag[];
   goal: GoalId;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 function ProgressBar({ step }: { step: number }) {
   return (
@@ -55,6 +57,7 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
   const [goal, setGoal] = useState<GoalId | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [founderName, setFounderName] = useState("");
+  const [founderTrait, setFounderTrait] = useState<FounderTraitId | null>(null);
   const [sectorId, setSectorId] = useState<SectorId | null>(null);
 
   function toggleInterest(id: InterestTag) {
@@ -165,10 +168,56 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
     );
   }
 
+  if (step === 4) {
+    return (
+      <WizardCard step={4}>
+        <h1 className="text-2xl font-semibold text-white mb-1">Qual é o seu traço como fundador(a)?</h1>
+        <p className="text-slate-400 text-sm mb-6">
+          Sua experiência antes de fundar molda vantagens permanentes na sua empresa.
+        </p>
+        <div className="space-y-2 mb-8">
+          {FOUNDER_TRAITS.map((trait) => {
+            const active = founderTrait === trait.id;
+            return (
+              <button
+                key={trait.id}
+                onClick={() => setFounderTrait(trait.id)}
+                className={`w-full text-left rounded-lg border px-4 py-3 transition-colors flex gap-3 items-start ${
+                  active ? "border-amber-400 bg-amber-400/10" : "border-slate-700 hover:border-slate-500"
+                }`}
+              >
+                <span className="text-xl leading-none mt-0.5">{trait.emoji}</span>
+                <div>
+                  <div className="text-white font-medium">{trait.name}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{trait.description}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep(3)}
+            className="rounded-lg border border-slate-700 px-5 py-2.5 text-slate-300 hover:border-slate-500"
+          >
+            Voltar
+          </button>
+          <button
+            disabled={!founderTrait}
+            onClick={() => setStep(5)}
+            className="rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 font-medium text-slate-950 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+          >
+            Continuar →
+          </button>
+        </div>
+      </WizardCard>
+    );
+  }
+
   const canFinish = sectorId !== null;
 
   return (
-    <WizardCard step={4}>
+    <WizardCard step={5}>
       <h1 className="text-2xl font-semibold text-white mb-6">Configure sua empresa.</h1>
 
       <label className="block text-sm text-slate-300 mb-2">Seu nome</label>
@@ -213,7 +262,7 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
 
       <div className="flex gap-3">
         <button
-          onClick={() => setStep(3)}
+          onClick={() => setStep(4)}
           className="rounded-lg border border-slate-700 px-5 py-2.5 text-slate-300 hover:border-slate-500"
         >
           Voltar
@@ -223,7 +272,8 @@ export default function Onboarding({ onComplete }: { onComplete: (result: Onboar
           onClick={() =>
             sectorId &&
             goal &&
-            onComplete({ companyName, founderName, sectorId, interests, goal })
+            founderTrait &&
+            onComplete({ companyName, founderName, founderTrait, sectorId, interests, goal })
           }
           className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 font-medium text-slate-950 disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
         >
