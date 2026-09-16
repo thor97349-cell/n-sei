@@ -1,13 +1,21 @@
 import { SECTORS } from "./sectors";
-import { Decisions, GameState, HistoryEntry, LogEntry, SectorId } from "./types";
+import { Decisions, GameState, GoalId, HistoryEntry, InterestTag, LogEntry, SectorId } from "./types";
 import { emptyModifiers, rollEvent } from "./events";
 import { checkMilestones, levelForXp } from "./xp";
 
 const BANKRUPTCY_THRESHOLD = -5000;
 
-export function createNewGame(companyName: string, sectorId: SectorId): GameState {
+export function createNewGame(params: {
+  companyName: string;
+  founderName: string;
+  sectorId: SectorId;
+  interests: InterestTag[];
+  goal: GoalId;
+}): GameState {
+  const { companyName, founderName, sectorId, interests, goal } = params;
   const sector = SECTORS[sectorId];
   const startingCustomers = Math.round(sector.marketSize * 0.003);
+  const startingStaff = { sales: 1, support: 1, product: 1 };
   const initialHistory: HistoryEntry = {
     month: 0,
     revenue: startingCustomers * sector.referencePrice,
@@ -16,10 +24,19 @@ export function createNewGame(companyName: string, sectorId: SectorId): GameStat
     marketShare: startingCustomers / sector.marketSize,
     cash: 20000,
     reputation: 55,
+    variableCosts: 0,
+    staffCosts: 0,
+    fixedCosts: sector.fixedCosts,
+    marketingSpend: 0,
+    rndSpend: 0,
+    staff: startingStaff,
   };
 
   return {
     companyName: companyName.trim() || "Minha Empresa",
+    founderName: founderName.trim() || "Fundador(a)",
+    interests,
+    goal,
     sectorId,
     month: 0,
     cash: 20000,
@@ -32,7 +49,7 @@ export function createNewGame(companyName: string, sectorId: SectorId): GameStat
       price: sector.referencePrice,
       marketingSpend: Math.round(sector.cacBase * 20),
       rndSpend: 0,
-      staff: { sales: 1, support: 1, product: 1 },
+      staff: startingStaff,
     },
     history: [initialHistory],
     log: [
@@ -111,6 +128,12 @@ export function advanceMonth(state: GameState, decisions: Decisions): GameState 
     marketShare,
     cash,
     reputation,
+    variableCosts,
+    staffCosts,
+    fixedCosts,
+    marketingSpend: decisions.marketingSpend,
+    rndSpend: decisions.rndSpend,
+    staff: decisions.staff,
   };
 
   const log: LogEntry[] = [

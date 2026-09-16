@@ -32,6 +32,16 @@ export interface Decisions {
   staff: StaffCounts;
 }
 
+export type InterestTag =
+  | "entrepreneurship"
+  | "finance"
+  | "marketing"
+  | "investing"
+  | "technology"
+  | "operations";
+
+export type GoalId = "build" | "learn" | "compete" | "invest";
+
 export interface HistoryEntry {
   month: number;
   revenue: number;
@@ -40,6 +50,12 @@ export interface HistoryEntry {
   marketShare: number;
   cash: number;
   reputation: number;
+  variableCosts: number;
+  staffCosts: number;
+  fixedCosts: number;
+  marketingSpend: number;
+  rndSpend: number;
+  staff: StaffCounts;
 }
 
 export interface LogEntry {
@@ -50,6 +66,9 @@ export interface LogEntry {
 
 export interface GameState {
   companyName: string;
+  founderName: string;
+  interests: InterestTag[];
+  goal: GoalId;
   sectorId: SectorId;
   month: number;
   cash: number;

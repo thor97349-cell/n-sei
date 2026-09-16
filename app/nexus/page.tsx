@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import Onboarding from "@/components/nexus/Onboarding";
-import Dashboard from "@/components/nexus/Dashboard";
-import DecisionPanel from "@/components/nexus/DecisionPanel";
+import Onboarding, { OnboardingResult } from "@/components/nexus/Onboarding";
 import GameOverScreen from "@/components/nexus/GameOverScreen";
+import AppShell from "@/components/nexus/shell/AppShell";
+import OverviewView from "@/components/nexus/views/OverviewView";
+import CompanyView from "@/components/nexus/views/CompanyView";
+import MarketView from "@/components/nexus/views/MarketView";
+import FinanceView from "@/components/nexus/views/FinanceView";
+import DecisionsView from "@/components/nexus/views/DecisionsView";
+import ChallengesView from "@/components/nexus/views/ChallengesView";
+import AdvisorView from "@/components/nexus/views/AdvisorView";
+import LearnView from "@/components/nexus/views/LearnView";
 import { createNewGame, advanceMonth } from "@/lib/nexus/engine";
 import { loadGame, saveGame, clearGame } from "@/lib/nexus/storage";
-import { SECTORS } from "@/lib/nexus/sectors";
-import { GameState, SectorId, Decisions } from "@/lib/nexus/types";
+import { GameState, Decisions } from "@/lib/nexus/types";
+import { ViewId } from "@/lib/nexus/views";
 
 const noopSubscribe = () => () => {};
 
@@ -26,6 +33,7 @@ export default function NexusPage() {
   const isClient = useIsClient();
   const [state, setState] = useState<GameState | null>(null);
   const [loadedFromStorage, setLoadedFromStorage] = useState(false);
+  const [activeView, setActiveView] = useState<ViewId>("overview");
 
   if (isClient && !loadedFromStorage) {
     setLoadedFromStorage(true);
@@ -36,8 +44,9 @@ export default function NexusPage() {
     if (state) saveGame(state);
   }, [state]);
 
-  function handleStart(companyName: string, sectorId: SectorId) {
-    setState(createNewGame(companyName, sectorId));
+  function handleOnboardingComplete(result: OnboardingResult) {
+    setState(createNewGame(result));
+    setActiveView("overview");
   }
 
   function handleAdvance(decisions: Decisions) {
@@ -47,14 +56,15 @@ export default function NexusPage() {
   function handleRestart() {
     clearGame();
     setState(null);
+    setActiveView("overview");
   }
 
   if (!isClient) {
-    return <div className="min-h-screen" />;
+    return <div className="min-h-screen bg-slate-950" />;
   }
 
   if (!state) {
-    return <Onboarding onStart={handleStart} />;
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   if (state.gameOver) {
@@ -62,22 +72,15 @@ export default function NexusPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <div className="flex items-center justify-between mb-8">
-        <div className="text-sm tracking-[0.3em] text-cyan-400 uppercase">Vértice</div>
-        <button onClick={handleRestart} className="text-xs text-slate-500 hover:text-slate-300">
-          Encerrar e começar nova empresa
-        </button>
-      </div>
-      <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-        <Dashboard state={state} />
-        <DecisionPanel
-          sector={SECTORS[state.sectorId]}
-          initial={state.decisions}
-          onAdvance={handleAdvance}
-          disabled={state.gameOver}
-        />
-      </div>
-    </div>
+    <AppShell state={state} active={activeView} onNavigate={setActiveView} onRestart={handleRestart}>
+      {activeView === "overview" && <OverviewView state={state} onNavigate={setActiveView} />}
+      {activeView === "company" && <CompanyView state={state} />}
+      {activeView === "market" && <MarketView state={state} />}
+      {activeView === "finance" && <FinanceView state={state} />}
+      {activeView === "decisions" && <DecisionsView state={state} onAdvance={handleAdvance} />}
+      {activeView === "challenges" && <ChallengesView state={state} />}
+      {activeView === "advisor" && <AdvisorView state={state} />}
+      {activeView === "learn" && <LearnView />}
+    </AppShell>
   );
 }

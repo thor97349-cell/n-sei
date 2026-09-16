@@ -6,10 +6,10 @@ const TONE_STYLES: Record<LogEntry["tone"], string> = {
   neutral: "border-slate-700 text-slate-300",
 };
 
-export default function EventLog({ log }: { log: LogEntry[] }) {
-  const recent = [...log].reverse().slice(0, 12);
+export default function EventLog({ log, limit = 12, maxHeight = "max-h-80" }: { log: LogEntry[]; limit?: number; maxHeight?: string }) {
+  const recent = [...log].reverse().slice(0, limit);
   return (
-    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+    <div className={`space-y-2 overflow-y-auto pr-1 ${maxHeight}`}>
       {recent.map((entry, i) => (
         <div
           key={`${entry.month}-${i}`}

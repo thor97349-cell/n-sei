@@ -1,22 +1,32 @@
+import Sparkline from "./Sparkline";
+
 export default function StatCard({
   label,
   value,
-  delta,
-  accent,
+  deltaPercent,
+  points,
 }: {
   label: string;
   value: string;
-  delta?: string;
-  accent?: "good" | "bad" | "neutral";
+  deltaPercent?: number;
+  points?: number[];
 }) {
-  const deltaColor =
-    accent === "good" ? "text-emerald-400" : accent === "bad" ? "text-rose-400" : "text-slate-400";
+  const hasDelta = deltaPercent !== undefined && Number.isFinite(deltaPercent);
+  const isGood = hasDelta && deltaPercent! >= 0;
+  const deltaColor = hasDelta ? (isGood ? "text-emerald-400" : "text-rose-400") : "text-slate-500";
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">{label}</div>
-      <div className="text-xl font-semibold text-white font-mono">{value}</div>
-      {delta && <div className={`text-xs mt-1 ${deltaColor}`}>{delta}</div>}
+      <div className="flex items-start justify-between mb-1">
+        <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+        {hasDelta && (
+          <span className={`text-xs font-medium ${deltaColor}`}>
+            {isGood ? "↑" : "↓"} {Math.abs(deltaPercent!).toFixed(1)}%
+          </span>
+        )}
+      </div>
+      <div className="text-xl font-semibold text-white font-mono mb-2">{value}</div>
+      {points && points.length > 1 && <Sparkline points={points} color={isGood ? "#34d399" : "#22d3ee"} />}
     </div>
   );
 }
