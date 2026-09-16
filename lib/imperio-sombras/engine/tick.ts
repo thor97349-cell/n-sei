@@ -3,12 +3,16 @@ import {
   CRISE_PERDA_CONTROLE,
   CRISE_PERDA_DINHEIRO_PCT,
   CRISE_RISCO_POS_CRISE,
+  LIMITE_DIVIDA_COBRANCA,
+  MULTIPLICADOR_RISCO_SOBRE_LIMITE,
   REPUTACAO_GANHO_POR_TICK_BASE,
 } from "../constants";
 import { DISTRITOS } from "../data/distritos";
 import type { GameState } from "../types";
 import {
+  getConfigDificuldade,
   getGeracaoSegurancaPorTick,
+  getJurosDividaPorSegundo,
   getReducaoRiscoFracao,
   rendaEfetivaDistrito,
 } from "./selectors";
@@ -32,7 +36,9 @@ export function simularTick(
   opcoes: { silencioso?: boolean } = {},
 ): ResultadoTick {
   const deltaMs = Math.max(0, agora - state.ultimaAtualizacao);
-  const deltaSeg = deltaMs / 1000;
+  // A velocidade do jogo acelera a simulação econômica (renda, risco,
+  // reputação, juros), mas não os relógios reais de eventos/cronômetros.
+  const deltaSeg = (deltaMs / 1000) * state.velocidade;
 
   if (deltaSeg <= 0) {
     return {
@@ -43,12 +49,20 @@ export function simularTick(
     };
   }
 
+  const dificuldade = getConfigDificuldade(state);
   const recursos = { ...state.recursos };
   const distritos = { ...state.distritos };
   const reducaoRiscoFracao = getReducaoRiscoFracao(state);
   const geracaoSeguranca = getGeracaoSegurancaPorTick(state);
+  const multiplicadorRiscoCobranca =
+    state.divida > LIMITE_DIVIDA_COBRANCA ? MULTIPLICADOR_RISCO_SOBRE_LIMITE : 1;
 
   recursos.seguranca += geracaoSeguranca * deltaSeg;
+
+  let divida = state.divida;
+  if (divida > 0) {
+    divida += getJurosDividaPorSegundo(state) * deltaSeg;
+  }
 
   let dinheiroGanho = 0;
   let influenciaGanha = 0;
@@ -76,7 +90,9 @@ export function simularTick(
     const crescimentoRisco =
       distritoDef.riscoCrescimentoBase *
       (dState.nivelControle / 100) *
-      (1 - reducaoRiscoFracao);
+      (1 - reducaoRiscoFracao) *
+      dificuldade.multiplicadorRisco *
+      multiplicadorRiscoCobranca;
     let novoRisco = dState.risco + crescimentoRisco * deltaSeg;
     let novoControle = dState.nivelControle;
 
@@ -117,6 +133,7 @@ export function simularTick(
     ultimaAtualizacao: agora,
     recursos,
     distritos,
+    divida,
     estatisticas: {
       ...novoEstado.estatisticas,
       totalDinheiroGanho: novoEstado.estatisticas.totalDinheiroGanho + dinheiroGanho,

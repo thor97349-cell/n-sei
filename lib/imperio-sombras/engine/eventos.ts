@@ -31,6 +31,7 @@ export function sortearEvento(
   if (distritosDesbloqueados.length === 0) return null;
 
   const candidatos = EVENTOS.filter((e) => {
+    if (e.condicao && !e.condicao(state)) return false;
     if (e.escopo === "distrito") return distritosDesbloqueados.length > 0;
     return true;
   });

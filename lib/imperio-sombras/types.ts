@@ -21,6 +21,50 @@ export type TipoEfeitoUpgrade =
   | "reducao_custo_investimento"
   | "reducao_evento_negativo";
 
+export type Dificuldade = "facil" | "normal" | "dificil";
+
+export interface ConfigDificuldade {
+  id: Dificuldade;
+  nome: string;
+  descricao: string;
+  multiplicadorRisco: number;
+  multiplicadorEventoNegativo: number;
+  multiplicadorJuros: number;
+  recursosIniciais: Recursos;
+}
+
+export interface OfertaEmprestimo {
+  id: string;
+  nome: string;
+  descricao: string;
+  icone: string;
+  valorRecebido: number;
+  valorDivida: number;
+}
+
+export type TipoEfeitoConexao =
+  | "reduzir_risco_maior_distrito"
+  | "reduzir_divida_percentual"
+  | "resolver_evento_ativo"
+  | "restaurar_reputacao";
+
+export interface ConexaoDef {
+  id: string;
+  nome: string;
+  descricao: string;
+  icone: string;
+  custoRecrutamento: Partial<Recursos>;
+  custoAcionar: Partial<Recursos>;
+  cooldownMs: number;
+  efeito: { tipo: TipoEfeitoConexao; valor: number };
+}
+
+export interface ConexaoState {
+  id: string;
+  recrutada: boolean;
+  prontoEm: number;
+}
+
 export interface EfeitoUpgrade {
   tipo: TipoEfeitoUpgrade;
   valorPorNivel: number;
@@ -73,6 +117,9 @@ export interface EfeitoResultado {
     nivelControle?: number;
     risco?: number;
   };
+  // Variação percentual multiplicativa da dívida (ex.: -0.4 quita 40% dela;
+  // 0.2 aumenta 20% como penalidade dos cobradores).
+  dividaPercentual?: number;
   mensagem: string;
 }
 
@@ -81,6 +128,7 @@ export interface EventOpcaoDef {
   texto: string;
   padrao?: boolean;
   custo?: Partial<Recursos>;
+  custoPercentualDinheiro?: number;
   probabilidadeSucesso?: number;
   efeitoSucesso: EfeitoResultado;
   efeitoFalha?: EfeitoResultado;
@@ -97,6 +145,8 @@ export interface EventoDef {
   duracaoMs: number;
   peso: number;
   opcoes: EventOpcaoDef[];
+  // Evento só pode ser sorteado se a condição (quando definida) for verdadeira.
+  condicao?: (state: GameState) => boolean;
 }
 
 export interface EventoAtivo {
@@ -133,9 +183,14 @@ export interface GameState {
   versao: number;
   criadoEm: number;
   ultimaAtualizacao: number;
+  dificuldade: Dificuldade;
+  introVista: boolean;
+  velocidade: number;
   recursos: Recursos;
+  divida: number;
   distritos: Record<string, DistritoState>;
   upgrades: Record<string, UpgradeState>;
+  conexoes: Record<string, ConexaoState>;
   eventoAtivo: EventoAtivo | null;
   proximoEventoEm: number;
   registro: LogEntry[];

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { TICK_MS } from "../constants";
+import type { Dificuldade } from "../types";
 import { criarEstadoInicial, gameReducer } from "./reducer";
 import { carregarEstadoInicial, salvarEstado } from "./storage";
 
@@ -60,6 +61,27 @@ export function useGameEngine() {
     [],
   );
   const reiniciarJogo = useCallback(() => dispatch({ type: "REINICIAR_JOGO" }), []);
+  const pegarEmprestimo = useCallback(
+    (ofertaId: string) => dispatch({ type: "PEGAR_EMPRESTIMO", ofertaId }),
+    [],
+  );
+  const pagarDivida = useCallback(() => dispatch({ type: "PAGAR_DIVIDA" }), []);
+  const recrutarConexao = useCallback(
+    (conexaoId: string) => dispatch({ type: "RECRUTAR_CONEXAO", conexaoId }),
+    [],
+  );
+  const acionarConexao = useCallback(
+    (conexaoId: string) => dispatch({ type: "ACIONAR_CONEXAO", conexaoId }),
+    [],
+  );
+  const definirVelocidade = useCallback(
+    (velocidade: number) => dispatch({ type: "DEFINIR_VELOCIDADE", velocidade }),
+    [],
+  );
+  const iniciarJogo = useCallback(
+    (dificuldade: Dificuldade) => dispatch({ type: "INICIAR_JOGO", dificuldade }),
+    [],
+  );
 
   return {
     state,
@@ -71,5 +93,11 @@ export function useGameEngine() {
     resolverEvento,
     dispensarRelatorioOffline,
     reiniciarJogo,
+    pegarEmprestimo,
+    pagarDivida,
+    recrutarConexao,
+    acionarConexao,
+    definirVelocidade,
+    iniciarJogo,
   };
 }

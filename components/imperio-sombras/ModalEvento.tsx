@@ -1,21 +1,29 @@
 import { useEffect, useState } from "react";
+import { CONEXOES } from "@/lib/imperio-sombras/data/conexoes";
 import { EVENTOS_POR_ID } from "@/lib/imperio-sombras/data/eventos";
-import { getDistritoDef } from "@/lib/imperio-sombras/engine/selectors";
+import { getDistritoDef, podeAfordarCusto } from "@/lib/imperio-sombras/engine/selectors";
 import { formatarCusto } from "@/lib/imperio-sombras/format";
-import type { EventoAtivo, Recursos } from "@/lib/imperio-sombras/types";
+import type { EventoAtivo, GameState, Recursos } from "@/lib/imperio-sombras/types";
 import BarraProgresso from "./BarraProgresso";
+
+const CONEXAO_RESOLVE_EVENTO = CONEXOES.find(
+  (c) => c.efeito.tipo === "resolver_evento_ativo",
+);
 
 interface ModalEventoProps {
   eventoAtivo: EventoAtivo;
-  recursos: Recursos;
+  state: GameState;
   onResolver: (opcaoId: string) => void;
+  onAcionarConexao: (conexaoId: string) => void;
 }
 
 export default function ModalEvento({
   eventoAtivo,
-  recursos,
+  state,
   onResolver,
+  onAcionarConexao,
 }: ModalEventoProps) {
+  const recursos = state.recursos;
   // Começa em `criadoEm` (valor puro vindo de props) e só passa a refletir
   // o relógio real dentro do efeito, para não chamar Date.now() no render.
   const [agora, setAgora] = useState(eventoAtivo.criadoEm);
@@ -53,12 +61,38 @@ export default function ModalEvento({
           <BarraProgresso valor={percentualRestante} corClasse="bg-fuchsia-500" alturaClasse="h-1.5" />
         </div>
 
+        {CONEXAO_RESOLVE_EVENTO &&
+          (() => {
+            const cState = state.conexoes[CONEXAO_RESOLVE_EVENTO.id];
+            if (!cState?.recrutada) return null;
+            const pronta = state.ultimaAtualizacao >= cState.prontoEm;
+            const pode = pronta && podeAfordarCusto(recursos, CONEXAO_RESOLVE_EVENTO.custoAcionar);
+            return (
+              <button
+                type="button"
+                disabled={!pode}
+                onClick={() => onAcionarConexao(CONEXAO_RESOLVE_EVENTO.id)}
+                className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-left text-sm text-white transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/30"
+              >
+                <span>
+                  {CONEXAO_RESOLVE_EVENTO.icone} Chamar {CONEXAO_RESOLVE_EVENTO.nome}
+                </span>
+                <span className="text-xs opacity-70">
+                  {pronta ? formatarCusto(CONEXAO_RESOLVE_EVENTO.custoAcionar) : "Em cooldown"}
+                </span>
+              </button>
+            );
+          })()}
+
         <div className="flex flex-col gap-2">
           {def.opcoes.map((opcao) => {
-            const custoTexto = opcao.custo ? formatarCusto(opcao.custo) : null;
+            const custo = opcao.custoPercentualDinheiro
+              ? { dinheiro: Math.round(recursos.dinheiro * opcao.custoPercentualDinheiro) }
+              : opcao.custo;
+            const custoTexto = custo ? formatarCusto(custo) : null;
             const semRecurso =
-              opcao.custo &&
-              Object.entries(opcao.custo).some(
+              custo &&
+              Object.entries(custo).some(
                 ([chave, valor]) => recursos[chave as keyof Recursos] < (valor ?? 0),
               );
             return (

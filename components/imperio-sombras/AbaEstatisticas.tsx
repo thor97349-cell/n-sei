@@ -1,4 +1,4 @@
-import { TITULOS_IMPERIO } from "@/lib/imperio-sombras/constants";
+import { DIFICULDADES, TITULOS_IMPERIO } from "@/lib/imperio-sombras/constants";
 import {
   getPontuacaoImperio,
   getProximoTitulo,
@@ -69,6 +69,7 @@ export default function AbaEstatisticas({
           rotulo="Tempo de império"
           valor={formatarDuracao(state.estatisticas.tempoJogadoMs)}
         />
+        <Estatistica rotulo="Dificuldade" valor={DIFICULDADES[state.dificuldade].nome} />
       </section>
 
       <section className="rounded-xl border border-red-500/20 bg-red-950/10 p-4">

@@ -1,4 +1,4 @@
-import { TITULOS_IMPERIO } from "../constants";
+import { DIFICULDADES, TAXA_JUROS_DIVIDA_POR_SEGUNDO, TITULOS_IMPERIO } from "../constants";
 import { DISTRITOS, DISTRITOS_POR_ID } from "../data/distritos";
 import { UPGRADES_POR_ID } from "../data/upgrades";
 import type {
@@ -157,4 +157,23 @@ export function distritosDesbloqueadosIds(state: GameState): string[] {
 
 export function getDistritoDef(id: string): DistritoDef | undefined {
   return DISTRITOS_POR_ID[id];
+}
+
+export function getConfigDificuldade(state: GameState) {
+  return DIFICULDADES[state.dificuldade];
+}
+
+export function getJurosDividaPorSegundo(state: GameState): number {
+  return (
+    state.divida *
+    TAXA_JUROS_DIVIDA_POR_SEGUNDO *
+    getConfigDificuldade(state).multiplicadorJuros
+  );
+}
+
+export function getMaiorRiscoDistritoId(state: GameState): string | null {
+  const desbloqueados = Object.values(state.distritos).filter((d) => d.desbloqueado);
+  if (desbloqueados.length === 0) return null;
+  const maior = desbloqueados.reduce((a, b) => (b.risco > a.risco ? b : a));
+  return maior.id;
 }

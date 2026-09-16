@@ -1,27 +1,38 @@
-import { EVENTO_PAGAR_AUTORIDADE_PCT, EVENTOS_POR_ID } from "../data/eventos";
+import { EVENTOS_POR_ID } from "../data/eventos";
 import { DISTRITOS } from "../data/distritos";
 import { UPGRADES, UPGRADES_POR_ID } from "../data/upgrades";
+import { CONEXOES, CONEXOES_POR_ID } from "../data/conexoes";
 import {
   CUSTO_REFORCO_SEGURANCA,
+  DIFICULDADE_PADRAO,
+  DIFICULDADES,
   INVESTIMENTO_INCREMENTO_CONTROLE,
-  RECURSOS_INICIAIS,
+  OFERTAS_EMPRESTIMO,
   REDUCAO_RISCO_REFORCO,
+  VELOCIDADES,
+  VELOCIDADE_PADRAO,
   VERSAO_ESTADO,
 } from "../constants";
 import type {
+  ConexaoState,
+  Dificuldade,
   DistritoState,
   EfeitoResultado,
+  EventOpcaoDef,
   EventoDef,
   GameState,
   Recursos,
   RecursoId,
+  TipoLog,
   UpgradeState,
 } from "../types";
 import {
   custoDesbloqueio,
   custoInvestimento,
   custoUpgrade,
+  getConfigDificuldade,
   getDistritoDef,
+  getMaiorRiscoDistritoId,
   getReducaoEventoNegativoFracao,
   podeAfordarCusto,
 } from "./selectors";
@@ -36,11 +47,17 @@ export type GameAction =
   | { type: "DESBLOQUEAR_DISTRITO"; distritoId: string }
   | { type: "COMPRAR_UPGRADE"; upgradeId: string }
   | { type: "RESOLVER_EVENTO"; opcaoId: string }
+  | { type: "PEGAR_EMPRESTIMO"; ofertaId: string }
+  | { type: "PAGAR_DIVIDA" }
+  | { type: "RECRUTAR_CONEXAO"; conexaoId: string }
+  | { type: "ACIONAR_CONEXAO"; conexaoId: string }
+  | { type: "DEFINIR_VELOCIDADE"; velocidade: number }
+  | { type: "INICIAR_JOGO"; dificuldade: Dificuldade }
   | { type: "DISPENSAR_RELATORIO_OFFLINE" }
   | { type: "CARREGAR_ESTADO"; estado: GameState }
   | { type: "REINICIAR_JOGO" };
 
-export function criarEstadoInicial(): GameState {
+export function criarEstadoInicial(dificuldade: Dificuldade = DIFICULDADE_PADRAO): GameState {
   const agora = Date.now();
   const distritos: Record<string, DistritoState> = {};
   for (const d of DISTRITOS) {
@@ -55,14 +72,23 @@ export function criarEstadoInicial(): GameState {
   for (const u of UPGRADES) {
     upgrades[u.id] = { id: u.id, nivel: 0 };
   }
+  const conexoes: Record<string, ConexaoState> = {};
+  for (const c of CONEXOES) {
+    conexoes[c.id] = { id: c.id, recrutada: false, prontoEm: 0 };
+  }
 
   let estado: GameState = {
     versao: VERSAO_ESTADO,
     criadoEm: agora,
     ultimaAtualizacao: agora,
-    recursos: { ...RECURSOS_INICIAIS },
+    dificuldade,
+    introVista: false,
+    velocidade: VELOCIDADE_PADRAO,
+    recursos: { ...DIFICULDADES[dificuldade].recursosIniciais },
+    divida: 0,
     distritos,
     upgrades,
+    conexoes,
     eventoAtivo: null,
     proximoEventoEm: agora + proximoIntervaloEvento(),
     registro: [],
@@ -92,16 +118,28 @@ function deduzirRecursos(recursos: Recursos, custo: Partial<Recursos>): Recursos
   return novo;
 }
 
-function aplicarReducaoNegativa(
+function calcularCustoOpcao(
+  state: GameState,
+  opcao: EventOpcaoDef,
+): Partial<Recursos> | undefined {
+  if (opcao.custoPercentualDinheiro) {
+    return { dinheiro: Math.round(state.recursos.dinheiro * opcao.custoPercentualDinheiro) };
+  }
+  return opcao.custo ? { ...opcao.custo } : undefined;
+}
+
+// multiplicador < 1 amortece o impacto de efeitos ruins (upgrades de defesa),
+// multiplicador > 1 os amplifica (dificuldade Difícil).
+function aplicarModificadorNegativo(
   efeito: EfeitoResultado,
-  fracao: number,
+  multiplicador: number,
 ): EfeitoResultado {
-  if (fracao <= 0) return efeito;
+  if (multiplicador === 1) return efeito;
   const recursos = efeito.recursos
     ? Object.fromEntries(
         Object.entries(efeito.recursos).map(([k, v]) => [
           k,
-          v && v < 0 ? v * (1 - fracao) : v,
+          v && v < 0 ? v * multiplicador : v,
         ]),
       )
     : undefined;
@@ -109,60 +147,39 @@ function aplicarReducaoNegativa(
     ? {
         nivelControle:
           efeito.distrito.nivelControle && efeito.distrito.nivelControle < 0
-            ? efeito.distrito.nivelControle * (1 - fracao)
+            ? efeito.distrito.nivelControle * multiplicador
             : efeito.distrito.nivelControle,
         risco:
           efeito.distrito.risco && efeito.distrito.risco > 0
-            ? efeito.distrito.risco * (1 - fracao)
+            ? efeito.distrito.risco * multiplicador
             : efeito.distrito.risco,
       }
     : undefined;
-  return { ...efeito, recursos, distrito };
+  const dividaPercentual =
+    efeito.dividaPercentual && efeito.dividaPercentual > 0
+      ? efeito.dividaPercentual * multiplicador
+      : efeito.dividaPercentual;
+  return { ...efeito, recursos, distrito, dividaPercentual };
 }
 
-function resolverEvento(
+function getMultiplicadorEfetivoNegativo(state: GameState): number {
+  const dificuldade = getConfigDificuldade(state);
+  const reducao = getReducaoEventoNegativoFracao(state);
+  return dificuldade.multiplicadorEventoNegativo * (1 - reducao);
+}
+
+// Aplica o efeito (já resolvido) de um evento ao estado e encerra o evento
+// ativo. Usado tanto pela resposta normal do jogador quanto por conexões que
+// resolvem o evento em andamento na hora (ver "resolver_evento_ativo").
+function aplicarEfeitoEvento(
   state: GameState,
-  opcaoIdEscolhida: string,
+  def: EventoDef,
+  efeito: EfeitoResultado,
   agora: number,
-  auto: boolean,
+  tipoLog: TipoLog,
+  prefixoMensagem: string,
 ): GameState {
-  if (!state.eventoAtivo) return state;
-  const def: EventoDef | undefined = EVENTOS_POR_ID[state.eventoAtivo.eventoId];
-  if (!def) {
-    return { ...state, eventoAtivo: null };
-  }
-
-  const opcaoPadrao = def.opcoes.find((o) => o.padrao) ?? def.opcoes[0];
-  const opcao =
-    def.opcoes.find((o) => o.id === opcaoIdEscolhida) ?? opcaoPadrao;
-
-  let custo = opcao.custo ? { ...opcao.custo } : undefined;
-  if (def.id === "autoridade-corrupta" && opcao.id === "pagar-autoridade") {
-    custo = {
-      dinheiro: Math.round(state.recursos.dinheiro * EVENTO_PAGAR_AUTORIDADE_PCT),
-    };
-  }
-
-  // Se o jogador não pode pagar a opção escolhida, cai para a opção padrão.
-  if (custo && !podeAfordarCusto(state.recursos, custo) && opcao.id !== opcaoPadrao.id) {
-    return resolverEvento(state, opcaoPadrao.id, agora, auto);
-  }
-
-  let recursos = custo ? deduzirRecursos(state.recursos, custo) : { ...state.recursos };
-
-  const sucesso =
-    opcao.probabilidadeSucesso === undefined
-      ? true
-      : Math.random() < opcao.probabilidadeSucesso;
-
-  const efeitoBase = sucesso
-    ? opcao.efeitoSucesso
-    : opcao.efeitoFalha ?? opcao.efeitoSucesso;
-  const efeito = aplicarReducaoNegativa(
-    efeitoBase,
-    getReducaoEventoNegativoFracao(state),
-  );
-
+  let recursos = { ...state.recursos };
   if (efeito.recursos) {
     for (const [chave, valor] of Object.entries(efeito.recursos)) {
       const atual = recursos[chave as RecursoId];
@@ -171,7 +188,7 @@ function resolverEvento(
   }
 
   let distritos = state.distritos;
-  const distritoId = state.eventoAtivo.distritoId;
+  const distritoId = state.eventoAtivo?.distritoId;
   if (efeito.distrito && distritoId && distritos[distritoId]) {
     const dState = distritos[distritoId];
     distritos = {
@@ -188,12 +205,15 @@ function resolverEvento(
     };
   }
 
-  const tipoLog = !sucesso ? "negativo" : "evento";
-  const prefixo = auto ? "(sem resposta a tempo) " : "";
-  let novoEstado: GameState = {
+  const divida = efeito.dividaPercentual
+    ? Math.max(0, state.divida + state.divida * efeito.dividaPercentual)
+    : state.divida;
+
+  const novoEstado: GameState = {
     ...state,
     recursos,
     distritos,
+    divida,
     eventoAtivo: null,
     proximoEventoEm: agora + proximoIntervaloEvento(),
     estatisticas: {
@@ -201,13 +221,56 @@ function resolverEvento(
       eventosResolvidos: state.estatisticas.eventosResolvidos + 1,
     },
   };
-  novoEstado = adicionarLog(
+  return adicionarLog(
     novoEstado,
-    `${def.icone} ${def.titulo}: ${prefixo}${efeito.mensagem}`,
+    `${def.icone} ${def.titulo}: ${prefixoMensagem}${efeito.mensagem}`,
     tipoLog,
     agora,
   );
-  return novoEstado;
+}
+
+function resolverEvento(
+  state: GameState,
+  opcaoIdEscolhida: string,
+  agora: number,
+  auto: boolean,
+): GameState {
+  if (!state.eventoAtivo) return state;
+  const def: EventoDef | undefined = EVENTOS_POR_ID[state.eventoAtivo.eventoId];
+  if (!def) {
+    return { ...state, eventoAtivo: null };
+  }
+
+  const opcaoPadrao = def.opcoes.find((o) => o.padrao) ?? def.opcoes[0];
+  const opcao = def.opcoes.find((o) => o.id === opcaoIdEscolhida) ?? opcaoPadrao;
+
+  const custo = calcularCustoOpcao(state, opcao);
+
+  // Se o jogador não pode pagar a opção escolhida, cai para a opção padrão.
+  if (custo && !podeAfordarCusto(state.recursos, custo) && opcao.id !== opcaoPadrao.id) {
+    return resolverEvento(state, opcaoPadrao.id, agora, auto);
+  }
+
+  const estadoComCusto: GameState = custo
+    ? { ...state, recursos: deduzirRecursos(state.recursos, custo) }
+    : state;
+
+  const sucesso =
+    opcao.probabilidadeSucesso === undefined
+      ? true
+      : Math.random() < opcao.probabilidadeSucesso;
+
+  const efeitoBase = sucesso
+    ? opcao.efeitoSucesso
+    : opcao.efeitoFalha ?? opcao.efeitoSucesso;
+  const efeito = aplicarModificadorNegativo(
+    efeitoBase,
+    getMultiplicadorEfetivoNegativo(state),
+  );
+
+  const tipoLog = !sucesso ? "negativo" : "evento";
+  const prefixo = auto ? "(sem resposta a tempo) " : "";
+  return aplicarEfeitoEvento(estadoComCusto, def, efeito, agora, tipoLog, prefixo);
 }
 
 function processarEventos(state: GameState, agora: number): GameState {
@@ -382,6 +445,174 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.eventoAtivo) return state;
       return resolverEvento(state, action.opcaoId, Date.now(), false);
     }
+
+    case "PEGAR_EMPRESTIMO": {
+      const oferta = OFERTAS_EMPRESTIMO.find((o) => o.id === action.ofertaId);
+      if (!oferta) return state;
+
+      const agora = Date.now();
+      let novoEstado: GameState = {
+        ...state,
+        recursos: {
+          ...state.recursos,
+          dinheiro: state.recursos.dinheiro + oferta.valorRecebido,
+        },
+        divida: state.divida + oferta.valorDivida,
+      };
+      novoEstado = adicionarLog(
+        novoEstado,
+        `${oferta.icone} ${oferta.nome}: +${oferta.valorRecebido} em caixa. Dívida agora em ${Math.round(novoEstado.divida)}.`,
+        "info",
+        agora,
+      );
+      return novoEstado;
+    }
+
+    case "PAGAR_DIVIDA": {
+      if (state.divida <= 0 || state.recursos.dinheiro <= 0) return state;
+      const valorPago = Math.min(state.recursos.dinheiro, state.divida);
+
+      const agora = Date.now();
+      let novoEstado: GameState = {
+        ...state,
+        recursos: { ...state.recursos, dinheiro: state.recursos.dinheiro - valorPago },
+        divida: Math.max(0, state.divida - valorPago),
+      };
+      novoEstado = adicionarLog(
+        novoEstado,
+        `💳 Pagamento de dívida: –${Math.round(valorPago)} dinheiro.`,
+        "info",
+        agora,
+      );
+      return novoEstado;
+    }
+
+    case "RECRUTAR_CONEXAO": {
+      const def = CONEXOES_POR_ID[action.conexaoId];
+      const cState = state.conexoes[action.conexaoId];
+      if (!def || !cState || cState.recrutada) return state;
+      if (!podeAfordarCusto(state.recursos, def.custoRecrutamento)) return state;
+
+      const agora = Date.now();
+      let novoEstado: GameState = {
+        ...state,
+        recursos: deduzirRecursos(state.recursos, def.custoRecrutamento),
+        conexoes: {
+          ...state.conexoes,
+          [def.id]: { ...cState, recrutada: true, prontoEm: agora },
+        },
+      };
+      novoEstado = adicionarLog(
+        novoEstado,
+        `${def.icone} ${def.nome} agora está do seu lado.`,
+        "positivo",
+        agora,
+      );
+      return novoEstado;
+    }
+
+    case "ACIONAR_CONEXAO": {
+      const def = CONEXOES_POR_ID[action.conexaoId];
+      const cState = state.conexoes[action.conexaoId];
+      if (!def || !cState || !cState.recrutada) return state;
+      const agora = Date.now();
+      if (agora < cState.prontoEm) return state;
+      if (!podeAfordarCusto(state.recursos, def.custoAcionar)) return state;
+
+      const estadoComCusto: GameState = {
+        ...state,
+        recursos: deduzirRecursos(state.recursos, def.custoAcionar),
+        conexoes: {
+          ...state.conexoes,
+          [def.id]: { ...cState, prontoEm: agora + def.cooldownMs },
+        },
+      };
+
+      switch (def.efeito.tipo) {
+        case "reduzir_risco_maior_distrito": {
+          const alvoId = getMaiorRiscoDistritoId(estadoComCusto);
+          if (!alvoId) return state;
+          const alvoDef = getDistritoDef(alvoId);
+          const dState = estadoComCusto.distritos[alvoId];
+          const novoEstado: GameState = {
+            ...estadoComCusto,
+            distritos: {
+              ...estadoComCusto.distritos,
+              [alvoId]: {
+                ...dState,
+                risco: clamp(dState.risco - def.efeito.valor, 0, 100),
+              },
+            },
+          };
+          return adicionarLog(
+            novoEstado,
+            `${def.icone} ${def.nome} abafou o caso em ${alvoDef?.nome ?? alvoId}. Risco reduzido.`,
+            "positivo",
+            agora,
+          );
+        }
+
+        case "reduzir_divida_percentual": {
+          if (estadoComCusto.divida <= 0) return state;
+          const abatimento = estadoComCusto.divida * def.efeito.valor;
+          const novoEstado: GameState = {
+            ...estadoComCusto,
+            divida: Math.max(0, estadoComCusto.divida - abatimento),
+          };
+          return adicionarLog(
+            novoEstado,
+            `${def.icone} ${def.nome} renegociou sua dívida. –${Math.round(abatimento)} de dívida.`,
+            "positivo",
+            agora,
+          );
+        }
+
+        case "resolver_evento_ativo": {
+          if (!estadoComCusto.eventoAtivo) return state;
+          const eventoDef = EVENTOS_POR_ID[estadoComCusto.eventoAtivo.eventoId];
+          const melhorOpcao =
+            eventoDef?.opcoes.find((o) => !o.padrao) ?? eventoDef?.opcoes[0];
+          if (!eventoDef || !melhorOpcao) return state;
+          return aplicarEfeitoEvento(
+            estadoComCusto,
+            eventoDef,
+            melhorOpcao.efeitoSucesso,
+            agora,
+            "positivo",
+            `${def.nome} resolveu na hora: `,
+          );
+        }
+
+        case "restaurar_reputacao": {
+          const novoEstado: GameState = {
+            ...estadoComCusto,
+            recursos: {
+              ...estadoComCusto.recursos,
+              reputacao: estadoComCusto.recursos.reputacao + def.efeito.valor,
+            },
+          };
+          return adicionarLog(
+            novoEstado,
+            `${def.icone} ${def.nome} publicou uma matéria favorável. +${def.efeito.valor} reputação.`,
+            "positivo",
+            agora,
+          );
+        }
+
+        default:
+          return state;
+      }
+    }
+
+    case "DEFINIR_VELOCIDADE": {
+      if (!VELOCIDADES.includes(action.velocidade as (typeof VELOCIDADES)[number])) {
+        return state;
+      }
+      return { ...state, velocidade: action.velocidade };
+    }
+
+    case "INICIAR_JOGO":
+      return { ...criarEstadoInicial(action.dificuldade), introVista: true };
 
     case "DISPENSAR_RELATORIO_OFFLINE":
       return { ...state, relatorioOffline: null };

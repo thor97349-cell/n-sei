@@ -1,3 +1,4 @@
+import { LIMITE_DIVIDA_COBRANCA } from "../constants";
 import type { EventoDef } from "../types";
 
 // Eventos com escopo "distrito" recebem um distrito desbloqueado aleatório
@@ -226,6 +227,7 @@ export const EVENTOS: EventoDef[] = [
       {
         id: "pagar-autoridade",
         texto: "Pagar 15% do dinheiro guardado",
+        custoPercentualDinheiro: 0.15,
         efeitoSucesso: {
           mensagem: "O oficial ficou satisfeito e voltou a olhar para o outro lado.",
         },
@@ -237,6 +239,38 @@ export const EVENTOS: EventoDef[] = [
         efeitoSucesso: {
           recursos: { reputacao: -10 },
           mensagem: "Vocês recusaram. Todos os distritos ficaram mais visados.",
+        },
+      },
+    ],
+  },
+  {
+    id: "cobradores-na-porta",
+    titulo: "Cobradores na Porta",
+    descricao:
+      "Os capangas do agiota vieram cobrar pessoalmente. A dívida está pesando demais.",
+    icone: "🥊",
+    escopo: "global",
+    duracaoMs: 30_000,
+    peso: 4,
+    condicao: (state) => state.divida > LIMITE_DIVIDA_COBRANCA,
+    opcoes: [
+      {
+        id: "negociar-entrada",
+        texto: "Pagar uma entrada para acalmar os ânimos (–20% do dinheiro em caixa)",
+        custoPercentualDinheiro: 0.2,
+        efeitoSucesso: {
+          dividaPercentual: -0.4,
+          mensagem: "Os cobradores aceitaram a entrada. A dívida encolheu bastante.",
+        },
+      },
+      {
+        id: "ignorar-cobradores",
+        texto: "Ignorar e fechar a porta",
+        padrao: true,
+        efeitoSucesso: {
+          recursos: { reputacao: -15 },
+          dividaPercentual: 0.2,
+          mensagem: "Os cobradores saíram batendo portas. A dívida só cresceu, com juros extras.",
         },
       },
     ],
@@ -266,7 +300,3 @@ export const EVENTOS: EventoDef[] = [
 export const EVENTOS_POR_ID: Record<string, EventoDef> = Object.fromEntries(
   EVENTOS.map((e) => [e.id, e]),
 );
-
-// Trata o caso especial de "autoridade-corrupta", cujo custo é percentual
-// (15% do dinheiro atual) em vez de um valor fixo — resolvido no reducer.
-export const EVENTO_PAGAR_AUTORIDADE_PCT = 0.15;
