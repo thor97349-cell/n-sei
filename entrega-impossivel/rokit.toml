@@ -1,0 +1,7 @@
+# Ferramentas de desenvolvimento (instale com https://github.com/rojo-rbx/rokit: `rokit install`).
+# Só são necessárias para quem for editar o código fora do Studio.
+[tools]
+rojo = "rojo-rbx/rojo@7.4.4"
+lune = "lune-org/lune@0.10.4"
+stylua = "JohnnyMorganz/StyLua@2.5.2"
+luau-lsp = "JohnnyMorganz/luau-lsp@1.70.1"

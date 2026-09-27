@@ -1,5 +1,9 @@
 # HoraCerta
 
+> 🎮 **Este branch também contém o jogo Roblox _ENTREGA IMPOSSÍVEL_** — veja
+> [`entrega-impossivel/README.md`](entrega-impossivel/README.md). O app HoraCerta abaixo
+> continua intacto.
+
 🔗 **Deploy:** https://n-sei-red.vercel.app
 
 MVP de marketplace de expertise sênior por hora: conecta pequenos negócios

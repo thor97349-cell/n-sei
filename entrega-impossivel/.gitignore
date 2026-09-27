@@ -1,0 +1,6 @@
+# Arquivos intermediários do build (o arquivo final build/EntregaImpossivel.rbxl é versionado)
+build/_base.rbxl
+sourcemap.json
+*.rbxl.lock
+*.rbxlx.lock
+build/.cache/
