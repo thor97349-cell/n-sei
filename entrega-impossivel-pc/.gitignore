@@ -1,0 +1,9 @@
+# Godot
+.godot/
+/android/
+
+# Builds exportados
+/build/
+*.exe
+*.pck
+*.x86_64
