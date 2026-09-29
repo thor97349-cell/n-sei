@@ -20,6 +20,11 @@ on:
 permissions:
   contents: write
 
+# Um envio novo cancela a execução anterior do mesmo branch (economiza minutos).
+concurrency:
+  group: entrega-impossivel-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   GODOT_VERSION: "4.7.2"
   PROJECT_DIR: entrega-impossivel-pc
