@@ -20,6 +20,7 @@ var wetness := 0.0
 var _rain_amount := 0.0
 var _next_lightning := 8.0
 var _flash := 0.0
+var _stars: ImageTexture
 
 
 func _ready() -> void:
@@ -32,7 +33,7 @@ func _ready() -> void:
 	sky_material.ground_color = Color(0.22, 0.2, 0.18)
 	sky_material.energy_multiplier = 1.0
 	sky_material.use_debanding = true
-	sky_material.night_sky = _star_texture()
+	_stars = _star_texture()
 	var sky := Sky.new()
 	sky.sky_material = sky_material
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
@@ -175,6 +176,10 @@ func _update_sky(_delta: float) -> void:
 	environment.volumetric_fog_density = lerpf(0.003, 0.02, storm)
 	environment.tonemap_exposure = lerpf(1.08, 1.6, night_factor)
 
+	# Estrelas só à noite e sem chuva (o céu físico soma a textura sempre).
+	var show_stars := night_factor > 0.6 and storm < 0.3
+	if show_stars != (sky_material.night_sky != null):
+		sky_material.night_sky = _stars if show_stars else null
 	RenderingServer.global_shader_parameter_set("night", night_factor)
 	RenderingServer.global_shader_parameter_set("wetness", wetness)
 
@@ -191,7 +196,7 @@ func _star_texture() -> ImageTexture:
 		var x := rng.randi_range(0, width - 1)
 		# Só na metade de cima (acima do horizonte).
 		var y := rng.randi_range(0, height / 2 - 8)
-		var brightness := pow(rng.randf(), 3.0) * 0.9 + 0.1
+		var brightness := pow(rng.randf(), 3.0) * 0.6 + 0.08
 		var tint := Color(0.85, 0.9, 1.0).lerp(Color(1.0, 0.9, 0.75), rng.randf())
 		image.set_pixel(x, y, tint * brightness)
 	return ImageTexture.create_from_image(image)

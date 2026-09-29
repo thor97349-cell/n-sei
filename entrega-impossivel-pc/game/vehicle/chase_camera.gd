@@ -4,7 +4,7 @@ extends Camera3D
 ## veículo), modo "capô" (visão do motorista) e olhar em volta com o analógico
 ## direito ou o mouse (botão direito). Evita atravessar paredes e treme nas batidas.
 
-const MODES: Array[String] = ["chase", "far", "cockpit"]
+const MODES: Array[String] = ["chase", "far", "hood"]
 
 var target: Vehicle
 var mode := 0
@@ -42,7 +42,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		var motion: Vector2 = event.relative
 		var invert := -1.0 if Settings.get_value("controls/invert_y") else 1.0
-		_mouse_look += Vector2(-motion.x * 0.005, -motion.y * 0.004 * invert)
+		var sensitivity: float = Settings.get_value("controls/camera_sensitivity")
+		_mouse_look += Vector2(-motion.x * 0.005, -motion.y * 0.004 * invert) * sensitivity
 	if event.is_action_pressed("camera_toggle"):
 		mode = (mode + 1) % MODES.size()
 		_offset = Vector3.ZERO
@@ -74,12 +75,13 @@ func _process(delta: float) -> void:
 	_shake = maxf(_shake - delta * 1.8, 0.0)
 	var shake := Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0) * _shake * 0.15
 
-	if MODES[mode] == "cockpit":
-		var eye := xform * Vector3(0.36, height - target.ground_offset - 0.42, length * 0.08)
+	if MODES[mode] == "hood":
+		# Câmera sobre o capô, olhando para a frente.
+		var eye := xform * Vector3(0.0, height - target.ground_offset + 0.12, length * 0.18)
 		global_position = eye + shake
 		var forward := xform.basis.z.rotated(xform.basis.y, _look_yaw)
-		look_at(eye + forward * 10.0 + xform.basis.y * (_look_pitch * 6.0 - 0.4), xform.basis.y)
-		fov = lerpf(fov, 72.0 + clampf(speed / 40.0, 0.0, 1.0) * 8.0, 1.0 - exp(-delta * 3.0))
+		look_at(eye + forward * 10.0 + xform.basis.y * (_look_pitch * 6.0 - 0.9), xform.basis.y)
+		fov = lerpf(fov, 74.0 + clampf(speed / 40.0, 0.0, 1.0) * 8.0, 1.0 - exp(-delta * 3.0))
 		return
 
 	# Perseguição: a direção acompanha o carro com um pequeno atraso (sente as curvas).

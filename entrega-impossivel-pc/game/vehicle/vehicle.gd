@@ -37,6 +37,8 @@ var wheel_slip := 0.0
 var braking := false
 var headlights_on := false
 var headlights_auto := true
+## Multiplica a aderência dos pneus (pista molhada < 1).
+var grip_factor := 1.0
 var ground_offset := 0.5
 
 var _wheels: Array[VehicleWheel3D] = []
@@ -225,8 +227,7 @@ func _read_player_input(delta: float) -> void:
 	input_brake = Input.get_action_strength("brake")
 	input_handbrake = Input.is_action_pressed("handbrake")
 	var target := Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
-	var sensitivity: float = Settings.get_value("controls/sensitivity")
-	target = clampf(target * sensitivity, -1.0, 1.0)
+	target = clampf(target, -1.0, 1.0)
 	# Teclado: o volante gira aos poucos e volta sozinho; controle analógico é direto.
 	var rate := 3.2 if absf(target) > absf(input_steer) else 5.5
 	input_steer = move_toward(input_steer, target, rate * delta)
@@ -356,7 +357,7 @@ func _apply_drive(delta: float, drive: float, brake_input: float) -> void:
 		if decel > 0.0:
 			wheel.engine_force = 0.0
 		wheel.brake = quarter * decel
-		wheel.wheel_friction_slip = float(spec["grip"]) * (0.5 if input_handbrake and not front else 1.0)
+		wheel.wheel_friction_slip = float(spec["grip"]) * grip_factor * (0.5 if input_handbrake and not front else 1.0)
 	var slip := 0.0
 	for wheel in _wheels:
 		slip = maxf(slip, 1.0 - wheel.get_skidinfo())

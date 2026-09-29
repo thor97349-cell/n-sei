@@ -63,6 +63,7 @@ func _build_sounds() -> void:
 	_streams["skid"] = _noise_loop(1.0, 0.25, 0.55)
 	_streams["rain"] = _noise_loop(2.0, 0.35, 0.2)
 	_streams["wind"] = _noise_loop(2.0, 0.25, 0.04)
+	_streams["thunder"] = _thunder()
 
 
 func _to_wav(samples: PackedFloat32Array, loop: bool = false) -> AudioStreamWAV:
@@ -130,6 +131,22 @@ func _impact() -> AudioStreamWAV:
 		low = lerpf(low, randf_range(-1.0, 1.0), 0.08)
 		var thump := sin(TAU * (70.0 - t * 60.0) * t) * exp(-t * 9.0)
 		samples.append((thump * 0.8 + low * 2.0 * exp(-t * 14.0)) * 0.6)
+	return _to_wav(samples)
+
+
+## Trovão: ronco grave com estalos no começo e decaimento longo.
+func _thunder() -> AudioStreamWAV:
+	var samples := PackedFloat32Array()
+	var count := int(3.2 * MIX_RATE)
+	var low := 0.0
+	var lower := 0.0
+	for i in count:
+		var t := float(i) / MIX_RATE
+		low = lerpf(low, randf_range(-1.0, 1.0), 0.02)
+		lower = lerpf(lower, low, 0.05)
+		var crack := randf_range(-1.0, 1.0) * exp(-t * 18.0) * 0.4
+		var envelope := minf(t * 8.0, 1.0) * exp(-t * 1.1) * (0.75 + 0.25 * sin(t * 7.0))
+		samples.append((lower * 9.0 * envelope + crack) * 0.7)
 	return _to_wav(samples)
 
 

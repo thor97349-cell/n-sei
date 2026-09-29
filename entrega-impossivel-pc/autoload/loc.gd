@@ -85,8 +85,8 @@ func _load_tables() -> void:
 	_add("settings.auto", "Automático", "Automatic")
 	_add("settings.controls", "Controles", "Controls")
 	_add("settings.controls_text",
-		"W/S acelerar e frear • A/D virar • Espaço freio de mão • R resgatar\nTab celular (pedidos) • C câmera • L faróis • H buzina • M mapa • Esc pausa\nControle: RT/LT acelerar/frear • analógico virar • A freio de mão • Y câmera • Select celular",
-		"W/S throttle and brake • A/D steer • Space handbrake • R recover\nTab phone (orders) • C camera • L headlights • H horn • M map • Esc pause\nGamepad: RT/LT throttle/brake • stick steer • A handbrake • Y camera • Select phone")
+		"W/S acelerar e frear (segure S parado para dar ré) • A/D virar • Espaço freio de mão\nE abastecer/garagem • R resgatar • Tab celular • M mapa • C câmera • L faróis • H buzina • Esc pausa\nBotão direito do mouse: olhar em volta\nControle: RT/LT acelerar/frear • analógico virar • A freio de mão • X abastecer • Y câmera • Select celular",
+		"W/S throttle and brake (hold S when stopped to reverse) • A/D steer • Space handbrake\nE refuel/garage • R recover • Tab phone • M map • C camera • L headlights • H horn • Esc pause\nRight mouse button: look around\nGamepad: RT/LT throttle/brake • stick steer • A handbrake • X refuel • Y camera • Select phone")
 
 	# HUD
 	_add("hud.no_delivery", "📦 SEM ENTREGA — abra o celular [Tab]", "📦 NO DELIVERY — open your phone [Tab]")
@@ -175,6 +175,37 @@ func _load_tables() -> void:
 	_add("garage.handling", "Dirigibilidade", "Handling")
 	_add("garage.cargo", "Carga", "Cargo")
 	_add("garage.only_at_hq", "A garagem fica na Central de Entregas.", "The garage is at the Delivery HQ.")
+
+	_add("garage.finish_delivery", "Termine a entrega antes de trocar de veículo.", "Finish the delivery before switching vehicles.")
+	_add("garage.close", "FECHAR", "CLOSE")
+	_add("garage.cargo_size", "Carga máx.: {0}", "Max cargo: {0}")
+
+	# Serviços e avisos extras
+	_add("hud.refuel_hold", "Segure E para abastecer (R$ {0}/L)", "Hold E to refuel ($ {0}/L)")
+	_add("hud.tank_full", "Tanque cheio", "Tank full")
+	_add("hud.garage_hint", "E: abrir a garagem", "E: open the garage")
+	_add("hud.flipped", "Veículo virado — aperte R para resgatar", "Vehicle flipped — press R to recover")
+	_add("hud.low_fuel", "⛽ Pouco combustível! Procure um posto (ícone ⛽ no mapa).", "⛽ Low fuel! Find a gas station (⛽ on the map).")
+	_add("hud.distance", "{0} até o destino", "{0} to go")
+	_add("hud.money", "R$ {0}", "$ {0}")
+	_add("hud.time_left", "Tempo", "Time")
+	_add("hud.event", "Evento", "Event")
+	_add("hud.map_title", "MAPA — M fecha", "MAP — M closes")
+	_add("hud.legend", "📦 coleta  🏁 destino  ⛽ posto  🏠 central", "📦 pickup  🏁 destination  ⛽ gas  🏠 HQ")
+	_add("result.continue", "Novos pedidos no celular [Tab]", "New orders on your phone [Tab]")
+	_add("phone.empty", "Nenhum pedido agora. Atualize em instantes.", "No orders right now. Refresh in a moment.")
+	_add("phone.no_offer_active", "Termine a entrega atual para aceitar outra.", "Finish your current delivery to accept another.")
+	_add("phone.minutes", "{0} min {1} s", "{0} min {1} s")
+	_add("menu.saving", "Salvando...", "Saving...")
+	_add("settings.apply", "APLICAR", "APPLY")
+	_add("settings.units.metric", "km/h", "km/h")
+	_add("settings.units.imperial", "mph", "mph")
+	_add("settings.lang.auto", "Automático", "Automatic")
+	_add("settings.lang.pt", "Português", "Portuguese")
+	_add("settings.lang.en", "Inglês", "English")
+	_add("settings.traffic.low", "Pouco", "Light")
+	_add("settings.traffic.normal", "Normal", "Normal")
+	_add("settings.traffic.high", "Muito", "Heavy")
 
 	# Tamanhos de carga
 	_add("cargo.S", "Pequena", "Small")

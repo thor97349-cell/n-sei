@@ -9,9 +9,11 @@ var _camera: Camera3D
 var _chase: ChaseCamera
 var _driver: Vehicle
 var _shots := [
-	[40, "lineup", Vector3(-8, 2.2, 60.5), Vector3(-19, 0.8, 53)],
-	[60, "rear", Vector3(-30, 1.8, 47), Vector3(-19, 0.8, 53)],
-	[80, "detail", Vector3(-19.5, 1.4, 56.3), Vector3(-21.5, 0.8, 53)],
+	[40, "van", Vector3(-26.5, 1.6, 59.0), Vector3(-31, 0.9, 53)],
+	[55, "hatch", Vector3(-21.5, 1.5, 58.5), Vector3(-26, 0.7, 53)],
+	[70, "truck", Vector3(-14.0, 2.4, 61.0), Vector3(-21, 1.3, 53)],
+	[85, "sport", Vector3(-11.8, 1.3, 57.8), Vector3(-16, 0.6, 53)],
+	[100, "rear", Vector3(-24, 1.6, 47.5), Vector3(-27, 0.7, 53)],
 	[330, "chase", null, null],
 	[360, "cockpit", null, null],
 ]
@@ -48,14 +50,14 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if _frame > 100:
+	if _frame > 110:
 		_driver.input_throttle = 0.7 if _driver.get_speed_kmh() < 55.0 else 0.0
 		_driver.input_steer = 0.0
 
 
 func _process(_delta: float) -> void:
 	_frame += 1
-	if _frame == 100:
+	if _frame == 110:
 		_chase.follow(_driver)
 		_chase.current = false
 	if _shots.is_empty():

@@ -4,9 +4,8 @@ extends Node
 ## Salvamento seguro: grava num arquivo temporário e só então substitui o save; o save
 ## anterior vira backup (.bak). Se o arquivo principal estiver corrompido, o backup é usado.
 
-const SAVE_PATH := "user://save.json"
-const BACKUP_PATH := "user://save.json.bak"
-const TEMP_PATH := "user://save.json.tmp"
+## Nome do arquivo de save (os testes usam outro para não mexer no save do jogador).
+var slot := "save"
 const SAVE_VERSION := 1
 const MAX_MONEY := 999_999_999
 
@@ -46,7 +45,11 @@ func reset() -> void:
 
 
 func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH) or FileAccess.file_exists(BACKUP_PATH)
+	return FileAccess.file_exists(_path("")) or FileAccess.file_exists(_path(".bak"))
+
+
+func _path(suffix: String) -> String:
+	return "user://%s.json%s" % [slot, suffix]
 
 
 func new_game() -> void:
@@ -158,30 +161,32 @@ func from_dict(data: Dictionary) -> void:
 
 func save_game() -> bool:
 	var text := JSON.stringify(to_dict(), "\t")
-	var file := FileAccess.open(TEMP_PATH, FileAccess.WRITE)
+	var temp_path := _path(".tmp")
+	var file := FileAccess.open(temp_path, FileAccess.WRITE)
 	if file == null:
-		push_warning("Não foi possível abrir %s: %s" % [TEMP_PATH, FileAccess.get_open_error()])
+		push_warning("Não foi possível abrir %s: %s" % [temp_path, FileAccess.get_open_error()])
 		return false
 	file.store_string(text)
 	file.close()
 	# Confere o que foi gravado antes de substituir o save bom.
-	var check := FileAccess.get_file_as_string(TEMP_PATH)
+	var check := FileAccess.get_file_as_string(temp_path)
 	if check != text:
 		push_warning("Falha ao verificar o arquivo de save temporário.")
 		return false
 	var dir := DirAccess.open("user://")
 	if dir == null:
 		return false
-	if dir.file_exists("save.json"):
-		if dir.file_exists("save.json.bak"):
-			dir.remove("save.json.bak")
-		dir.rename("save.json", "save.json.bak")
-	var error := dir.rename("save.json.tmp", "save.json")
+	var main := "%s.json" % slot
+	if dir.file_exists(main):
+		if dir.file_exists(main + ".bak"):
+			dir.remove(main + ".bak")
+		dir.rename(main, main + ".bak")
+	var error := dir.rename(main + ".tmp", main)
 	return error == OK
 
 
 func load_game() -> bool:
-	for path: String in [SAVE_PATH, BACKUP_PATH]:
+	for path: String in [_path(""), _path(".bak")]:
 		if not FileAccess.file_exists(path):
 			continue
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))

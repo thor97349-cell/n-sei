@@ -151,6 +151,7 @@ func _setup_input() -> void:
 	_action("camera_toggle", [KEY_C], [JOY_BUTTON_Y], [])
 	_action("headlights", [KEY_L], [JOY_BUTTON_DPAD_UP], [])
 	_action("reset_vehicle", [KEY_R], [JOY_BUTTON_DPAD_DOWN], [])
+	_action("interact", [KEY_E], [JOY_BUTTON_X], [])
 	_action("phone", [KEY_TAB], [JOY_BUTTON_BACK], [])
 	_action("map", [KEY_M], [JOY_BUTTON_DPAD_RIGHT], [])
 	_action("pause", [KEY_ESCAPE, KEY_P], [JOY_BUTTON_START], [])
