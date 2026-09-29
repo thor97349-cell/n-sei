@@ -1,8 +1,9 @@
 # Testa e gera os executáveis do jogo "Entrega Impossível" (pasta entrega-impossivel-pc).
-#  • A cada push que mexe no jogo: roda os testes automáticos e exporta Windows + Linux.
-#    Os executáveis ficam em "Actions" → execução → "Artifacts".
-#  • Ao criar uma tag "entrega-v*" (ex.: entrega-v0.1.0): também publica uma Release
-#    com os .zip para qualquer pessoa baixar.
+#  • A cada push que mexe no jogo: roda os testes automáticos, exporta Windows + Linux e
+#    publica os .zip na Release "entrega-latest" (aba Releases do repositório).
+#  • Ao criar uma tag "entrega-v*" (ex.: entrega-v0.1.0): publica uma Release fixa com esse nome.
+# Não usa nenhuma "action" de terceiros (só comandos), então funciona mesmo com a regra
+# "Require actions to be pinned to a full-length commit SHA" ligada.
 name: Entrega Impossível (PC)
 
 on:
@@ -34,32 +35,29 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache do Godot e dos modelos de exportação
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/godot
-            ~/.local/share/godot/export_templates
-          key: godot-${{ env.GODOT_VERSION }}-v1
-
-      - name: Baixar Godot ${{ env.GODOT_VERSION }}
+      - name: Baixar o código
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          if [ ! -x ~/godot/godot ]; then
-            mkdir -p ~/godot
-            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-            unzip -q /tmp/godot.zip -d ~/godot
-            mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
-          fi
+          git init -q .
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch -q --depth 1 origin "$GITHUB_SHA"
+          git checkout -q FETCH_HEAD
+          git log --oneline -1
+
+      - name: Baixar Godot ${{ env.GODOT_VERSION }} e os modelos de exportação
+        run: |
+          set -e
+          mkdir -p ~/godot
+          curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
           TEMPLATES=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-          if [ ! -f "$TEMPLATES/linux_release.x86_64" ]; then
-            mkdir -p "$TEMPLATES"
-            curl -fsSL -o /tmp/templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-            unzip -q -o -j /tmp/templates.tpz templates/version.txt templates/linux_release.x86_64 templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe -d "$TEMPLATES"
-            rm /tmp/templates.tpz
-          fi
+          mkdir -p "$TEMPLATES"
+          curl -fsSL -o /tmp/templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -o -j /tmp/templates.tpz templates/version.txt templates/linux_release.x86_64 templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe -d "$TEMPLATES"
+          rm /tmp/templates.tpz
           ~/godot/godot --version
 
       - name: Importar o projeto
@@ -92,24 +90,23 @@ jobs:
           if grep -q "SCRIPT ERROR" /tmp/run.log; then echo "O jogo exportado mostrou erros de script"; exit 1; fi
           (cd build/windows && zip -qr ../EntregaImpossivel-windows.zip .)
           (cd build/linux && zip -qr ../EntregaImpossivel-linux.zip .)
+          ls -la build/*.zip
 
-      - name: Guardar o executável do Windows
-        uses: actions/upload-artifact@v4
-        with:
-          name: EntregaImpossivel-windows
-          path: ${{ env.PROJECT_DIR }}/build/windows/
-
-      - name: Guardar o executável do Linux
-        uses: actions/upload-artifact@v4
-        with:
-          name: EntregaImpossivel-linux
-          path: ${{ env.PROJECT_DIR }}/build/linux/
-
-      - name: Publicar Release (só em tags entrega-v*)
-        if: startsWith(github.ref, 'refs/tags/entrega-v')
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Entrega Impossível ${{ github.ref_name }}
-          files: |
-            ${{ env.PROJECT_DIR }}/build/EntregaImpossivel-windows.zip
-            ${{ env.PROJECT_DIR }}/build/EntregaImpossivel-linux.zip
+      - name: Publicar os downloads (Releases)
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          NOTES="Descompacte e abra EntregaImpossivel.exe (Windows) ou EntregaImpossivel.x86_64 (Linux). Gerado do commit ${GITHUB_SHA::7} (${GITHUB_REF_NAME})."
+          if [[ "$GITHUB_REF" == refs/tags/entrega-v* ]]; then
+            gh release create "$GITHUB_REF_NAME" build/EntregaImpossivel-windows.zip build/EntregaImpossivel-linux.zip \
+              --repo "$GITHUB_REPOSITORY" --title "Entrega Impossível $GITHUB_REF_NAME" --notes "$NOTES"
+          else
+            gh release delete entrega-latest --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+            gh release create entrega-latest build/EntregaImpossivel-windows.zip build/EntregaImpossivel-linux.zip \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "Entrega Impossível — versão mais recente (teste)" --notes "$NOTES"
+          fi
+          echo "Downloads: https://github.com/${GITHUB_REPOSITORY}/releases/tag/entrega-latest"

@@ -24,15 +24,15 @@ fica mais nítida e suave.)*
 
 ## Como baixar e jogar
 
-Os executáveis são gerados automaticamente pelo GitHub a cada atualização do jogo:
+Os executáveis são gerados automaticamente pelo GitHub a cada atualização do jogo e
+publicados na página de **Releases** do repositório (link público, sem login):
 
-1. No GitHub do repositório, abra a aba **Actions** → **Entrega Impossível (PC)**.
-2. Clique na execução mais recente com ✅ e, em **Artifacts**, baixe
-   `EntregaImpossivel-windows` (ou `EntregaImpossivel-linux`).
+1. Abra https://github.com/thor97349-cell/n-sei/releases/tag/entrega-latest
+2. Baixe `EntregaImpossivel-windows.zip` (ou `EntregaImpossivel-linux.zip`).
 3. Descompacte e abra `EntregaImpossivel.exe` (Windows) ou `EntregaImpossivel.x86_64` (Linux).
 
-Para ter um link público de download (sem precisar de login no GitHub), crie uma tag
-`entrega-v0.1.0` no repositório: o mesmo processo publica uma **Release** com os `.zip`.
+Para uma versão fixa (ex.: para mandar para amigos testarem), crie uma tag `entrega-v0.1.0`:
+o mesmo processo publica uma Release com esse nome.
 
 > O Windows pode mostrar o aviso "O Windows protegeu o computador" (SmartScreen) porque o
 > executável não é assinado digitalmente. Clique em **Mais informações → Executar assim mesmo**.
