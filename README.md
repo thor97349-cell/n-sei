@@ -1,8 +1,9 @@
 # HoraCerta
 
-> 🎮 **Este branch também contém o jogo Roblox _ENTREGA IMPOSSÍVEL_** — veja
-> [`entrega-impossivel/README.md`](entrega-impossivel/README.md). O app HoraCerta abaixo
-> continua intacto.
+> 🎮 **Este branch também contém o jogo _ENTREGA IMPOSSÍVEL_** em duas versões:
+> para PC/Steam em Godot — [`entrega-impossivel-pc/README.md`](entrega-impossivel-pc/README.md) —
+> e o protótipo para Roblox — [`entrega-impossivel/README.md`](entrega-impossivel/README.md).
+> O app HoraCerta abaixo continua intacto.
 
 🔗 **Deploy:** https://n-sei-red.vercel.app
 

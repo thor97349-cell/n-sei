@@ -89,7 +89,7 @@ func _load_tables() -> void:
 		"W/S throttle and brake (hold S when stopped to reverse) • A/D steer • Space handbrake\nE refuel/garage • R recover • Tab phone • M map • C camera • L headlights • H horn • Esc pause\nRight mouse button: look around\nGamepad: RT/LT throttle/brake • stick steer • A handbrake • X refuel • Y camera • Select phone")
 
 	# HUD
-	_add("hud.no_delivery", "📦 SEM ENTREGA — abra o celular [Tab]", "📦 NO DELIVERY — open your phone [Tab]")
+	_add("hud.no_delivery", "📦 PROCURAR ENTREGA — abra o celular [Tab]", "📦 FIND A DELIVERY — open your phone [Tab]")
 	_add("hud.go_pickup", "📍 VÁ ATÉ A COLETA", "📍 GO TO PICKUP")
 	_add("hud.delivering", "📦 ENTREGA ATIVA", "📦 DELIVERY ACTIVE")
 	_add("hud.late", "❌ ENTREGA ATRASADA", "❌ DELIVERY LATE")
@@ -192,6 +192,7 @@ func _load_tables() -> void:
 	_add("hud.event", "Evento", "Event")
 	_add("hud.map_title", "MAPA — M fecha", "MAP — M closes")
 	_add("hud.legend", "📦 coleta  🏁 destino  ⛽ posto  🏠 central", "📦 pickup  🏁 destination  ⛽ gas  🏠 HQ")
+	_add("toast.welcome", "Bem-vindo à EntregaJá! Abra o celular [Tab] e aceite sua primeira entrega.", "Welcome to EntregaJá! Open your phone [Tab] and accept your first delivery.")
 	_add("result.continue", "Novos pedidos no celular [Tab]", "New orders on your phone [Tab]")
 	_add("phone.empty", "Nenhum pedido agora. Atualize em instantes.", "No orders right now. Refresh in a moment.")
 	_add("phone.no_offer_active", "Termine a entrega atual para aceitar outra.", "Finish your current delivery to accept another.")

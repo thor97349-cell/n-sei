@@ -5,6 +5,9 @@ config_version=5
 
 [application]
 
+config/use_custom_user_dir=true
+config/custom_user_dir_name="EntregaImpossivel"
+
 config/name="Entrega Impossível"
 config/description="Entregas contra o relógio numa cidade viva: trânsito, chuva, atalhos arriscados."
 config/version="0.1.0"
@@ -41,6 +44,7 @@ common/physics_interpolation=true
 [rendering]
 
 renderer/rendering_method="forward_plus"
+rendering_device/fallback_to_opengl3=true
 lights_and_shadows/directional_shadow/size=4096
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
 lights_and_shadows/positional_shadow/soft_shadow_filter_quality=2

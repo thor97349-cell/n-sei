@@ -1,0 +1,110 @@
+# Testa e gera os executáveis do jogo "Entrega Impossível" (pasta entrega-impossivel-pc).
+#  • A cada push que mexe no jogo: roda os testes automáticos e exporta Windows + Linux.
+#    Os executáveis ficam em "Actions" → execução → "Artifacts".
+#  • Ao criar uma tag "entrega-v*" (ex.: entrega-v0.1.0): também publica uma Release
+#    com os .zip para qualquer pessoa baixar.
+name: Entrega Impossível (PC)
+
+on:
+  push:
+    paths:
+      - "entrega-impossivel-pc/**"
+      - ".github/workflows/entrega-impossivel-pc.yml"
+    tags:
+      - "entrega-v*"
+  pull_request:
+    paths:
+      - "entrega-impossivel-pc/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.7.2"
+  PROJECT_DIR: entrega-impossivel-pc
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache do Godot e dos modelos de exportação
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-v1
+
+      - name: Baixar Godot ${{ env.GODOT_VERSION }}
+        run: |
+          set -e
+          if [ ! -x ~/godot/godot ]; then
+            mkdir -p ~/godot
+            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            unzip -q /tmp/godot.zip -d ~/godot
+            mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          fi
+          TEMPLATES=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          if [ ! -f "$TEMPLATES/linux_release.x86_64" ]; then
+            mkdir -p "$TEMPLATES"
+            curl -fsSL -o /tmp/templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -q -o -j /tmp/templates.tpz templates/version.txt templates/linux_release.x86_64 templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe -d "$TEMPLATES"
+            rm /tmp/templates.tpz
+          fi
+          ~/godot/godot --version
+
+      - name: Importar o projeto
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: ~/godot/godot --headless --path . --import || true
+
+      - name: Testes automáticos
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -e
+          ~/godot/godot --headless --path . res://tests/compile_check.tscn
+          ~/godot/godot --headless --fixed-fps 120 --path . res://tests/vehicle_test.tscn
+          ~/godot/godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn
+          ~/godot/godot --headless --fixed-fps 60 --path . res://tests/traffic_test.tscn -- 120
+
+      - name: Exportar Windows e Linux
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          set -e
+          mkdir -p build/windows build/linux
+          ~/godot/godot --headless --path . --export-release "Windows Desktop" build/windows/EntregaImpossivel.exe
+          ~/godot/godot --headless --path . --export-release "Linux" build/linux/EntregaImpossivel.x86_64
+          chmod +x build/linux/EntregaImpossivel.x86_64
+          for dir in build/windows build/linux; do
+            cp README.md CREDITS.md "$dir/"
+            mkdir -p "$dir/licencas" && cp assets/fonts/OFL*.txt "$dir/licencas/"
+          done
+          # O jogo exportado precisa abrir sem erros.
+          timeout 120 ./build/linux/EntregaImpossivel.x86_64 --headless --quit-after 300 2>&1 | tee /tmp/run.log
+          if grep -q "SCRIPT ERROR" /tmp/run.log; then echo "O jogo exportado mostrou erros de script"; exit 1; fi
+          (cd build/windows && zip -qr ../EntregaImpossivel-windows.zip .)
+          (cd build/linux && zip -qr ../EntregaImpossivel-linux.zip .)
+
+      - name: Guardar o executável do Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: EntregaImpossivel-windows
+          path: ${{ env.PROJECT_DIR }}/build/windows/
+
+      - name: Guardar o executável do Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: EntregaImpossivel-linux
+          path: ${{ env.PROJECT_DIR }}/build/linux/
+
+      - name: Publicar Release (só em tags entrega-v*)
+        if: startsWith(github.ref, 'refs/tags/entrega-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Entrega Impossível ${{ github.ref_name }}
+          files: |
+            ${{ env.PROJECT_DIR }}/build/EntregaImpossivel-windows.zip
+            ${{ env.PROJECT_DIR }}/build/EntregaImpossivel-linux.zip
