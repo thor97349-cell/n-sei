@@ -8,8 +8,8 @@
 ## Fontes (embutidas no jogo)
 - **Liberation Sans** (Regular e Bold) — SIL Open Font License 1.1.
   © 2010 Google Corporation, © 2012 Red Hat, Inc. Texto completo: `assets/fonts/OFL.txt`.
-- **Noto Color Emoji** — SIL Open Font License 1.1.
-  © 2013-2017 Google Inc. Texto completo: `assets/fonts/OFL-NotoColorEmoji.txt`.
+- **Noto Color Emoji** — SIL Open Font License 1.1 (versão recortada só com os emojis
+  usados no jogo). © 2013-2017 Google Inc. Texto completo: `assets/fonts/OFL-NotoColorEmoji.txt`.
 
 ## Todo o resto
 Cidade, prédios, veículos, texturas (shaders), sons e música do motor são **gerados por
