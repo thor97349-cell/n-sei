@@ -35,6 +35,7 @@ window/stretch/aspect="expand"
 
 common/physics_ticks_per_second=120
 common/max_physics_steps_per_frame=12
+common/physics_interpolation=true
 3d/physics_engine="GodotPhysics3D"
 
 [rendering]

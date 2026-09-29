@@ -5,6 +5,7 @@ extends RefCounted
 ##
 ## torque: torque máximo do motor (N·m)   gears: relações de marcha   final_drive: diferencial
 ## cargo: maior tamanho de encomenda aceito ("S", "M" ou "L")
+## grip: coeficiente de atrito do pneu (≈ aceleração lateral máxima em g × 1,1)
 
 const ORDER := ["van", "hatch", "truck", "sport"]
 
@@ -20,7 +21,7 @@ const DATA := {
 		"mass": 1650.0, "torque": 230.0, "torque_peak_rpm": 2800.0, "idle_rpm": 850.0, "max_rpm": 5600.0,
 		"gears": [3.9, 2.25, 1.45, 1.05, 0.82], "reverse_gear": 3.6, "final_drive": 4.3,
 		"drive": "front", "brake_decel": 8.0, "steer_angle": 0.62, "drag": 0.42,
-		"grip": 1.45, "stiffness": 26.0, "rest_length": 0.26, "travel": 0.2,
+		"grip": 1.05, "stiffness": 26.0, "rest_length": 0.26, "travel": 0.2,
 		"damping_compression": 1.7, "damping_relaxation": 2.6, "center_of_mass_y": -0.05,
 		"fuel_capacity": 60.0, "consumption": 1.0,
 		"cargo": "M",
@@ -35,10 +36,10 @@ const DATA := {
 		"style": "hatch", "limiter_kmh": 185.0,
 		"length": 4.05, "width": 1.76, "height": 1.47,
 		"wheelbase": 2.55, "track": 1.52, "wheel_radius": 0.31, "wheel_width": 0.21,
-		"mass": 1120.0, "torque": 200.0, "torque_peak_rpm": 3500.0, "idle_rpm": 850.0, "max_rpm": 6800.0,
+		"mass": 1120.0, "torque": 172.0, "torque_peak_rpm": 3500.0, "idle_rpm": 850.0, "max_rpm": 6800.0,
 		"gears": [3.6, 2.1, 1.45, 1.1, 0.88], "reverse_gear": 3.5, "final_drive": 4.1,
 		"drive": "front", "brake_decel": 9.5, "steer_angle": 0.62, "drag": 0.30,
-		"grip": 1.65, "stiffness": 32.0, "rest_length": 0.22, "travel": 0.17,
+		"grip": 1.15, "stiffness": 32.0, "rest_length": 0.22, "travel": 0.17,
 		"damping_compression": 1.9, "damping_relaxation": 2.9, "center_of_mass_y": -0.1,
 		"fuel_capacity": 45.0, "consumption": 0.8,
 		"cargo": "S",
@@ -56,7 +57,7 @@ const DATA := {
 		"mass": 3900.0, "torque": 520.0, "torque_peak_rpm": 1800.0, "idle_rpm": 700.0, "max_rpm": 3800.0,
 		"gears": [5.2, 3.0, 1.9, 1.35, 1.0, 0.8], "reverse_gear": 4.8, "final_drive": 4.6,
 		"drive": "rear", "brake_decel": 7.0, "steer_angle": 0.58, "drag": 0.75,
-		"grip": 1.35, "stiffness": 24.0, "rest_length": 0.3, "travel": 0.22,
+		"grip": 0.95, "stiffness": 24.0, "rest_length": 0.3, "travel": 0.22,
 		"damping_compression": 1.8, "damping_relaxation": 2.8, "center_of_mass_y": -0.2,
 		"fuel_capacity": 120.0, "consumption": 2.2,
 		"cargo": "L",
@@ -74,7 +75,7 @@ const DATA := {
 		"mass": 1380.0, "torque": 470.0, "torque_peak_rpm": 4500.0, "idle_rpm": 950.0, "max_rpm": 7800.0,
 		"gears": [3.3, 2.2, 1.65, 1.3, 1.05, 0.86], "reverse_gear": 3.2, "final_drive": 3.7,
 		"drive": "rear", "brake_decel": 11.0, "steer_angle": 0.58, "drag": 0.26,
-		"grip": 1.9, "stiffness": 42.0, "rest_length": 0.18, "travel": 0.14,
+		"grip": 1.35, "stiffness": 42.0, "rest_length": 0.18, "travel": 0.14,
 		"damping_compression": 2.3, "damping_relaxation": 3.4, "center_of_mass_y": -0.15,
 		"fuel_capacity": 65.0, "consumption": 1.5,
 		"cargo": "S",
