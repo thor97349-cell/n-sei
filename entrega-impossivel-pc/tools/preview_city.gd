@@ -18,6 +18,9 @@ const VIEWS := {
 	"farm": [Vector3(-370, 4, 330), Vector3(-450, 3, 290)],
 	"mall": [Vector3(-222, 5, 70), Vector3(-150, 2, 30)],
 	"intersection": [Vector3(-75, 1.6, -95), Vector3(-75, 3, -225)],
+	"trees_close": [Vector3(300, 2.2, -50), Vector3(318, 4, -20)],
+	"palms": [Vector3(-30, 2.0, 108), Vector3(10, 4, 124)],
+	"street_trees": [Vector3(245, 1.8, -228), Vector3(320, 4, -236)],
 }
 
 var _prefix := "user://city"

@@ -60,7 +60,7 @@ func _build_sounds() -> void:
 	_streams["fine"] = _shutter()
 	_streams["impact"] = _impact()
 	_streams["horn"] = _horn()
-	_streams["skid"] = _noise_loop(1.0, 0.25, 0.55)
+	_streams["skid"] = _tire_squeal()
 	_streams["rain"] = _noise_loop(2.0, 0.35, 0.2)
 	_streams["wind"] = _noise_loop(2.0, 0.25, 0.04)
 	_streams["thunder"] = _thunder()
@@ -132,6 +132,46 @@ func _impact() -> AudioStreamWAV:
 		var thump := sin(TAU * (70.0 - t * 60.0) * t) * exp(-t * 9.0)
 		samples.append((thump * 0.8 + low * 2.0 * exp(-t * 14.0)) * 0.6)
 	return _to_wav(samples)
+
+
+## Pneu cantando: tom agudo com vibrato + um pouco de ruído em banda (não é chiado branco).
+## 2 s exatos com frequências de ciclos inteiros, para o loop não estalar.
+func _tire_squeal() -> AudioStreamWAV:
+	var seconds := 2.0
+	var count := int(seconds * MIX_RATE)
+	var fade := int(0.1 * MIX_RATE)
+	var raw := PackedFloat32Array()
+	var phase := 0.0
+	var low := 0.0
+	var lower := 0.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 33
+	# Gera um pouco a mais para emendar o fim no começo sem salto.
+	for i in count + fade:
+		var t := float(i) / MIX_RATE
+		var frequency := 780.0 * (1.0 + 0.035 * sin(TAU * 5.5 * t) + 0.015 * sin(TAU * 11.5 * t))
+		phase = fmod(phase + frequency / MIX_RATE, 1.0)
+		var p := phase * TAU
+		var tone := sin(p) * 0.6 + sin(p * 2.0 + 0.3) * 0.2 + sin(p * 3.0 + 1.0) * 0.08
+		# Pouco ruído, só na faixa média (textura de borracha).
+		var white := rng.randf_range(-1.0, 1.0)
+		low = lerpf(low, white, 0.3)
+		lower = lerpf(lower, low, 0.06)
+		var band := (low - lower) * (0.7 + 0.3 * sin(TAU * 3.0 * t))
+		raw.append(tanh(tone * 0.9 + band * 0.12))
+	var samples := PackedFloat32Array()
+	samples.resize(count)
+	for j in count:
+		samples[j] = raw[j + fade]
+	for k in fade:
+		var w := float(k) / fade
+		samples[count - fade + k] = raw[count + k] * (1.0 - w) + raw[k] * w
+	var peak := 0.0001
+	for value in samples:
+		peak = maxf(peak, absf(value))
+	for i in count:
+		samples[i] = samples[i] / peak * 0.5
+	return _to_wav(samples, true)
 
 
 ## Trovão: ronco grave com estalos no começo e decaimento longo.

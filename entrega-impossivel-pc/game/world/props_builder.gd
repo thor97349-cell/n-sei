@@ -11,6 +11,9 @@ const LAMP_SPACING := 36.0
 const LAMP_HEIGHT := 7.6
 const LAMP_ARM := 2.0
 const CHUNK := 200.0
+## Árvores em pedaços menores (a troca entre a versão detalhada e a simples é por pedaço).
+const TREE_CHUNK := 90.0
+const TREE_DETAIL_RANGE := 190.0
 const SIGN_GREEN := Color(0.04, 0.34, 0.17)
 const STONE := Color(0.7, 0.68, 0.64)
 const WOOD := Color(0.42, 0.29, 0.18)
@@ -31,9 +34,11 @@ var _detail := MeshKit.new()
 var _paint := MeshKit.new()
 var _water := MeshKit.new()
 var _lights := MeshKit.new()
-var _round_trees: Array[Transform3D] = []
-var _pines: Array[Transform3D] = []
+## Árvores por espécie (FoliageKit.SPECIES): transformações e dados de cor por árvore.
+var _trees := {}
+var _tree_custom := {}
 var _lamps: Array[Transform3D] = []
+var _lamp_shapes: Array[CollisionShape3D] = []
 ## Onde não pode haver poste/árvore (entradas, becos, vagas de carga).
 var _keep_clear: Array[Rect2] = []
 
@@ -82,7 +87,7 @@ func _collider(center: Vector3, size: Vector3, basis: Basis = Basis()) -> void:
 	_static.add_child(shape)
 
 
-func _cylinder_collider(base: Vector3, radius: float, height: float) -> void:
+func _cylinder_collider(base: Vector3, radius: float, height: float) -> CollisionShape3D:
 	var shape := CollisionShape3D.new()
 	var cylinder := CylinderShape3D.new()
 	cylinder.radius = radius
@@ -90,6 +95,7 @@ func _cylinder_collider(base: Vector3, radius: float, height: float) -> void:
 	shape.shape = cylinder
 	shape.position = base + Vector3(0, height / 2.0, 0)
 	_static.add_child(shape)
+	return shape
 
 
 ## Caixa num referencial (origem + base): `local` = centro da base da caixa.
@@ -149,14 +155,24 @@ func _yaw_to(direction: Vector3) -> float:
 	return atan2(direction.x, direction.z)
 
 
-func _add_tree(base: Vector3, pine: bool, collide: bool = true) -> void:
-	var scale := _rng.randf_range(0.8, 1.3)
-	var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(scale, scale * _rng.randf_range(0.9, 1.15), scale))
-	var xform := Transform3D(basis, base)
+## Planta uma árvore. `species` vazio = folhosa sorteada (redonda, alta ou guarda-chuva).
+func _add_tree(base: Vector3, pine: bool, collide: bool = true, species: String = "") -> void:
 	if pine:
-		_pines.append(xform)
-	else:
-		_round_trees.append(xform)
+		species = "pine"
+	elif species == "":
+		var roll := _rng.randf()
+		species = "round" if roll < 0.5 else ("tall" if roll < 0.78 else "umbrella")
+	var scale := _rng.randf_range(0.8, 1.25)
+	if species == "palm":
+		scale = _rng.randf_range(0.85, 1.15)
+	var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(scale, scale * _rng.randf_range(0.9, 1.12), scale))
+	if not _trees.has(species):
+		_trees[species] = [] as Array[Transform3D]
+		_tree_custom[species] = []
+	(_trees[species] as Array[Transform3D]).append(Transform3D(basis, base))
+	# Cor: variação de verde; alguns ipês floridos (amarelos ou rosas) entre as folhosas.
+	var flowering := 1.0 if species in ["round", "umbrella"] and _rng.randf() < 0.12 else 0.0
+	(_tree_custom[species] as Array).append(Color(_rng.randf(), flowering, 1.0 if _rng.randf() < 0.5 else 0.0, 0.0))
 	if collide:
 		_cylinder_collider(base, 0.25 * scale, 3.0)
 
@@ -165,7 +181,7 @@ func _add_lamp(base: Vector3, yaw: float) -> void:
 	var xform := Transform3D(Basis(Vector3.UP, yaw), base)
 	_lamps.append(xform)
 	_info.street_lamps.append(xform * Vector3(0, LAMP_HEIGHT - 0.15, LAMP_ARM))
-	_cylinder_collider(base, 0.16, LAMP_HEIGHT)
+	_lamp_shapes.append(_cylinder_collider(base, 0.16, LAMP_HEIGHT))
 
 
 func _bench(center: Vector3, yaw: float) -> void:
@@ -390,7 +406,7 @@ func _plaza() -> void:
 		_box(_detail, Vector3(bed.get_center().x, curb, bed.get_center().y), Basis(), Vector3.ZERO, Vector3(bed.size.x + 0.4, 0.12, bed.size.y + 0.4), STONE.darkened(0.1))
 		for i in 4:
 			var p := Vector3(_rng.randf_range(bed.position.x + 3, bed.end.x - 3), curb, _rng.randf_range(bed.position.y + 3, bed.end.y - 3))
-			_add_tree(p, false)
+			_add_tree(p, false, true, "palm" if i % 2 == 0 else "")
 	var cover := _mesh(grass.commit(Mats.ground(0)), "PlazaGrass")
 	cover.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for i in 10:
@@ -610,7 +626,7 @@ func _promenade() -> void:
 	while x < bmax.x - 8.0:
 		if absf(x - middle) > 6.0:
 			_bench(Vector3(x, curb, bmax.y - 3.2), 0.0)
-			_add_tree(Vector3(x + 5.0, curb, walk_min - 3.0), false)
+			_add_tree(Vector3(x + 5.0, curb, walk_min - 3.0), false, true, "palm")
 			if i % 2 == 0:
 				_add_lamp(Vector3(x + 5.0, curb, walk_min + 0.8), 0.0)
 		x += 12.0
@@ -1034,31 +1050,54 @@ func _commit() -> void:
 	if not _lights.is_empty():
 		var lights := _mesh(_lights.commit(Mats.night_light(Color(1.0, 0.97, 0.9), 10.0)), "FloodLights")
 		lights.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_multimesh_chunks("Lamps", _lamp_mesh(), _lamps, 900.0)
-	_multimesh_chunks("Trees", _round_tree_mesh(), _round_trees, 1100.0)
-	_multimesh_chunks("Pines", _pine_mesh(), _pines, 1100.0)
+	var lamp_places := _multimesh_chunks("Lamps", _lamp_mesh(), _lamps, 0.0, 900.0, CHUNK)
+	for i in _lamps.size():
+		var place: Array = lamp_places[i]
+		_info.breakable_lamps.append([_lamp_shapes[i], place[0], place[1], _lamps[i], _info.street_lamps[i]])
+	# Árvores: versão com folhas de perto e versão simples de longe (troca suave).
+	for species: String in _trees:
+		var transforms: Array[Transform3D] = _trees[species]
+		var custom: Array = _tree_custom[species]
+		_multimesh_chunks("Trees_%s" % species, FoliageKit.tree_mesh(species, true), transforms, 0.0, TREE_DETAIL_RANGE, TREE_CHUNK, custom, 25.0)
+		_multimesh_chunks("TreesFar_%s" % species, FoliageKit.tree_mesh(species, false), transforms, TREE_DETAIL_RANGE - 25.0, 1300.0, TREE_CHUNK, custom, 25.0)
 
 
-func _multimesh_chunks(prefix: String, mesh: Mesh, transforms: Array[Transform3D], range_end: float) -> void:
+## Divide instâncias em pedaços (para o motor descartar o que está fora da câmera).
+## Devolve, para cada transformação de entrada, [MultiMesh, índice] onde ela ficou.
+func _multimesh_chunks(prefix: String, mesh: Mesh, transforms: Array[Transform3D], range_begin: float, range_end: float, cell: float, custom: Array = [], fade: float = 0.0) -> Array:
 	var cells := {}
-	for xform in transforms:
-		var key := Vector2i(floori(xform.origin.x / CHUNK), floori(xform.origin.z / CHUNK))
+	for i in transforms.size():
+		var xform := transforms[i]
+		var key := Vector2i(floori(xform.origin.x / cell), floori(xform.origin.z / cell))
 		if not cells.has(key):
 			cells[key] = []
-		cells[key].append(xform)
+		cells[key].append(i)
+	var placements := []
+	placements.resize(transforms.size())
 	for key: Vector2i in cells:
 		var list: Array = cells[key]
 		var multimesh := MultiMesh.new()
 		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.use_custom_data = not custom.is_empty()
 		multimesh.mesh = mesh
 		multimesh.instance_count = list.size()
-		for i in list.size():
-			multimesh.set_instance_transform(i, list[i])
+		for j in list.size():
+			var index: int = list[j]
+			multimesh.set_instance_transform(j, transforms[index])
+			if not custom.is_empty():
+				multimesh.set_instance_custom_data(j, custom[index])
+			placements[index] = [multimesh, j]
 		var instance := MultiMeshInstance3D.new()
 		instance.name = "%s_%d_%d" % [prefix, key.x, key.y]
 		instance.multimesh = multimesh
+		instance.visibility_range_begin = range_begin
 		instance.visibility_range_end = range_end
+		if fade > 0.0:
+			instance.visibility_range_begin_margin = fade if range_begin > 0.0 else 0.0
+			instance.visibility_range_end_margin = fade
+			instance.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		_holder.add_child(instance)
+	return placements
 
 
 func _lamp_mesh() -> ArrayMesh:
@@ -1071,46 +1110,3 @@ func _lamp_mesh() -> ArrayMesh:
 	var bulb := MeshKit.new()
 	bulb.add_box(Transform3D(Basis(), Vector3(0, LAMP_HEIGHT - 0.16, LAMP_ARM)), Vector3(0.36, 0.05, 0.7), Color.WHITE, Vector2.ZERO, false, false)
 	return bulb.commit(Mats.night_light(Color(1.0, 0.82, 0.6), 9.0), mesh)
-
-
-func _round_tree_mesh() -> ArrayMesh:
-	var trunk := MeshKit.new()
-	trunk.add_cylinder(Transform3D(), 0.17, 3.2, 8, Color(0.3, 0.22, 0.16), false)
-	var mesh := trunk.commit(Mats.vertex_colored("bark", 0.9))
-	var sphere := SphereMesh.new()
-	sphere.radial_segments = 12
-	sphere.rings = 7
-	sphere.radius = 1.0
-	sphere.height = 2.0
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for blob: Array in [
-		[Vector3(0, 4.4, 0), Vector3(2.4, 2.0, 2.4)],
-		[Vector3(1.3, 3.9, 0.5), Vector3(1.6, 1.4, 1.6)],
-		[Vector3(-1.1, 4.0, -0.8), Vector3(1.7, 1.5, 1.7)],
-		[Vector3(0.2, 5.5, 0.3), Vector3(1.6, 1.3, 1.6)],
-		[Vector3(-0.6, 3.8, 1.2), Vector3(1.5, 1.3, 1.5)],
-	]:
-		st.append_from(sphere, 0, Transform3D(Basis().scaled(blob[1]), blob[0]))
-	st.set_material(Mats.foliage())
-	return st.commit(mesh)
-
-
-func _pine_mesh() -> ArrayMesh:
-	var trunk := MeshKit.new()
-	trunk.add_cylinder(Transform3D(), 0.2, 2.4, 8, Color(0.28, 0.2, 0.14), false)
-	var mesh := trunk.commit(Mats.vertex_colored("bark", 0.9))
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for layer: Array in [[1.6, 2.8, 3.6], [3.6, 2.2, 3.2], [5.4, 1.5, 2.8], [7.0, 0.9, 2.2]]:
-		var cone := CylinderMesh.new()
-		cone.top_radius = 0.0
-		cone.bottom_radius = layer[1]
-		cone.height = layer[2]
-		cone.radial_segments = 10
-		cone.rings = 1
-		cone.cap_bottom = true
-		cone.cap_top = false
-		st.append_from(cone, 0, Transform3D(Basis(), Vector3(0, float(layer[0]) + float(layer[2]) / 2.0, 0)))
-	st.set_material(Mats.foliage_pine())
-	return st.commit(mesh)

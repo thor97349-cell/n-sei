@@ -18,6 +18,13 @@ const IDLE_FUEL_PER_SECOND := 0.0004
 const IMPACT_THRESHOLD := 2.2
 ## Velocidade máxima de ré (m/s).
 const REVERSE_LIMIT := 7.5
+## Quanto do limite de aderência o volante todo pede (1 = exatamente o limite: a curva
+## mais fechada possível sem o pneu escorregar nem cantar).
+const STEER_GRIP_MARGIN := 1.0
+## Controle de estabilidade: giro (rad/s) acima do esperado que é tolerado antes de corrigir.
+const YAW_TOLERANCE := 0.3
+## Depois de uma batida: segundos em que o carro recebe ajuda para não sair girando/capotar.
+const IMPACT_ASSIST_SECONDS := 0.9
 
 var id := "van"
 var spec: Dictionary = {}
@@ -34,6 +41,8 @@ var fuel := 60.0
 var speed := 0.0
 var odometer := 0.0
 var wheel_slip := 0.0
+## 0..1: quanto o pneu está "cantando" (derrapagem lateral, travada ou patinada).
+var tire_squeal := 0.0
 var braking := false
 var headlights_on := false
 var headlights_auto := true
@@ -56,6 +65,9 @@ var _frontal_area := 2.0
 var _out_of_fuel_sent := false
 var _audio: EngineAudio
 var _horn: AudioStreamPlayer
+var _impact_assist := 0.0
+var _yaw_inertia := 1000.0
+var _roll_inertia := 500.0
 
 
 ## Monta o veículo (malha, rodas, colisão, luzes). Chame antes de adicionar à cena.
@@ -80,10 +92,20 @@ func setup(vehicle_id: String, color: Color = Color(0, 0, 0, 0), with_audio: boo
 	linear_damp = 0.0
 	angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 	angular_damp = 0.25
+	# Pouco atrito com paredes: o carro raspa e desliza em vez de "agarrar" e girar.
 	var material := PhysicsMaterial.new()
-	material.friction = 0.35
-	material.bounce = 0.05
+	material.friction = 0.2
+	material.bounce = 0.0
 	physics_material_override = material
+	# A carroceria nunca encosta no chão (as rodas são raios): qualquer contato dela é
+	# batida ou raspada, e liga a ajuda de estabilidade.
+	contact_monitor = true
+	max_contacts_reported = 4
+	var length: float = spec["length"]
+	var width: float = spec["width"]
+	var height: float = spec["height"]
+	_yaw_inertia = mass * (length * length + width * width) / 12.0
+	_roll_inertia = mass * (width * width + height * height) / 12.0
 	_frontal_area = float(spec["width"]) * float(spec["height"]) * 0.82
 	fuel = float(spec["fuel_capacity"])
 
@@ -216,9 +238,12 @@ func _physics_process(delta: float) -> void:
 	_update_engine(delta, drive)
 	_apply_drive(delta, drive, brake_input)
 	_apply_steering(delta)
+	_apply_stability(delta)
 	_apply_aero()
 	_use_fuel(delta, drive)
+	_check_breakables(delta)
 	_detect_impacts(delta)
+	_update_squeal(delta)
 	_update_lights(brake_input)
 
 
@@ -228,8 +253,12 @@ func _read_player_input(delta: float) -> void:
 	input_handbrake = Input.is_action_pressed("handbrake")
 	var target := Input.get_action_strength("steer_right") - Input.get_action_strength("steer_left")
 	target = clampf(target, -1.0, 1.0)
-	# Teclado: o volante gira aos poucos e volta sozinho; controle analógico é direto.
-	var rate := 3.2 if absf(target) > absf(input_steer) else 5.5
+	# Teclado: o volante gira aos poucos (mais calmo em alta velocidade) e volta sozinho
+	# ao centro; ao trocar de lado passa rápido pelo meio. Controle analógico quase direto.
+	var fast := clampf(absf(speed) / 25.0, 0.0, 1.0)
+	var rate := lerpf(4.5, 2.6, fast)
+	if absf(target) < absf(input_steer) or signf(target) != signf(input_steer):
+		rate = 6.5
 	input_steer = move_toward(input_steer, target, rate * delta)
 	if Input.is_action_just_pressed("headlights"):
 		headlights_auto = false
@@ -357,19 +386,80 @@ func _apply_drive(delta: float, drive: float, brake_input: float) -> void:
 		if decel > 0.0:
 			wheel.engine_force = 0.0
 		wheel.brake = quarter * decel
-		wheel.wheel_friction_slip = float(spec["grip"]) * grip_factor * (0.5 if input_handbrake and not front else 1.0)
+		# Traseira com um pouco mais de aderência: o carro tende a sair de frente (seguro).
+		var bias := 1.0 if front else 1.08
+		wheel.wheel_friction_slip = float(spec["grip"]) * grip_factor * (0.5 if input_handbrake and not front else bias)
 	var slip := 0.0
 	for wheel in _wheels:
 		slip = maxf(slip, 1.0 - wheel.get_skidinfo())
 	wheel_slip = slip if not abs_active else slip * 0.5
 
 
+## Direção previsível: o volante todo sempre pede a curva mais fechada que os pneus
+## aguentam naquela velocidade (um pouco além, para sentir o limite). Assim meio volante
+## é meia curva em qualquer velocidade, em vez de "tudo ou nada" em alta.
+func max_steer_angle() -> float:
+	var base: float = spec["steer_angle"]
+	var v := absf(speed)
+	if input_handbrake or v < 1.0:
+		return base
+	var lateral_limit := float(spec["grip"]) * grip_factor * 9.8
+	var radius := v * v / lateral_limit
+	return clampf(atan(float(spec["wheelbase"]) / radius) * STEER_GRIP_MARGIN, 0.03, base)
+
+
 func _apply_steering(delta: float) -> void:
-	var sensitivity := clampf(absf(speed) / 32.0, 0.0, 1.0)
-	var max_angle := float(spec["steer_angle"]) * lerpf(1.0, 0.3, sensitivity)
-	var target := -input_steer * max_angle
-	_steer = move_toward(_steer, target, delta * 2.6)
+	var limit := max_steer_angle()
+	var target := -input_steer * limit
+	# As rodas acompanham o volante rápido (a suavização fica no volante).
+	_steer = move_toward(_steer, target, delta * maxf(limit, 0.25) * 8.0)
 	steering = _steer
+
+
+func _wheels_on_ground() -> int:
+	var count := 0
+	for wheel in _wheels:
+		if wheel.is_in_contact():
+			count += 1
+	return count
+
+
+## Ajudas discretas (arcade): controle de estabilidade, carro nivelado no ar e
+## amortecimento depois de batidas para o carro não sair rodopiando ou capotar.
+func _apply_stability(delta: float) -> void:
+	var up := global_basis.y
+	var local_spin := global_basis.inverse() * angular_velocity
+	var on_ground := _wheels_on_ground()
+	var v := linear_velocity.length()
+	if on_ground >= 3 and v > 3.0:
+		# Giro esperado para o ângulo das rodas; o que passar disso é derrapagem de traseira.
+		var expected := speed * tan(steering) / float(spec["wheelbase"])
+		var tolerance := YAW_TOLERANCE + (1.4 if input_handbrake else 0.0)
+		var excess := local_spin.y - expected
+		if absf(excess) > tolerance:
+			var correction := (absf(excess) - tolerance) * signf(excess)
+			apply_torque(-up * correction * _yaw_inertia * 5.0)
+	# Tombando (> 20°) ou no ar: puxa de volta para ficar de pé.
+	var tilt := up.angle_to(Vector3.UP)
+	if tilt > deg_to_rad(20.0) or on_ground == 0:
+		var axis := up.cross(Vector3.UP)
+		if axis.length() > 0.001:
+			apply_torque(axis.normalized() * tilt * _roll_inertia * 6.0)
+		apply_torque(-(global_basis.x * local_spin.x + global_basis.z * local_spin.z) * _roll_inertia * 3.0)
+	# Encostando em algo ou logo depois de uma batida: tira o excesso de giro e de balanço.
+	if get_contact_count() > 0:
+		_impact_assist = maxf(_impact_assist, 0.5)
+	if _impact_assist > 0.0:
+		_impact_assist -= delta
+		# Raspando/batendo: segura a carroceria de pé (sem aquele tombo de lado).
+		if tilt > deg_to_rad(4.0):
+			var level_axis := up.cross(Vector3.UP)
+			if level_axis.length() > 0.001:
+				apply_torque(level_axis.normalized() * tilt * _roll_inertia * 14.0)
+		local_spin.x *= exp(-delta * 8.0)
+		local_spin.z *= exp(-delta * 8.0)
+		local_spin.y = clampf(local_spin.y, -1.1, 1.1) * exp(-delta * 2.5)
+		angular_velocity = global_basis * local_spin
 
 
 func _apply_aero() -> void:
@@ -404,12 +494,64 @@ func _detect_impacts(delta: float) -> void:
 	var change := (linear_velocity - _last_velocity).length()
 	# Frear forte muda ~0,1 m/s por passo; batidas mudam muito mais de uma vez.
 	var expected := 25.0 * delta
-	if change - expected > IMPACT_THRESHOLD and _impact_cooldown <= 0.0:
-		_impact_cooldown = 0.35
-		var strength := change - expected
-		impacted.emit(strength)
-		Sfx.play("impact", linear_to_db(clampf(strength / 12.0, 0.15, 1.0)), randf_range(0.85, 1.1))
+	if change - expected > IMPACT_THRESHOLD:
+		_impact_assist = IMPACT_ASSIST_SECONDS
+		if _impact_cooldown <= 0.0:
+			_impact_cooldown = 0.35
+			var strength := change - expected
+			impacted.emit(strength)
+			Sfx.play("impact", linear_to_db(clampf(strength / 12.0, 0.15, 1.0)), randf_range(0.85, 1.1))
 	_last_velocity = linear_velocity
+
+
+## Pneu cantando: derrapagem lateral de verdade (ângulo entre para onde o carro aponta e
+## para onde ele vai), roda travada freando ou patinando. Curva normal não canta.
+func _update_squeal(delta: float) -> void:
+	var target := 0.0
+	var v := Vector2(linear_velocity.x, linear_velocity.z).length()
+	if v > 5.0 and _wheels_on_ground() >= 2:
+		# Derrapagem em cada eixo: ângulo entre para onde a roda aponta e para onde ela
+		# realmente anda. Rolando normal (mesmo em curva fechada) fica perto de zero.
+		var half_base := float(spec["wheelbase"]) / 2.0
+		var forward := global_basis.z
+		var rear_slip := _axle_slip(-half_base, forward)
+		var front_slip := _axle_slip(half_base, forward.rotated(global_basis.y, steering))
+		target = smoothstep(8.0, 18.0, maxf(rear_slip, front_slip))
+		# Rodas travadas (freio além do ABS) ou patinando na arrancada.
+		target = maxf(target, smoothstep(0.35, 0.8, wheel_slip) * (0.7 if braking or input_throttle > 0.5 else 0.0))
+		target *= clampf((v - 5.0) / 6.0, 0.0, 1.0)
+	# Sobe rápido e desce devagar (sem liga-desliga a cada quadro).
+	tire_squeal = move_toward(tire_squeal, target, delta * (6.0 if target > tire_squeal else 2.5))
+
+
+func _axle_slip(offset: float, heading: Vector3) -> float:
+	var point := global_basis * Vector3(0, 0, offset)
+	var velocity := linear_velocity + angular_velocity.cross(point)
+	velocity.y = 0.0
+	heading.y = 0.0
+	if velocity.length() < 2.0 or heading.length() < 0.01:
+		return 0.0
+	var angle := rad_to_deg(heading.normalized().angle_to(velocity.normalized()))
+	return 180.0 - angle if angle > 90.0 else angle
+
+
+## Postes de luz quebram quando o carro chega neles: o poste cai e o carro perde só parte
+## da velocidade (em vez de parar seco). Verificado antes do contato acontecer.
+func _check_breakables(delta: float) -> void:
+	if Breakables.current == null or linear_velocity.length() < 3.0:
+		return
+	var reach := absf(speed) * delta * 2.0 + 0.3
+	var half := Vector2(float(spec["width"]) / 2.0 + 0.3, float(spec["length"]) / 2.0 + reach)
+	var hit := Breakables.current.hit_test(global_transform, half, linear_velocity)
+	if hit <= 0.0:
+		return
+	var before := linear_velocity
+	linear_velocity = before * 0.8
+	_last_velocity = linear_velocity
+	_impact_assist = IMPACT_ASSIST_SECONDS
+	var strength := before.length() * 0.2
+	impacted.emit(strength)
+	Sfx.play("impact", linear_to_db(clampf(strength / 10.0, 0.2, 0.9)), randf_range(1.15, 1.35))
 
 
 func _update_lights(brake_input: float) -> void:

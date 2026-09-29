@@ -13,6 +13,8 @@ class CityInfo:
 	var street_lamps: Array[Vector3] = []
 	## Pontos para árvores nos quintais (preenchidos pelo BuildingBuilder).
 	var yard_trees: Array[Vector3] = []
+	## Postes de luz que quebram: [CollisionShape3D, MultiMesh, índice, Transform3D, posição da luz].
+	var breakable_lamps: Array = []
 	var building_count := 0
 
 	func set_shortcut_open(id: String, open: bool) -> void:

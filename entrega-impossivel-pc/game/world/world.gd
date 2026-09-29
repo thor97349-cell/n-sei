@@ -11,6 +11,7 @@ var info: CityBuilder.CityInfo
 var graph: RoadGraph
 var lights: TrafficLights
 var traffic: TrafficSystem
+var breakables: Breakables
 var camera: Camera3D
 
 var _pool: Array[OmniLight3D] = []
@@ -34,6 +35,13 @@ func _ready() -> void:
 	traffic.name = "Traffic"
 	add_child(traffic)
 	traffic.setup(graph, lights)
+	breakables = Breakables.new()
+	breakables.name = "Breakables"
+	add_child(breakables)
+	breakables.setup(info.breakable_lamps)
+	# Poste derrubado não acende; volta a acender quando é recolocado.
+	breakables.broken.connect(func(light: Vector3) -> void: info.street_lamps.erase(light))
+	breakables.restored.connect(func(light: Vector3) -> void: info.street_lamps.append(light))
 	for i in STREET_LIGHTS:
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.8, 0.58)
@@ -51,6 +59,7 @@ func _ready() -> void:
 func set_camera(value: Camera3D) -> void:
 	camera = value
 	traffic.camera = value
+	breakables.camera = value
 
 
 func _process(delta: float) -> void:
