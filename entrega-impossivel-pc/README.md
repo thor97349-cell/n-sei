@@ -8,8 +8,14 @@ atravessa a cidade (trânsito, semáforos, chuva, acidentes, atalhos) e entrega 
 prazo. Quanto mais rápido e com a carga inteira, mais você ganha. Com o dinheiro, compra
 veículos melhores.
 
-![Cidade vista do alto](docs/cidade.jpg)
-![Dirigindo com o GPS](docs/dirigindo.jpg)
+| | |
+|---|---|
+| ![Cidade vista do alto](docs/cidade.jpg) | ![Dirigindo com o GPS e o prazo](docs/dirigindo.jpg) |
+| ![Celular com os pedidos](docs/celular.jpg) | ![Pagamento da entrega](docs/resultado.jpg) |
+| ![Noite com tempestade](docs/noite-chuva.jpg) | ![Garagem](docs/garagem.jpg) |
+
+*(Capturas feitas em renderização por software, sem placa de vídeo; num PC real a imagem
+fica mais nítida e suave.)*
 
 > **Você não precisa instalar nada para jogar.** Para *editar* o jogo, basta o Godot
 > (programa gratuito de ~100 MB, sem cadastro e sem royalties). Unity não é necessário.
@@ -182,7 +188,8 @@ com a extensão gratuita **GodotSteam**). Isso **ainda não foi feito**.
   execução só no Linux (o ambiente de desenvolvimento não tem Windows). Teste antes de
   publicar.
 - **Desempenho** não foi medido em placas de vídeo reais — só em renderização por
-  software. Use os níveis de qualidade nas Opções se ficar pesado.
+  software. A parte de lógica (física a 120 Hz, trânsito com 30 carros, entregas, HUD)
+  custa ~7 ms de CPU por quadro. Use os níveis de qualidade nas Opções se ficar pesado.
 - Sem integração com Steam (conquistas/overlay), sem multiplayer, sem trilha sonora.
 - O modo "capô" substitui a visão de dentro do carro (não há interior modelado).
 
