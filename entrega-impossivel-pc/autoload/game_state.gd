@@ -4,8 +4,10 @@ extends Node
 ## Salvamento seguro: grava num arquivo temporário e só então substitui o save; o save
 ## anterior vira backup (.bak). Se o arquivo principal estiver corrompido, o backup é usado.
 
-## Nome do arquivo de save (os testes usam outro para não mexer no save do jogador).
+## Nome do arquivo de save (os testes e o modo dev usam outro para não mexer no save do jogador).
 var slot := "save"
+## Modo dev: tudo liberado e o painel de testes (F1). Usa o save "dev".
+var dev_mode := false
 const SAVE_VERSION := 1
 const MAX_MONEY := 999_999_999
 

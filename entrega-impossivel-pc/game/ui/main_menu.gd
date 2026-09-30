@@ -5,6 +5,7 @@ extends Control
 signal continue_requested
 signal new_game_requested
 signal settings_requested
+signal dev_requested
 signal quit_requested
 
 var _buttons: VBoxContainer
@@ -44,6 +45,8 @@ func _ready() -> void:
 		_add_button("menu.continue", func() -> void: continue_requested.emit())
 	_add_button("menu.new_game", _on_new_game)
 	_add_button("menu.settings", func() -> void: settings_requested.emit())
+	_add_button("menu.dev", func() -> void: dev_requested.emit())
+	_buttons.get_child(_buttons.get_child_count() - 1).tooltip_text = Loc.t("menu.dev_hint")
 	_add_button("menu.credits", _toggle_credits)
 	if OS.get_name() != "Web":
 		_add_button("menu.quit", func() -> void: quit_requested.emit())

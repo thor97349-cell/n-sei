@@ -94,7 +94,7 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 	parts.add_box(Transform3D(Basis(), Vector3(0, y0 + front_bottom - 0.04, front_z - 0.08)), Vector3(front_w * 2.0 + 0.04, 0.3 if truck else 0.26, 0.24), plastic, Vector2.ZERO, false, false)
 	if truck:
 		# Caminhão: a traseira da cabine fica escondida pelo baú; grade, portas etc. à parte.
-		_truck_cab_details(parts, sections, y0, color)
+		_truck_cab_details(parts, sections, y0, color, BRAND_COLOR if branded else Color(0, 0, 0, 0))
 	else:
 		parts.add_box(Transform3D(Basis(), Vector3(0, y0 + rear_bottom - 0.04, rear_z + 0.08)), Vector3(rear_w * 2.0 + 0.04, 0.26, 0.24), plastic, Vector2.ZERO, false, false)
 		parts.add_box(Transform3D(Basis(), Vector3(0, y0 + lerpf(front_bottom, front_belt, 0.35), front_z + 0.005)), Vector3(front_w * 0.9, (front_belt - front_bottom) * 0.3, 0.05), Color(0.03, 0.03, 0.035), Vector2.ZERO, false, false)
@@ -141,12 +141,19 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 		_truck_box(root, spec, y0, float(profile["start"]) * length - length / 2.0, branded, BRAND_COLOR if branded else color)
 	elif branded and style == "van":
 		_brand_labels(root, width / 2.0 + 0.012, y0 + 1.5, -0.55, 0.42)
+	var wheels := wheel_mesh(radius, float(spec["wheel_width"]))
+	var rear_wheels := wheels
+	if truck:
+		# Roda de aço de caminhão; atrás, rodado duplo (só o visual).
+		wheels = truck_wheel_mesh(radius, float(spec["wheel_width"]), false)
+		rear_wheels = truck_wheel_mesh(radius, float(spec["wheel_width"]), true)
 	return {
 		"body": root,
 		"collision_points": collision,
 		"materials": materials,
 		"headlights": headlight_positions,
-		"wheel_mesh": wheel_mesh(radius, float(spec["wheel_width"])),
+		"wheel_mesh": wheels,
+		"rear_wheel_mesh": rear_wheels,
 	}
 
 
@@ -337,7 +344,7 @@ static func _mirrors(root: Node3D, sections: Array[Dictionary], y0: float, truck
 
 ## Detalhes da cabine do caminhão: grade com frisos, emblema, piscas, portas, degraus
 ## e luzes de teto.
-static func _truck_cab_details(parts: MeshKit, sections: Array[Dictionary], y0: float, paint: Color) -> void:
+static func _truck_cab_details(parts: MeshKit, sections: Array[Dictionary], y0: float, paint: Color, accent: Color) -> void:
 	var front: Dictionary = sections[sections.size() - 1]
 	var z: float = front["z"]
 	var w: float = front["w"]
@@ -368,6 +375,19 @@ static func _truck_cab_details(parts: MeshKit, sections: Array[Dictionary], y0: 
 	# Luzes de teto (âmbar) na frente da cabine.
 	for x: float in [-0.32, 0.0, 0.32]:
 		parts.add_box(Transform3D(Basis(), Vector3(x, y0 + 2.64, 3.0)), Vector3(0.13, 0.05, 0.07), Color(1.0, 0.6, 0.12), Vector2.ZERO, false, false)
+	# Quebra-sol sobre o para-brisa e limpadores.
+	var window_top := float(front["roof"]) - float(front["gap"])
+	parts.add_box(Transform3D(Basis(), Vector3(0, y0 + window_top + 0.02, z + 0.06)), Vector3(w * 1.92, 0.06, 0.16), black, Vector2.ZERO, false, false)
+	for x: float in [-0.42, 0.34]:
+		parts.add_box(Transform3D(Basis(Vector3.FORWARD, 0.18), Vector3(x, y0 + belt + 0.05, z + 0.015)), Vector3(0.6, 0.022, 0.02), black, Vector2.ZERO, false, false)
+	# Faróis de neblina no para-choque.
+	for side: float in [-1.0, 1.0]:
+		parts.add_box(Transform3D(Basis(), Vector3(side * (w - 0.2), y0 + bottom + 0.03, z + 0.045)), Vector3(0.18, 0.09, 0.02), Color(0.9, 0.9, 0.82), Vector2.ZERO, false, false)
+	# Faixa da firma nas portas (mesma cor da faixa do baú).
+	if accent.a > 0.0:
+		for side: float in [-1.0, 1.0]:
+			parts.add_box(Transform3D(Basis(), Vector3(side * (cab_w + 0.008), y0 + 1.18, (cab_rear + z) / 2.0 - 0.05)), Vector3(0.012, 0.13, z - cab_rear - 0.25), accent, Vector2.ZERO, false, false)
+			parts.add_box(Transform3D(Basis(), Vector3(side * (cab_w + 0.008), y0 + 1.13, (cab_rear + z) / 2.0 - 0.05)), Vector3(0.012, 0.03, z - cab_rear - 0.25), accent.darkened(0.45), Vector2.ZERO, false, false)
 
 
 ## Baú do caminhão atrás da cabine: cantoneiras e frisos de alumínio, faixa com o logo
@@ -421,8 +441,11 @@ static func _truck_box(root: Node3D, spec: Dictionary, y0: float, cab_z: float, 
 	var wheel_x := float(spec["track"]) / 2.0
 	var wheel_w: float = spec["wheel_width"]
 	for side: float in [-1.0, 1.0]:
-		box.call(Vector3(side * wheel_x, y0 + radius * 2.0 + 0.07, axle), Vector3(wheel_w + 0.14, 0.05, radius * 2.0 + 0.3), dark)
-		box.call(Vector3(side * wheel_x, y0 + 0.2, axle - radius - 0.22), Vector3(wheel_w + 0.12, 0.7, 0.02), dark)
+		box.call(Vector3(side * wheel_x, y0 + radius * 2.0 + 0.07, axle), Vector3(wheel_w * 1.85 + 0.12, 0.05, radius * 2.0 + 0.3), dark)
+		box.call(Vector3(side * wheel_x, y0 + 0.2, axle - radius - 0.22), Vector3(wheel_w * 1.85 + 0.1, 0.7, 0.02), dark)
+		# Luzes laterais âmbar ao longo do baú.
+		for z: float in [rear_z + 0.35, center_z, front_z - 0.35]:
+			box.call(Vector3(side * (half + 0.006), base + 0.02, z), Vector3(0.03, 0.06, 0.12), Color(1.0, 0.55, 0.08))
 		for y: float in [0.5, 0.74]:
 			box.call(Vector3(side * (half - 0.07), y0 + y, axle + radius + 0.75), Vector3(0.04, 0.07, 1.3), metal)
 	box.call(Vector3(half - 0.3, y0 + 0.42, 0.52), Vector3(0.46, 0.44, 0.9), Color(0.78, 0.8, 0.83))
@@ -456,6 +479,63 @@ static func _brand_labels(root: Node3D, half_width: float, y: float, z: float, h
 
 
 # --- rodas ---------------------------------------------------------------------------------
+
+## Roda de caminhão: pneu, aro de aço com furos, cubo e porcas. `dual` = dois pneus lado a
+## lado (rodado duplo traseiro), centrados no ponto da roda. Eixo de rotação = X.
+static func truck_wheel_mesh(radius: float, width: float, dual: bool) -> ArrayMesh:
+	var key := "truck:%.3f:%.3f:%s" % [radius, width, dual]
+	if _wheel_cache.has(key):
+		return _wheel_cache[key]
+	var axis := Basis(Vector3.FORWARD, PI / 2.0)
+	var tire_width := width * 0.92 if dual else width
+	var gap := 0.03
+	var offsets: Array[float] = [0.0]
+	if dual:
+		offsets = [-(tire_width + gap) / 2.0, (tire_width + gap) / 2.0]
+	var outer := (tire_width + gap) / 2.0 + tire_width / 2.0 if dual else width / 2.0
+	var mesh := ArrayMesh.new()
+	var tires := SurfaceTool.new()
+	tires.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rims := SurfaceTool.new()
+	rims.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for x in offsets:
+		var tire := CylinderMesh.new()
+		tire.top_radius = radius
+		tire.bottom_radius = radius
+		tire.height = tire_width
+		tire.radial_segments = 24
+		tire.rings = 1
+		tires.append_from(tire, 0, Transform3D(axis, Vector3(x, 0, 0)))
+		var rim := CylinderMesh.new()
+		rim.top_radius = radius * 0.62
+		rim.bottom_radius = radius * 0.62
+		rim.height = tire_width + 0.01
+		rim.radial_segments = 20
+		rim.rings = 1
+		rims.append_from(rim, 0, Transform3D(axis, Vector3(x, 0, 0)))
+	tires.set_material(Mats.rubber())
+	tires.commit(mesh)
+	rims.set_material(Mats.metal(Color(0.7, 0.71, 0.73)))
+	rims.commit(mesh)
+	# Faces de fora (dos dois lados, a mesma malha serve para as rodas esquerda e direita).
+	var details := MeshKit.new()
+	for side: float in [-1.0, 1.0]:
+		var face := side * (outer + 0.006)
+		# Cubo, anel de porcas e furos do aro.
+		details.add_cylinder(Transform3D(Basis(Vector3.FORWARD, side * PI / 2.0), Vector3(face, 0, 0)), radius * 0.24, 0.035, 12, Color(0.3, 0.31, 0.33))
+		for i in 8:
+			var angle := TAU * i / 8.0
+			var p := Vector3(face + side * 0.012, sin(angle) * radius * 0.34, cos(angle) * radius * 0.34)
+			details.add_box(Transform3D(Basis(), p - Vector3(0, 0.015, 0)), Vector3(0.024, 0.03, 0.03), Color(0.2, 0.2, 0.22), Vector2.ZERO, false, false)
+		for i in 6:
+			var angle := TAU * (i + 0.5) / 6.0
+			var p := Vector3(face, sin(angle) * radius * 0.5, cos(angle) * radius * 0.5)
+			var hole := Basis(Vector3.RIGHT, angle)
+			details.add_box(Transform3D(hole, p - hole * Vector3(0, 0.03, 0)), Vector3(0.006, 0.06, 0.085), Color(0.12, 0.12, 0.13), Vector2.ZERO, false, false)
+	details.commit(Mats.vertex_colored("truck_wheel", 0.45, 0.6), mesh)
+	_wheel_cache[key] = mesh
+	return mesh
+
 
 static var _wheel_cache := {}
 

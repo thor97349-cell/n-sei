@@ -139,7 +139,7 @@ func setup(vehicle_id: String, color: Color = Color(0, 0, 0, 0), with_audio: boo
 		wheel.use_as_steering = front
 		wheel.use_as_traction = front != rear_drive
 		var wheel_visual := MeshInstance3D.new()
-		wheel_visual.mesh = built["wheel_mesh"]
+		wheel_visual.mesh = built["wheel_mesh"] if front else built.get("rear_wheel_mesh", built["wheel_mesh"])
 		wheel.add_child(wheel_visual)
 		add_child(wheel)
 		_wheels.append(wheel)

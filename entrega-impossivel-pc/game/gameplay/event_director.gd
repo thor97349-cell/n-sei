@@ -66,8 +66,9 @@ func _process(delta: float) -> void:
 		stop()
 
 
-## Começa um evento (também usado pelos testes).
-func start(id: String) -> void:
+## Começa um evento (também usado pelos testes e pelo modo dev). `variant` escolhe o
+## atalho ("bridge" ou "mall_gate"); vazio = sorteia.
+func start(id: String, variant: String = "") -> void:
 	if active_id != "":
 		stop()
 	var duration: Vector2 = GameConfig.EVENT_DURATION[id]
@@ -81,7 +82,7 @@ func start(id: String) -> void:
 			world.atmosphere.set_rain(true)
 			Bus.weather_changed.emit("storm")
 		"shortcut":
-			_shortcut_id = "bridge" if _rng.randf() < 0.55 else "mall_gate"
+			_shortcut_id = variant if variant != "" else ("bridge" if _rng.randf() < 0.55 else "mall_gate")
 			world.info.set_shortcut_open(_shortcut_id, true)
 			if _shortcut_id == "bridge":
 				var edge := world.graph.closed_crossing_edge()

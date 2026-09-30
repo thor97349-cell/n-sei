@@ -9,11 +9,12 @@ var _frame := 0
 var _people: MultiMesh
 var _shots := [
 	[30, "truck_front", Vector3(6.5, 2.4, 7.5), Vector3(0, 1.3, 0)],
-	[40, "truck_side", Vector3(9.5, 1.9, -0.5), Vector3(0, 1.4, -0.5)],
-	[50, "truck_rear", Vector3(-6.0, 2.6, -8.5), Vector3(0, 1.4, -1.0)],
-	[60, "people_side", Vector3(20.0, 1.3, 12.5), Vector3(20.0, 1.0, 20.0)],
-	[70, "people_front", Vector3(11.0, 1.6, 21.5), Vector3(20.0, 0.9, 20.0)],
-	[80, "people_close", Vector3(18.6, 1.5, 17.6), Vector3(17.2, 1.1, 20.0)],
+	[45, "truck_side", Vector3(9.5, 1.9, -0.5), Vector3(0, 1.4, -0.5)],
+	[60, "truck_rear", Vector3(-6.0, 2.6, -8.5), Vector3(0, 1.4, -1.0)],
+	[75, "truck_wheels", Vector3(3.4, 0.9, -0.2), Vector3(0.9, 0.5, -1.2)],
+	[90, "people_side", Vector3(20.0, 1.3, 12.5), Vector3(20.0, 1.0, 20.0)],
+	[105, "people_front", Vector3(11.0, 1.6, 21.5), Vector3(20.0, 0.9, 20.0)],
+	[120, "people_close", Vector3(18.6, 1.5, 17.6), Vector3(17.2, 1.1, 20.0)],
 ]
 
 

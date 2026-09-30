@@ -16,6 +16,7 @@ var _menu: MainMenu
 var _pause: PauseMenu
 var _settings: SettingsMenu
 var _garage: GarageMenu
+var _dev: DevTools
 var _menu_camera: Camera3D
 var _menu_angle := 0.6
 
@@ -83,6 +84,7 @@ func _open_menu() -> void:
 	ui.add_child(_menu)
 	_menu.continue_requested.connect(func() -> void: _start(false))
 	_menu.new_game_requested.connect(func() -> void: _start(true))
+	_menu.dev_requested.connect(_start_dev)
 	_menu.settings_requested.connect(_open_settings)
 	_menu.quit_requested.connect(_quit)
 
@@ -105,6 +107,22 @@ func _start(new_game: bool) -> void:
 		Bus.toast(Loc.t("toast.welcome"), "event")
 
 
+## Modo dev: save próprio ("dev"), dinheiro de sobra, todos os veículos e o painel F1.
+## O save normal do jogador não é tocado.
+func _start_dev() -> void:
+	GameState.slot = "dev"
+	GameState.dev_mode = true
+	if not GameState.load_game():
+		GameState.new_game()
+	GameState.money = maxi(GameState.money, 500_000)
+	for id: String in VehicleSpecs.ORDER:
+		if not GameState.owns(id):
+			GameState.owned_vehicles.append(id)
+	GameState.save_game()
+	_start(false)
+	Bus.toast(Loc.t("dev.badge"), "event")
+
+
 func _build_game_ui() -> void:
 	for node: Node in [hud, phone, map_overlay]:
 		if node and is_instance_valid(node):
@@ -120,6 +138,13 @@ func _build_game_ui() -> void:
 	phone.visible = false
 	ui.add_child(phone)
 	phone.bind(session)
+	if _dev and is_instance_valid(_dev):
+		_dev.queue_free()
+		_dev = null
+	if GameState.dev_mode:
+		_dev = DevTools.new()
+		_dev.session = session
+		ui.add_child(_dev)
 
 
 func _on_language_changed() -> void:
@@ -136,7 +161,7 @@ func _on_language_changed() -> void:
 # --- partida ------------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
-	if state != State.PLAYING or _pause or _settings or _garage:
+	if state != State.PLAYING or _pause or _settings or _garage or (_dev and _dev.panel_open):
 		return
 	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()
@@ -200,9 +225,10 @@ func _end_session() -> void:
 		session.end()
 		session.queue_free()
 		session = null
-	for node: Node in [hud, phone, map_overlay, _pause, _garage]:
+	for node: Node in [hud, phone, map_overlay, _pause, _garage, _dev]:
 		if node and is_instance_valid(node):
 			node.queue_free()
+	_dev = null
 	hud = null
 	phone = null
 	map_overlay = null
@@ -213,6 +239,12 @@ func _end_session() -> void:
 func _back_to_menu() -> void:
 	_end_session()
 	get_tree().paused = false
+	if GameState.dev_mode:
+		# Sai do modo dev: volta a usar o save normal.
+		GameState.dev_mode = false
+		GameState.slot = "save"
+		if not GameState.load_game():
+			GameState.reset()
 	_open_menu()
 
 

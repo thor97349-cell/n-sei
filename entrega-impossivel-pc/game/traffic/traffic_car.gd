@@ -70,11 +70,12 @@ func setup(car_style: String, color_index: int) -> void:
 	(body.get_node("TailLamps") as MeshInstance3D).material_override = _tail_material
 	(body.get_node("Headlamps") as MeshInstance3D).material_override = _head_material
 	var wheel_mesh: Mesh = template["wheel_mesh"]
+	var rear_wheel_mesh: Mesh = template.get("rear_wheel_mesh", wheel_mesh)
 	var half_track := float(spec["track"]) / 2.0
 	var half_base := float(spec["wheelbase"]) / 2.0
 	for index in 4:
 		var wheel := MeshInstance3D.new()
-		wheel.mesh = wheel_mesh
+		wheel.mesh = wheel_mesh if index < 2 else rear_wheel_mesh
 		wheel.position = Vector3(half_track if index % 2 == 0 else -half_track, _wheel_radius - ground_offset, half_base if index < 2 else -half_base)
 		add_child(wheel)
 		_wheels.append(wheel)

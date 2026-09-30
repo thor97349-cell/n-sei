@@ -99,6 +99,23 @@ Há 4 níveis de qualidade gráfica nas Opções.
   Local: `%APPDATA%\EntregaImpossivel\` (Windows) ou `~/.local/share/EntregaImpossivel/` (Linux).
 - Idiomas: **português** e **inglês** (automático pelo sistema ou nas Opções).
 
+## Modo dev (ver o jogo completo)
+
+No menu principal, clique em **🛠 MODO DEV**. Ele usa um **save separado** (o seu jogo
+normal não é tocado), já começa com R$ 500.000 e **todos os veículos liberados**.
+Durante o jogo, aperte **F1** para abrir o painel (o jogo pausa enquanto ele está aberto):
+
+- **Veículo**: troca na hora para o furgão, hatch, caminhão ou esportivo, no mesmo lugar.
+- **Eventos**: acidente, tempestade, atalho da ponte, atalho do shopping, encerrar evento
+  e ligar/desligar os eventos automáticos.
+- **Hora e clima**: 7h, 12h, 18h, 22h e parar/andar o relógio.
+- **Dinheiro**: +R$ 10.000, +R$ 100.000 ou zerar (para testar a multa sem saldo).
+- **Entrega**: novos pedidos, ir direto para a vaga, carga 100%, tanque cheio, desvirar.
+- **Teleporte**: para qualquer local de coleta/entrega ou para a Central.
+- **Cidade**: trânsito e pedestres normal/cheio/nenhum, mostrar FPS.
+
+Para sair do modo dev: Esc → Menu principal (volta a usar o seu save normal).
+
 ## Como editar o jogo
 
 1. Baixe o **Godot 4.7.2** (versão padrão, não a ".NET"): https://godotengine.org/download
