@@ -1,7 +1,8 @@
 extends Node3D
 ## Teste automático dos pedestres (sem tela): monta a cidade, descobre os trechos livres
 ## das calçadas e simula um minuto. Verifica:
-##   • todo mundo fica na calçada (nunca na rua, nunca dentro de prédio, poste ou árvore);
+##   • todo mundo fica na calçada (nunca na rua, nunca dentro de prédio, poste ou árvore)
+##     e ninguém anda "dentro" de outra pessoa;
 ##   • um carro andando pela calçada a 30 km/h não passa por dentro de ninguém.
 ## Uso: godot --headless --fixed-fps 60 --path . res://tests/pedestrian_test.tscn
 
@@ -16,6 +17,7 @@ var _next_check := 0.0
 var _checks := 0
 var _off_sidewalk := 0
 var _inside := 0
+var _crowded := 0
 var _vehicle: Vehicle
 var _run_end := Vector3.ZERO
 var _run_dir := Vector3.ZERO
@@ -61,7 +63,9 @@ func _physics_process(delta: float) -> void:
 				_next_check = _time + 0.5
 				_check_positions(people)
 			if _time > WALK_SECONDS:
-				print("posições verificadas: %d | fora da calçada: %d | dentro de objetos: %d" % [_checks, _off_sidewalk, _inside])
+				print("posições verificadas: %d | fora da calçada: %d | dentro de objetos: %d | pessoas uma dentro da outra: %d" % [_checks, _off_sidewalk, _inside, _crowded])
+				if _crowded > _checks / 200:
+					_failures.append("%d vezes duas pessoas uma dentro da outra" % _crowded)
 				if _off_sidewalk > 0:
 					_failures.append("%d posições fora da calçada" % _off_sidewalk)
 				if _inside > 0:
@@ -80,7 +84,13 @@ func _physics_process(delta: float) -> void:
 
 func _check_positions(people: Pedestrians) -> void:
 	var space := get_world_3d().direct_space_state
-	for point in people.positions():
+	var points := people.positions()
+	# Duas pessoas uma "dentro" da outra.
+	for i in points.size():
+		for j in range(i + 1, points.size()):
+			if points[i].distance_to(points[j]) < 0.4:
+				_crowded += 1
+	for point in points:
 		_checks += 1
 		var on_sidewalk := false
 		for block in CityLayout.blocks():

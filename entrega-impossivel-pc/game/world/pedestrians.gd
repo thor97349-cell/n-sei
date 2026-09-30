@@ -13,14 +13,14 @@ extends Node3D
 ## Postes ficam a 0,7 m e árvores a 2 m do meio-fio; prédios começam a 4 m.
 const INSET := 3.1
 const SCAN_STEP := 1.0
-const SCAN_RADIUS := 0.5
+const SCAN_RADIUS := 0.58
 const SCAN_PER_FRAME := 500
 const MIN_SEGMENT := 12.0
 const SPAWN_MIN := 40.0
 const SPAWN_MAX := 130.0
 const DESPAWN := 160.0
 const MAX_PEOPLE := 64
-const WALK_CYCLE := 1.45
+const WALK_CYCLE := 1.25
 ## Trechos onde a calçada foi coberta de asfalto (saída da frota na Central): ninguém anda
 ## ali, senão parece gente andando no meio da rua bem onde o jogador sai.
 const NO_WALK: Array[Rect2] = [Rect2(-44.0, 58.0, 88.0, 12.0)]
@@ -367,6 +367,9 @@ func _spawn_walker(focus: Vector3, min_distance: float) -> bool:
 		# Quem aparece dentro da tela precisa estar longe (não "brota" na frente).
 		if min_distance > 0.0 and distance < 95.0 and _in_view(point, 0.0):
 			continue
+		# Nem colado em outra pessoa.
+		if _people.any(func(other: Person) -> bool: return other.position.distance_squared_to(point) < 4.0):
+			continue
 		add_walker(segment, s, 1 if _rng.randf() < 0.5 else -1)
 		return true
 	return false
@@ -382,7 +385,7 @@ func add_walker(segment: Segment, s: float, direction: int) -> void:
 	person.s = s
 	person.direction = direction
 	person.speed = _rng.randf_range(1.05, 1.55)
-	person.lateral = _rng.randf_range(0.12, 0.28)
+	person.lateral = _rng.randf_range(0.26, 0.36)
 	person.side = person.lateral * float(direction)
 	person.phase = _rng.randf()
 	person.scale = _rng.randf_range(0.9, 1.07)
@@ -451,6 +454,11 @@ func _process(delta: float) -> void:
 		_maintain()
 	delta = minf(delta, 0.1)
 	var danger := _player_danger()
+	# Quem anda no mesmo trecho e no mesmo sentido (para manter distância de quem vai à frente).
+	var lanes := {}
+	for person in _people:
+		if person.stop < 0:
+			(lanes.get_or_add(_lane_key(person), []) as Array).append(person)
 	for i in _people.size():
 		var person := _people[i]
 		var stride := 0.0
@@ -462,11 +470,16 @@ func _process(delta: float) -> void:
 			if person.scared > 0.0:
 				person.scared -= delta
 				pace = 3.2
+			elif person.pause <= 0.0:
+				# Alguém logo à frente no mesmo sentido: diminui o passo (e espera, se colar).
+				var gap := _gap_ahead(person, lanes.get(_lane_key(person), []))
+				if gap < 1.8:
+					pace *= clampf((gap - 0.9) / 0.9, 0.0, 1.0)
 			if person.pause > 0.0:
 				person.pause -= delta
-			else:
+			elif pace > 0.05:
 				_walk(person, pace * delta)
-				stride = 1.6 if person.scared > 0.0 else 1.0
+				stride = 1.6 if person.scared > 0.0 else clampf(pace / person.speed, 0.45, 1.0)
 				person.phase = fmod(person.phase + pace * delta / WALK_CYCLE, 1.0)
 			var sample: Array = person.segment.sample(person.s)
 			var tangent: Vector3 = sample[1]
@@ -492,6 +505,25 @@ func _process(delta: float) -> void:
 		_multimesh.set_instance_transform(i, Transform3D(basis, person.position))
 		_multimesh.set_instance_custom_data(i, Color(person.phase, stride, person.look.b, person.look.a))
 	_multimesh.visible_instance_count = _people.size()
+
+
+func _lane_key(person: Person) -> int:
+	return person.segment.get_instance_id() * 2 + (1 if person.direction > 0 else 0)
+
+
+## Distância (ao longo do trecho) até a próxima pessoa à frente no mesmo sentido.
+func _gap_ahead(person: Person, lane: Array) -> float:
+	var best := INF
+	var length := person.segment.length()
+	for other: Person in lane:
+		if other == person:
+			continue
+		var gap := (other.s - person.s) * float(person.direction)
+		if person.segment.closed:
+			gap = fposmod(gap, length)
+		if gap > 0.0 and gap < best:
+			best = gap
+	return best
 
 
 func _walk(person: Person, distance: float) -> void:
