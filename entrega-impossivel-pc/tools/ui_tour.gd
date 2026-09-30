@@ -60,10 +60,16 @@ func _ready() -> void:
 			_autopilot = false
 			_park(true)],
 		[505, "shot", "pickup_bay"],
+		[508, "call", func() -> void: _main.session.delivery._on_impact(9.0)],
+		[514, "shot", "cargo_hit"],
 		[555, "call", func() -> void: _park(false)],
-		[586, "call", func() -> void: _main.session.delivery._on_impact(9.0)],
 		[595, "shot", "delivering"],
 		[675, "shot", "result"],
+		[676, "call", func() -> void:
+			var payment := DeliveryManager.compute_payment(200, 120.0, 40.0, 62.0)
+			payment.merge({"failed": false, "condition": 62.0, "type": "pizza", "dropoff_name": "Casa Azul"})
+			_main.hud._show_result(payment)],
+		[679, "shot", "result_damaged"],
 		[680, "call", func() -> void: _main._open_garage()],
 		[695, "shot", "garage"],
 		[700, "call", func() -> void:

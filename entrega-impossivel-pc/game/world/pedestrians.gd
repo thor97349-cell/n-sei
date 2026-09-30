@@ -21,6 +21,9 @@ const SPAWN_MAX := 130.0
 const DESPAWN := 160.0
 const MAX_PEOPLE := 64
 const WALK_CYCLE := 1.45
+## Trechos onde a calçada foi coberta de asfalto (saída da frota na Central): ninguém anda
+## ali, senão parece gente andando no meio da rua bem onde o jogador sai.
+const NO_WALK: Array[Rect2] = [Rect2(-44.0, 58.0, 88.0, 12.0)]
 const THEME_WEIGHT := {
 	"downtown": 1.7, "commercial": 1.4, "plaza": 1.6, "mall": 1.3, "promenade": 1.5, "apartments": 1.2,
 	"waterfront": 1.2, "school": 1.0, "park": 1.0, "residential": 0.7, "stadium": 0.7,
@@ -174,12 +177,13 @@ func _physics_process(_delta: float) -> void:
 		while budget > 0 and _scan_index < _scan_samples.size():
 			var point := _scan_samples[_scan_index]
 			_scan_query.transform = Transform3D(Basis(), point + Vector3.UP * 0.95)
-			var free := true
-			for hit: Dictionary in space.intersect_shape(_scan_query, 4):
-				var collider: Object = hit["collider"]
-				if collider is StaticBody3D and not collider is AnimatableBody3D:
-					free = false
-					break
+			var free := not NO_WALK.any(func(rect: Rect2) -> bool: return rect.has_point(Vector2(point.x, point.z)))
+			if free:
+				for hit: Dictionary in space.intersect_shape(_scan_query, 4):
+					var collider: Object = hit["collider"]
+					if collider is StaticBody3D and not collider is AnimatableBody3D:
+						free = false
+						break
 			_scan_free.append(free)
 			_scan_index += 1
 			budget -= 1
