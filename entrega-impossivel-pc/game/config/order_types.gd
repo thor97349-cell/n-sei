@@ -73,3 +73,20 @@ static func display_name(id: String) -> String:
 static func tag(id: String) -> String:
 	var data := get_type(id)
 	return data["tag_pt"] if Loc.language == "pt" else data["tag_en"]
+
+
+## Quanto a encomenda aguenta batidas: 0 resistente (documentos), 1 normal,
+## 2 sensível (comida, geladeira), 3 muito frágil (bolo).
+static func fragility_level(id: String) -> int:
+	var fragility := float(get_type(id)["fragility"])
+	if fragility <= 0.2:
+		return 0
+	if fragility <= 0.7:
+		return 1
+	if fragility <= 1.5:
+		return 2
+	return 3
+
+
+static func fragility_color(level: int) -> Color:
+	return [Color(0.2, 0.72, 0.4), Color(0.45, 0.62, 0.85), Color(1.0, 0.6, 0.2), Color(1.0, 0.33, 0.38)][clampi(level, 0, 3)]

@@ -5,7 +5,8 @@ extends Node3D
 ##  3. entrega atrasada (paga menos) e entrega que estoura o limite (paga 0, sem perder dinheiro);
 ##  4. eventos: acidente bloqueia a rua e o GPS desvia; atalho abre a ponte; tempestade molha a pista;
 ##  5. posto de gasolina, guincho e resgate;
-##  6. salvar e carregar o progresso.
+##  6. multa do sinal vermelho (valor justo, uma só por passagem);
+##  7. salvar e carregar o progresso.
 ## Uso: godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn
 
 var _world: World
@@ -49,6 +50,8 @@ func _check_payments() -> void:
 	_check(wrecked["total"] >= 0, "carga destruída e atrasada nunca dá valor negativo")
 	var damaged := DeliveryManager.compute_payment(200, 100.0, 50.0, 50.0)
 	_check(damaged["damage"] == 100 and damaged["rating"] < 5.0, "carga 50% danificada desconta metade e baixa a nota")
+	_check(GameConfig.red_light_fine(1000) == 80 and GameConfig.red_light_fine(200) == 50, "multa: 25% do saldo, no máximo R$ 80")
+	_check(GameConfig.red_light_fine(40) == 15 and GameConfig.red_light_fine(10) == 10 and GameConfig.red_light_fine(0) == 0, "multa: mínimo R$ 15, nunca mais do que o saldo")
 
 
 func _physics_process(delta: float) -> void:
@@ -169,6 +172,44 @@ func _physics_process(delta: float) -> void:
 			_check(not vehicle.is_flipped(), "resgate desvira o carro na faixa")
 			var result: Array = _world.graph.nearest_edge(vehicle.global_position)
 			_check(float(result[2]) < 8.0, "resgate coloca o carro na rua")
+			# Multa: acha um cruzamento com semáforo e espera o sinal ficar vermelho.
+			for edge in _world.graph.edges:
+				if edge.traffic and not edge.highway and _world.graph.has_traffic_lights(edge.b) and edge.length > 100.0:
+					_fine_edge = edge
+					break
+			_check(_fine_edge != null, "achou um cruzamento com semáforo")
+			_next(0.0)
+		17:
+			var lights := _world.lights
+			if lights.state(_fine_edge.axis) != "red" or lights.red_for(_fine_edge.axis) < 1.0 or lights.red_for(_fine_edge.axis) > 3.0:
+				_waited += delta
+				if _waited > 60.0:
+					_check(false, "sinal vermelho não chegou")
+					_finish()
+				return
+			GameState.money = 200
+			GameState.stats["fines"] = 0
+			_fine_s = _stop_s() - 14.0
+			_fine_direction = 1.0
+			_next(0.0)
+		18:
+			# Passa o sinal vermelho a 43 km/h.
+			if _drive_fine(delta, 2.2):
+				_check(GameState.money == 150, "multa de R$ 50 com R$ 200 de saldo (ficou com %d)" % GameState.money)
+				_check(int(GameState.stats["fines"]) == 1, "multa contada nas estatísticas")
+				_fine_direction = -1.0
+				_next(0.0)
+		19:
+			# Dá ré até antes da faixa, espera e passa de novo no mesmo vermelho: não multa outra vez.
+			if _drive_fine(delta, 2.0):
+				_next(6.5)
+		20:
+			_fine_direction = 1.0
+			if _drive_fine(delta, 2.0):
+				_check(_world.lights.state(_fine_edge.axis) == "red", "ainda é o mesmo sinal vermelho")
+				_check(GameState.money == 150 and int(GameState.stats["fines"]) == 1, "sem segunda multa na mesma passagem")
+				_next(0.0)
+		21:
 			# Salvar e carregar.
 			GameState.money = 1234
 			GameState.stats["deliveries"] = 7
@@ -198,6 +239,30 @@ func _teleport(zone: Vector3, along_x: bool) -> void:
 
 
 var _waited := 0.0
+var _fine_edge: RoadGraph.Edge
+var _fine_s := 0.0
+var _fine_direction := 1.0
+var _fine_time := 0.0
+
+
+func _stop_s() -> float:
+	return _fine_edge.length - _world.graph.crossing_width(_fine_edge.b, _fine_edge) / 2.0 - TrafficSystem.STOP_LINE
+
+
+## Move o carro "na mão" pela faixa da direita (12 m/s) por `seconds`; true quando termina.
+func _drive_fine(delta: float, seconds: float) -> bool:
+	var vehicle := _session.vehicle
+	_fine_s += 12.0 * _fine_direction * delta
+	var right := Vector3(-_fine_edge.dir.z, 0, _fine_edge.dir.x)
+	var point := _fine_edge.from + _fine_edge.dir * _fine_s + right * 5.25
+	vehicle.global_transform = Transform3D(Basis(Vector3.UP, atan2(_fine_edge.dir.x, _fine_edge.dir.z)), point + Vector3.UP * 0.8)
+	vehicle.linear_velocity = _fine_edge.dir * 12.0 * _fine_direction
+	vehicle.angular_velocity = Vector3.ZERO
+	_fine_time += delta
+	if _fine_time >= seconds:
+		_fine_time = 0.0
+		return true
+	return false
 
 
 func _next(seconds: float) -> void:

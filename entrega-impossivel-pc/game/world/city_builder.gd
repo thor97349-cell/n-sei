@@ -15,6 +15,8 @@ class CityInfo:
 	var yard_trees: Array[Vector3] = []
 	## Postes de luz que quebram: [CollisionShape3D, MultiMesh, índice, Transform3D, posição da luz].
 	var breakable_lamps: Array = []
+	## Pontos de ônibus: [lugar onde as pessoas esperam, direção (yaw) olhando para a rua].
+	var bus_stops: Array = []
 	var building_count := 0
 
 	func set_shortcut_open(id: String, open: bool) -> void:

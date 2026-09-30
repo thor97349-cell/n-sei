@@ -88,7 +88,9 @@ func _process(delta: float) -> void:
 	var desired_heading := _flat(xform.basis.z)
 	if target.speed < -2.0:
 		desired_heading = _flat(xform.basis.z)
-	_heading = _heading.slerp(desired_heading, 1.0 - exp(-delta * (3.5 + speed * 0.08))).normalized()
+	# Interpola o ângulo (e não o vetor): estável mesmo quando o carro gira 180° de uma vez.
+	var heading_yaw := lerp_angle(atan2(_heading.x, _heading.z), atan2(desired_heading.x, desired_heading.z), 1.0 - exp(-delta * (3.5 + speed * 0.08)))
+	_heading = Vector3(sin(heading_yaw), 0.0, cos(heading_yaw))
 	var far_mode := MODES[mode] == "far"
 	var distance := length * (1.35 if not far_mode else 2.1) + 3.2 + speed * 0.03
 	var lift := height * (0.9 if not far_mode else 1.4) + 1.1

@@ -19,6 +19,8 @@ const SPAWN_MIN := 80.0
 const SPAWN_MAX := 360.0
 const DESPAWN := 470.0
 const TICK := 1.0 / 60.0
+## Tolerância logo depois que o sinal fica vermelho (quem já estava em cima da faixa).
+const RED_GRACE := 0.6
 
 var graph: RoadGraph
 var lights: TrafficLights
@@ -36,6 +38,8 @@ var _frame := 0
 var _focus := Vector3.ZERO
 var _player_track := {}
 var _fine_cooldown := 0.0
+## Cruzamentos já multados: "nó:eixo" → número da fase vermelha em que a multa saiu.
+var _fined := {}
 
 
 func setup(road_graph: RoadGraph, traffic_lights: TrafficLights) -> void:
@@ -395,6 +399,14 @@ func _check_red_light() -> void:
 	if previous < 0.0 or not on_right_side or not graph.has_traffic_lights(node):
 		return
 	var stop_s := edge.length - graph.crossing_width(node, edge) / 2.0 - STOP_LINE
-	if previous < stop_s and s >= stop_s and lights.state(edge.axis) == "red" and _fine_cooldown <= 0.0:
-		_fine_cooldown = 6.0
-		red_light_run.emit()
+	if previous >= stop_s or s < stop_s or lights.state(edge.axis) != "red":
+		return
+	# Uma multa só por cruzamento em cada sinal vermelho (dar ré e passar de novo não
+	# multa outra vez), e uma pequena tolerância para quem pegou o vermelho em cima da faixa.
+	var fined_key := "%d:%s" % [node, edge.axis]
+	var serial := lights.red_serial(edge.axis)
+	if lights.red_for(edge.axis) < RED_GRACE or _fine_cooldown > 0.0 or int(_fined.get(fined_key, -1)) == serial:
+		return
+	_fined[fined_key] = serial
+	_fine_cooldown = 6.0
+	red_light_run.emit()

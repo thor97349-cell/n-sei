@@ -439,9 +439,10 @@ func _apply_stability(delta: float) -> void:
 		if absf(excess) > tolerance:
 			var correction := (absf(excess) - tolerance) * signf(excess)
 			apply_torque(-up * correction * _yaw_inertia * 5.0)
-	# Tombando (> 20°) ou no ar: puxa de volta para ficar de pé.
+	# Tombando (> 20°) ou no ar: puxa de volta para ficar de pé. Carro já deitado ou de
+	# rodas para cima (> 75°) não se desvira sozinho: aí é o resgate (R).
 	var tilt := up.angle_to(Vector3.UP)
-	if tilt > deg_to_rad(20.0) or on_ground == 0:
+	if (tilt > deg_to_rad(20.0) or on_ground == 0) and tilt < deg_to_rad(75.0):
 		var axis := up.cross(Vector3.UP)
 		if axis.length() > 0.001:
 			apply_torque(axis.normalized() * tilt * _roll_inertia * 6.0)
@@ -452,7 +453,7 @@ func _apply_stability(delta: float) -> void:
 	if _impact_assist > 0.0:
 		_impact_assist -= delta
 		# Raspando/batendo: segura a carroceria de pé (sem aquele tombo de lado).
-		if tilt > deg_to_rad(4.0):
+		if tilt > deg_to_rad(4.0) and tilt < deg_to_rad(75.0):
 			var level_axis := up.cross(Vector3.UP)
 			if level_axis.length() > 0.001:
 				apply_torque(level_axis.normalized() * tilt * _roll_inertia * 14.0)

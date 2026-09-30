@@ -48,34 +48,39 @@ func _ready() -> void:
 			_main.session.vehicle.use_player_input = false],
 		[180, "drive", 1.0],
 		[420, "shot", "driving"],
-		[425, "call", func() -> void: _main.map_overlay.visible = true],
-		[440, "shot", "map"],
-		[445, "call", func() -> void:
+		[432, "call", func() -> void:
+			GameState.money = 200
+			_main.session._on_red_light()],
+		[442, "shot", "fine"],
+		[460, "call", func() -> void: _main.map_overlay.visible = true],
+		[475, "shot", "map"],
+		[480, "call", func() -> void:
 			_main.map_overlay.visible = false
 			_main.hud.visible = true
 			_autopilot = false
 			_park(true)],
-		[470, "shot", "pickup_bay"],
-		[520, "call", func() -> void: _park(false)],
-		[560, "shot", "delivering"],
-		[640, "shot", "result"],
-		[645, "call", func() -> void: _main._open_garage()],
-		[660, "shot", "garage"],
-		[665, "call", func() -> void:
+		[505, "shot", "pickup_bay"],
+		[555, "call", func() -> void: _park(false)],
+		[586, "call", func() -> void: _main.session.delivery._on_impact(9.0)],
+		[595, "shot", "delivering"],
+		[675, "shot", "result"],
+		[680, "call", func() -> void: _main._open_garage()],
+		[695, "shot", "garage"],
+		[700, "call", func() -> void:
 			_main._garage.queue_free()
 			_main._garage = null
 			_main._pause_game()],
-		[680, "shot", "pause"],
-		[685, "call", func() -> void: _main._open_settings()],
-		[700, "shot", "settings"],
-		[705, "call", func() -> void:
+		[715, "shot", "pause"],
+		[720, "call", func() -> void: _main._open_settings()],
+		[735, "shot", "settings"],
+		[740, "call", func() -> void:
 			_main._settings.queue_free()
 			_main._settings = null
 			_main._resume()
 			_main.world.atmosphere.minutes = 21.0 * 60.0
 			_main.session.events.start("storm")],
-		[800, "shot", "night_rain"],
-		[805, "quit"],
+		[835, "shot", "night_rain"],
+		[840, "quit"],
 	]
 
 

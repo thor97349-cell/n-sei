@@ -70,8 +70,10 @@ jobs:
           set -e
           ~/godot/godot --headless --path . res://tests/compile_check.tscn
           ~/godot/godot --headless --fixed-fps 120 --path . res://tests/vehicle_test.tscn
+          ~/godot/godot --headless --fixed-fps 120 --path . res://tests/handling_test.tscn
           ~/godot/godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn
           ~/godot/godot --headless --fixed-fps 60 --path . res://tests/traffic_test.tscn -- 120
+          ~/godot/godot --headless --fixed-fps 60 --path . res://tests/pedestrian_test.tscn
 
       - name: Exportar Windows e Linux
         working-directory: ${{ env.PROJECT_DIR }}

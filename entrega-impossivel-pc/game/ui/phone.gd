@@ -126,6 +126,13 @@ func _card(offer: Dictionary, index: int) -> Control:
 	info.add_child(UiKit.label("🛣 %s" % UiKit.distance(offer["route_m"]), 15, dark))
 	info.add_child(UiKit.label("⏱ %s" % UiKit.clock(offer["time_limit"]), 15, dark))
 	info.add_child(UiKit.label("📦 %s" % Loc.t("cargo." + str(offer["size"])), 15, dark))
+	# Quanto a carga aguenta batidas (bolo e comida estragam fácil; documentos aguentam).
+	var level := OrderTypes.fragility_level(offer["type"])
+	var fragility := UiKit.hbox(8)
+	column.add_child(fragility)
+	fragility.add_child(UiKit.label(Loc.t("fragility.%d" % level), 15, OrderTypes.fragility_color(level).darkened(0.25), true))
+	if level >= 2:
+		fragility.add_child(UiKit.label("• " + Loc.t("phone.fragility_hint"), 14, Color(0.45, 0.47, 0.5)))
 	if session.vehicle:
 		var away := session.vehicle.global_position.distance_to(offer["pickup_zone"])
 		column.add_child(UiKit.label(Loc.t("phone.from_you", [UiKit.distance(away)]), 14, Color(0.45, 0.47, 0.5)))

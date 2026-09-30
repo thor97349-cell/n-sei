@@ -59,6 +59,7 @@ func start(world_ref: World) -> void:
 	world.traffic.red_light_run.connect(_on_red_light)
 	world.traffic.clear()
 	world.traffic.fill(vehicle.global_position)
+	world.pedestrians.fill(vehicle.global_position)
 	_on_stage_changed()
 
 
@@ -306,8 +307,8 @@ func _update_route() -> void:
 
 
 func _on_red_light() -> void:
-	var charged := GameState.charge(GameConfig.RED_LIGHT_FINE)
+	# O aviso grande (flash da câmera + valor) é mostrado pelo HUD ao receber fine_issued.
+	var charged := GameState.charge(GameConfig.red_light_fine(GameState.money))
 	GameState.increment("fines")
 	Bus.fine_issued.emit("red_light", charged)
 	Sfx.play("fine")
-	Bus.toast(Loc.t("toast.fine_red_light", [charged]), "fine")

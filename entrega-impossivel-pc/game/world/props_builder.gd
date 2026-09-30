@@ -57,12 +57,14 @@ func build_all() -> void:
 	_root.add_child(_holder)
 	_blocks = CityLayout.blocks()
 	_collect_keep_clear()
+	_bus_stops()
 	_street_lamps_and_trees()
 	_traffic_lights()
 	_loading_bays()
 	_plaza()
 	_hq_parking()
 	_mall_parking()
+	_parked_cars()
 	_park()
 	_promenade()
 	_stadium()
@@ -256,6 +258,52 @@ func _street_lamps_and_trees() -> void:
 					t.y = CityLayout.CURB_HEIGHT
 					_add_tree(t, false)
 				along += LAMP_SPACING
+
+
+# --- pontos de ônibus ------------------------------------------------------------------------
+
+## Um abrigo de ônibus no meio de cada trecho de avenida (um lado só), nos bairros com
+## movimento. Os pedestres esperam ali (Pedestrians). Postes e árvores não ocupam o lugar.
+func _bus_stops() -> void:
+	var ads: Array[Color] = [Color(0.95, 0.5, 0.1), Color(0.2, 0.5, 0.85), Color(0.85, 0.22, 0.3), Color(0.3, 0.65, 0.35)]
+	for edge in _graph.edges:
+		if edge.highway or edge.crossing != "" or edge.length < 100.0:
+			continue
+		var side := 1.0 if edge.index % 2 == 0 else -1.0
+		var outward := Vector3(-edge.dir.z, 0, edge.dir.x) * side
+		var along := edge.length * (0.5 + (0.1 if edge.index % 3 == 0 else -0.08))
+		var origin := edge.from + edge.dir * along + outward * (edge.width / 2.0)
+		var block := _block_at(origin + outward * 2.0)
+		if block.is_empty() or block["theme"] in ["industrial", "construction"]:
+			continue
+		var fits := true
+		for offset: float in [-5.0, 0.0, 5.0]:
+			var probe := origin + outward * 2.0 + edge.dir * offset
+			if not _clear(probe) or _in_canal(probe, 6.0):
+				fits = false
+		if not fits:
+			continue
+		origin.y = CityLayout.CURB_HEIGHT
+		var basis := Basis(Vector3.UP, _yaw_to(outward))
+		var roof := Color(0.2, 0.22, 0.25)
+		_box(_detail, origin, basis, Vector3(0, 2.4, 1.7), Vector3(3.5, 0.09, 1.6), roof)
+		_box(_detail, origin, basis, Vector3(0, 0.25, 2.42), Vector3(3.3, 2.15, 0.06), Color(0.56, 0.68, 0.74), true)
+		_box(_detail, origin, basis, Vector3(0, 0.0, 2.42), Vector3(3.3, 0.25, 0.1), roof)
+		_box(_detail, origin, basis, Vector3(1.62, 0.25, 1.8), Vector3(0.07, 2.15, 1.2), ads[edge.index % ads.size()], true)
+		_box(_detail, origin, basis, Vector3(-1.62, 0.0, 2.3), Vector3(0.08, 2.4, 0.08), roof)
+		_box(_detail, origin, basis, Vector3(0, 0.45, 2.1), Vector3(2.4, 0.07, 0.42), WOOD)
+		for x: float in [-1.0, 1.0]:
+			_box(_detail, origin, basis, Vector3(x, 0.0, 2.1), Vector3(0.07, 0.45, 0.35), POLE_GREY)
+		_collider(origin + basis * Vector3(0, 0.25, 2.1), Vector3(2.4, 0.5, 0.42), basis)
+		# Placa de ônibus pendurada na ponta do teto.
+		_box(_detail, origin, basis, Vector3(-1.9, 2.0, 1.1), Vector3(0.05, 0.45, 0.55), Color(0.1, 0.3, 0.7))
+		_box(_detail, origin, basis, Vector3(-1.9, 2.05, 1.1), Vector3(0.06, 0.08, 0.56), PAINT_YELLOW)
+		_bin(origin + basis * Vector3(2.15, 0, 2.0), Color(0.2, 0.42, 0.25))
+		var corners: Array[Vector3] = [origin + edge.dir * 5.5, origin - edge.dir * 5.5 + outward * 4.0]
+		var low := Vector2(minf(corners[0].x, corners[1].x), minf(corners[0].z, corners[1].z))
+		var high := Vector2(maxf(corners[0].x, corners[1].x), maxf(corners[0].z, corners[1].z))
+		_keep_clear.append(Rect2(low, high - low))
+		_info.bus_stops.append([origin + basis * Vector3(0, 0, 1.25), _yaw_to(-outward)])
 
 
 # --- semáforos ---------------------------------------------------------------------------
@@ -544,6 +592,33 @@ func _mall_parking() -> void:
 	closed_node.add_child(closed_mesh)
 	holder.add_child(closed_node)
 	_info.shortcuts["mall_gate"] = {"parent": holder, "open": open_node, "closed": closed_node}
+
+
+## Alguns carros parados no estacionamento do shopping (nas vagas ao lado da faixa
+## central, que continua livre para o atalho).
+func _parked_cars() -> void:
+	var pmin: Vector2 = CityLayout.MALL_PARKING["min"]
+	var pmax: Vector2 = CityLayout.MALL_PARKING["max"]
+	var gate_z: Vector2 = CityLayout.MALL_PARKING["gate_z"]
+	var y := CityLayout.CURB_HEIGHT + 0.04
+	var holder := Node3D.new()
+	holder.name = "ParkedCars"
+	_holder.add_child(holder)
+	var used := {}
+	for i in 12:
+		var row := _rng.randi() % 2
+		var stall := _rng.randi_range(1, int((pmax.x - pmin.x - 8.0) / 2.7) - 2)
+		if used.has("%d:%d" % [row, stall]):
+			continue
+		used["%d:%d" % [row, stall]] = true
+		var x := pmin.x + 4.0 + 2.7 * (float(stall) + 0.5)
+		# Fila norte (de frente para o muro norte) ou fila sul.
+		var z := pmin.y + 8.3 if row == 0 else gate_z.y + 3.7
+		var forward := Vector3(0, 0, -1) if row == 0 else Vector3(0, 0, 1)
+		var car := TrafficCar.new()
+		car.setup(TrafficCar.random_style(_rng) if _rng.randf() < 0.8 else "hatch", _rng.randi() % TrafficCar.COLORS.size())
+		holder.add_child(car)
+		car.place(Vector3(x, y, z), forward)
 
 
 # --- parque e orla -----------------------------------------------------------------------------

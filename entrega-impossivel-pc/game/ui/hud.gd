@@ -26,12 +26,25 @@ var _distance: Label
 var _hint: Label
 var _cargo_row: HBoxContainer
 var _cargo_bar: ProgressBar
+var _cargo_fill: StyleBoxFlat
+var _cargo_percent: Label
+var _cargo_kind: Label
+var _cargo_pay: Label
+var _cargo_popup: Label
+var _cargo_color_level := -1
 var _prompt_panel: PanelContainer
 var _prompt: Label
 var _prompt_bar: ProgressBar
 var _result_panel: PanelContainer
 var _result_box: VBoxContainer
 var _toasts: VBoxContainer
+var _flash: ColorRect
+var _fine_panel: PanelContainer
+var _fine_title: Label
+var _fine_reason: Label
+var _fine_amount: Label
+var _fine_balance: Label
+var _fine_tween: Tween
 var _blink := 0.0
 
 
@@ -44,6 +57,7 @@ func _ready() -> void:
 	_build_prompt()
 	_build_result()
 	_build_toasts()
+	_build_fine()
 	minimap = MiniMap.new()
 	minimap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	minimap.position = Vector2(24, -24 - 260)
@@ -67,6 +81,7 @@ func _ready() -> void:
 	add_child(speedometer)
 	Bus.notify.connect(_on_toast)
 	Bus.money_changed.connect(_on_money)
+	Bus.fine_issued.connect(_on_fine)
 	_on_money(GameState.money, 0)
 
 
@@ -76,6 +91,7 @@ func bind(game_session: GameSession) -> void:
 	speedometer.vehicle = session.vehicle
 	session.vehicle_spawned.connect(func(v: Vehicle) -> void: speedometer.vehicle = v)
 	session.delivery.finished.connect(_show_result)
+	session.delivery.cargo_damaged.connect(_on_cargo_damaged)
 
 
 # --- construção ------------------------------------------------------------------------
@@ -133,6 +149,7 @@ func _build_status() -> void:
 	row.add_child(_distance)
 	_hint = UiKit.label("", 17, UiKit.WARNING, false, HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(_hint)
+	# Estado da carga: tipo (resistência), barra colorida, % e quanto a entrega paga agora.
 	_cargo_row = UiKit.hbox(8)
 	column.add_child(_cargo_row)
 	_cargo_row.add_child(UiKit.label(Loc.t("hud.cargo"), 16, UiKit.MUTED))
@@ -141,7 +158,23 @@ func _build_status() -> void:
 	_cargo_bar.custom_minimum_size = Vector2(0, 12)
 	_cargo_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_cargo_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_cargo_fill = UiKit.stylebox(UiKit.SUCCESS, 6, Color(0, 0, 0, 0), 0, 0)
+	_cargo_bar.add_theme_stylebox_override("fill", _cargo_fill)
 	_cargo_row.add_child(_cargo_bar)
+	_cargo_percent = UiKit.label("", 17, UiKit.SUCCESS, true)
+	_cargo_percent.custom_minimum_size = Vector2(52, 0)
+	_cargo_percent.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_cargo_row.add_child(_cargo_percent)
+	_cargo_kind = UiKit.label("", 15, UiKit.MUTED)
+	_cargo_row.add_child(_cargo_kind)
+	_cargo_pay = UiKit.label("", 16, UiKit.MUTED, false, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_cargo_pay)
+	# "-7%" que aparece e sobe a cada batida que estraga a carga.
+	_cargo_popup = UiKit.label("", 24, UiKit.DANGER, true)
+	_cargo_popup.modulate.a = 0.0
+	_cargo_popup.top_level = true
+	_cargo_popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_cargo_popup)
 
 
 func _build_prompt() -> void:
@@ -193,6 +226,37 @@ func _build_toasts() -> void:
 	add_child(_toasts)
 
 
+## Aviso de multa: flash de "câmera" na tela toda e um quadro no meio com o valor.
+func _build_fine() -> void:
+	_flash = ColorRect.new()
+	_flash.color = Color(1, 1, 1, 0)
+	_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_flash)
+	var holder := CenterContainer.new()
+	holder.anchor_left = 0.5
+	holder.anchor_right = 0.5
+	holder.offset_left = -260
+	holder.offset_right = 260
+	holder.offset_top = 250
+	holder.offset_bottom = 420
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(holder)
+	_fine_panel = UiKit.panel(Color(0.5, 0.07, 0.06, 0.95), 14, 28)
+	_fine_panel.visible = false
+	holder.add_child(_fine_panel)
+	var column := UiKit.vbox(2)
+	_fine_panel.add_child(column)
+	_fine_title = UiKit.label("", 30, Color.WHITE, true, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_fine_title)
+	_fine_reason = UiKit.label("", 19, Color(1.0, 0.86, 0.82), false, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_fine_reason)
+	_fine_amount = UiKit.label("", 42, Color(1.0, 0.82, 0.3), true, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_fine_amount)
+	_fine_balance = UiKit.label("", 17, Color(1, 1, 1, 0.78), false, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_fine_balance)
+
+
 # --- atualização ------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
@@ -218,6 +282,7 @@ func _update_status() -> void:
 	_distance.visible = false
 	_hint.visible = false
 	_cargo_row.visible = false
+	_cargo_pay.visible = false
 	_detail.visible = true
 	_status.add_theme_color_override("font_color", UiKit.TEXT)
 	match delivery.stage:
@@ -262,8 +327,7 @@ func _update_status() -> void:
 				_hint.text = Loc.t("hud.hurry")
 			else:
 				_hint.visible = false
-			_cargo_row.visible = true
-			_cargo_bar.value = delivery.cargo_condition
+			_show_cargo(delivery)
 			_show_distance()
 		DeliveryManager.Stage.RESULT:
 			var result := delivery.last_result
@@ -274,6 +338,43 @@ func _update_status() -> void:
 				_status.text = Loc.t("result.done_late") if result.get("late", false) else Loc.t("result.done")
 				_status.add_theme_color_override("font_color", UiKit.SUCCESS)
 			_detail.text = Loc.t("result.continue")
+
+
+func _show_cargo(delivery: DeliveryManager) -> void:
+	var active := delivery.active
+	var condition := delivery.cargo_condition
+	_cargo_row.visible = true
+	_cargo_bar.value = condition
+	var level := 0 if condition > 70.0 else (1 if condition > 40.0 else 2)
+	var color: Color = [UiKit.SUCCESS, UiKit.WARNING, UiKit.DANGER][level]
+	if level != _cargo_color_level:
+		_cargo_color_level = level
+		_cargo_fill.bg_color = color
+		_cargo_percent.add_theme_color_override("font_color", color)
+	_cargo_percent.text = "%d%%" % roundi(condition)
+	var fragility := OrderTypes.fragility_level(active["type"])
+	_cargo_kind.text = Loc.t("fragility.short.%d" % fragility)
+	_cargo_kind.add_theme_color_override("font_color", OrderTypes.fragility_color(fragility))
+	# Quanto o cliente pagaria se a entrega fosse feita agora (mesma conta do pagamento).
+	var now := DeliveryManager.compute_payment(active["reward"], active["time_limit"], delivery.time_left, condition)
+	_cargo_pay.visible = true
+	_cargo_pay.text = Loc.t("hud.pay_now", [UiKit.money(int(now["total"]))])
+	if int(now["damage"]) > 0:
+		_cargo_pay.text += "  " + Loc.t("hud.pay_loss", [UiKit.money(int(now["damage"]))])
+	_cargo_pay.add_theme_color_override("font_color", UiKit.MUTED if int(now["damage"]) == 0 else UiKit.DANGER.lightened(0.25))
+
+
+func _on_cargo_damaged(loss: float, _condition: float) -> void:
+	_cargo_popup.text = "-%d%%" % maxi(roundi(loss), 1)
+	var start := _cargo_percent.get_global_rect().position + Vector2(-8.0, -6.0)
+	_cargo_popup.position = start
+	_cargo_popup.modulate.a = 1.0
+	var tween := _cargo_popup.create_tween().set_parallel(true)
+	tween.tween_property(_cargo_popup, "position:y", start.y - 34.0, 1.1).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_cargo_popup, "modulate:a", 0.0, 1.1).set_delay(0.35)
+	# A barra pisca em vermelho.
+	_cargo_bar.modulate = Color(1.8, 0.6, 0.6)
+	_cargo_bar.create_tween().tween_property(_cargo_bar, "modulate", Color.WHITE, 0.5)
 
 
 func _show_distance() -> void:
@@ -299,13 +400,20 @@ func _show_result(result: Dictionary) -> void:
 		_line(Loc.t("result.base"), int(result["base"]), UiKit.TEXT)
 		if int(result["bonus"]) > 0:
 			_line(Loc.t("result.bonus"), int(result["bonus"]), UiKit.SUCCESS)
+		var condition := roundi(float(result.get("condition", 100.0)))
 		if int(result["damage"]) > 0:
-			_line(Loc.t("result.damage"), -int(result["damage"]), UiKit.DANGER)
+			_line(Loc.t("result.damage", [condition]), -int(result["damage"]), UiKit.DANGER)
 		if int(result["tip"]) > 0:
 			_line(Loc.t("result.tip"), int(result["tip"]), UiKit.WARNING)
 		_result_box.add_child(HSeparator.new())
 		_line(Loc.t("result.total"), int(result["total"]), UiKit.SUCCESS, 28)
-		_result_box.add_child(UiKit.label("%s  %s" % [UiKit.stars(float(result["rating"])), Loc.t("result.condition", [roundi(float(result.get("condition", 100.0)))])], 20, UiKit.WARNING, false, HORIZONTAL_ALIGNMENT_CENTER))
+		_result_box.add_child(UiKit.label("%s  %s" % [UiKit.stars(float(result["rating"])), Loc.t("result.condition", [condition])], 20, UiKit.WARNING, false, HORIZONTAL_ALIGNMENT_CENTER))
+		var note := Loc.t("result.intact") if condition >= 100 else (Loc.t("result.damage_note") if int(result["damage"]) > 0 else "")
+		if note != "":
+			var label := UiKit.label(note, 16, UiKit.SUCCESS if condition >= 100 else UiKit.DANGER.lightened(0.3), false, HORIZONTAL_ALIGNMENT_CENTER)
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			label.custom_minimum_size = Vector2(400, 0)
+			_result_box.add_child(label)
 	_result_panel.visible = true
 	_result_panel.modulate.a = 1.0
 	var tween := create_tween()
@@ -348,3 +456,26 @@ func _on_toast(text: String, style: String) -> void:
 	tween.tween_interval(TOAST_SECONDS)
 	tween.tween_property(toast, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(toast.queue_free)
+
+
+func _on_fine(reason: String, amount: int) -> void:
+	_fine_title.text = Loc.t("fine.title")
+	_fine_reason.text = Loc.t("fine." + reason)
+	if amount > 0:
+		_fine_amount.text = "-" + UiKit.money(amount)
+		_fine_balance.text = Loc.t("fine.balance", [UiKit.money(GameState.money)])
+	else:
+		_fine_amount.text = UiKit.money(0)
+		_fine_balance.text = Loc.t("fine.no_money")
+	_flash.color.a = 0.55
+	var flash := create_tween()
+	flash.tween_property(_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)
+	if _fine_tween and _fine_tween.is_valid():
+		_fine_tween.kill()
+	_fine_panel.visible = true
+	_fine_panel.modulate.a = 0.0
+	_fine_tween = create_tween()
+	_fine_tween.tween_property(_fine_panel, "modulate:a", 1.0, 0.12)
+	_fine_tween.tween_interval(3.4)
+	_fine_tween.tween_property(_fine_panel, "modulate:a", 0.0, 0.5)
+	_fine_tween.tween_callback(func() -> void: _fine_panel.visible = false)

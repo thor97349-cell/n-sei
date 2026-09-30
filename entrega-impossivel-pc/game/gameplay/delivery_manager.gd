@@ -13,6 +13,8 @@ extends Node
 signal offers_changed
 signal stage_changed
 signal finished(result: Dictionary)
+## A carga estragou numa batida: quanto perdeu (pontos %) e como ficou.
+signal cargo_damaged(loss: float, condition: float)
 
 enum Stage { IDLE, TO_PICKUP, DELIVERING, RESULT }
 
@@ -252,10 +254,17 @@ func _on_impact(strength: float) -> void:
 	if stage != Stage.DELIVERING or strength < GameConfig.CARGO_IMPACT_THRESHOLD:
 		return
 	var damage := GameConfig.CARGO_DAMAGE_PER_IMPACT * (strength / GameConfig.CARGO_IMPACT_THRESHOLD) * float(active["fragility"])
+	var before := cargo_condition
 	cargo_condition = maxf(cargo_condition - damage, 0.0)
-	if _hit_cooldown <= 0.0:
-		_hit_cooldown = 1.5
-		Bus.toast(Loc.t("toast.cargo_hit", [roundi(cargo_condition)]), "warning")
+	if before - cargo_condition < 0.5:
+		return
+	cargo_damaged.emit(before - cargo_condition, cargo_condition)
+	# O HUD mostra cada batida; o aviso escrito só aparece ao passar de 75%, 50% e 25%.
+	for threshold: float in [75.0, 50.0, 25.0]:
+		if before > threshold and cargo_condition <= threshold and _hit_cooldown <= 0.0:
+			_hit_cooldown = 1.5
+			Bus.toast(Loc.t("toast.cargo_hit", [roundi(cargo_condition)]), "warning")
+			break
 
 
 ## Calcula o pagamento (função pura, usada também pelos testes).

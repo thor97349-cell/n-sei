@@ -70,7 +70,10 @@ Há 4 níveis de qualidade gráfica nas Opções.
   - no prazo: valor cheio, **+35%** se sobrar ≥45% do tempo, **+15%** se sobrar ≥25%;
   - atrasado: até 40 s de tolerância recebe **40%**; depois disso o pedido é cancelado
     e paga **0** — você **nunca perde dinheiro** numa entrega;
-  - batidas estragam a carga (bolo e pizza são frágeis) e reduzem pagamento e nota;
+  - batidas estragam a carga e reduzem pagamento e nota. Cada tipo aguenta batidas de
+    um jeito (o celular mostra: documentos são resistentes, comida é sensível, bolo é
+    muito frágil). Durante a entrega o HUD mostra o estado da carga em %, o "−X%" de cada
+    batida e quanto a entrega está pagando agora;
   - nota alta (4–5 ★) dá **gorjeta**.
 - **8 tipos de pedido**: pizza, hambúrguer, documentos, remédio, pacote, pacote urgente,
   bolo de festa e geladeira — cada um com prazo, fragilidade e valor diferentes.
@@ -79,8 +82,15 @@ Há 4 níveis de qualidade gráfica nas Opções.
 - **Cidade**: ~1,5 km², avenidas e rodovia em anel, canal com pontes, uma pinguela estreita
   (atalho arriscado, sem grade), ponte em obras, becos, estacionamento do shopping,
   parque, estádio, obra, chácara fora da cidade; ciclo de dia e noite (1 dia = 24 min).
+  Árvores variadas (copa redonda, alta, guarda-chuva, pinheiros, palmeiras e ipês
+  floridos), pontos de ônibus e postes de luz que caem quando você bate.
+- **Pedestres**: andam pelas calçadas (nunca atravessam a rua), esperam nos pontos de
+  ônibus e pulam para o lado quando você sobe na calçada. Menos gente à noite e na chuva.
 - **Trânsito**: carros da IA respeitam semáforos e distância e param para você.
-  Avançar o sinal vermelho gera **multa** (câmera).
+- **Multa do sinal vermelho** (câmera): 25% do seu saldo, entre R$ 15 e R$ 80 — nunca
+  deixa o saldo negativo. Uma multa só por cruzamento em cada sinal vermelho, com uma
+  pequena tolerância para quem pegou o vermelho em cima da faixa. A tela pisca (flash) e
+  mostra o valor descontado e o saldo que sobrou.
 - **Eventos**: 🚧 acidente (rua bloqueada; o GPS desvia), 🌧️ tempestade (pista molhada,
   menos aderência, relâmpagos) e 🔓 atalho temporário (ponte em obras ou shopping).
 - **Serviços**: posto de gasolina (segure E), guincho quando acaba o combustível (cobra só o
@@ -115,21 +125,32 @@ Rodam sem tela e também no GitHub Actions antes de gerar os executáveis:
 ```bash
 godot --headless --path . res://tests/compile_check.tscn            # todos os scripts compilam
 godot --headless --fixed-fps 120 --path . res://tests/vehicle_test.tscn   # física dos 4 veículos
-godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn   # 41 verificações do jogo
+godot --headless --fixed-fps 120 --path . res://tests/handling_test.tscn  # curvas e batidas
+godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn   # 48 verificações do jogo
 godot --headless --fixed-fps 60 --path . res://tests/traffic_test.tscn -- 180  # trânsito
+godot --headless --fixed-fps 60 --path . res://tests/pedestrian_test.tscn # pedestres
 ```
 
 Resultados atuais (Godot 4.7.2):
 
 | Veículo | 0–100 km/h | Máxima | Frenagem 100–0 | Aderência lateral |
 |---|---|---|---|---|
-| Pé-de-Boi (furgão) | 10,3 s | 148 km/h | 48 m | 0,94 g |
-| Faísca (hatch) | 7,9 s | 183 km/h | 41 m | 1,03 g |
-| Brutão (caminhão) | 17,1 s | 108 km/h | 54 m | 0,84 g |
-| Relâmpago (esportivo) | 3,4 s | 248 km/h | 36 m | 1,16 g |
+| Pé-de-Boi (furgão) | 10,3 s | 148 km/h | 48 m | 0,99 g |
+| Faísca (hatch) | 7,9 s | 183 km/h | 41 m | 1,07 g |
+| Brutão (caminhão) | 17,1 s | 108 km/h | 54 m | 0,89 g |
+| Relâmpago (esportivo) | 3,4 s | 248 km/h | 36 m | 1,23 g |
 
-Trânsito (4 min simulados, 36 carros): 70% em movimento em média, nenhum carro dentro do
+Dirigibilidade (teclado, volante todo): nenhum veículo roda nas curvas de 30 a 90 km/h,
+meio volante faz meia curva, ao soltar o carro endireita em ~0,2 s; batendo de lado num
+muro a 50 km/h o carro não tomba (máx. 10°) e segue andando; derrubar um poste de luz a
+50 km/h tira só ~10% da velocidade.
+
+Trânsito (2 min simulados, 36 carros): ~70% em movimento em média, nenhum carro dentro do
 outro, nenhum carro da IA avançou o vermelho.
+
+Pedestres (1 min simulado): ~5 mil posições verificadas, nenhuma fora da calçada nem
+dentro de prédio/poste/árvore; um carro andando pela calçada a 30 km/h não encosta em
+ninguém.
 
 ## Gerar os executáveis no seu computador
 
@@ -182,14 +203,15 @@ com a extensão gratuita **GodotSteam**). Isso **ainda não foi feito**.
   coerente e limpo, mas não é fotorrealista. Para vender bem na Steam, o próximo passo é
   trocar por modelos 3D e texturas de verdade (há pacotes gratuitos CC0, como Kenney e
   Poly Haven — os sites estavam bloqueados neste ambiente, por isso não foram usados).
-- **Sem pedestres**; os carros da IA não trocam de faixa nem ultrapassam, e nos cruzamentos
-  com 4 saídas só seguem reto ou viram à direita (para nunca se cruzarem).
+- Pedestres só andam nas calçadas (ainda não atravessam na faixa); os carros da IA não
+  trocam de faixa nem ultrapassam, e nos cruzamentos com 4 saídas só seguem reto ou viram
+  à direita (para nunca se cruzarem).
 - **Windows**: o `.exe` é gerado com os modelos oficiais do Godot, mas foi testado em
   execução só no Linux (o ambiente de desenvolvimento não tem Windows). Teste antes de
   publicar.
 - **Desempenho** não foi medido em placas de vídeo reais — só em renderização por
-  software. A parte de lógica (física a 120 Hz, trânsito com 30 carros, entregas, HUD)
-  custa ~7 ms de CPU por quadro. Use os níveis de qualidade nas Opções se ficar pesado.
+  software. A parte de lógica (física a 120 Hz, trânsito com 30 carros, pedestres,
+  entregas, HUD) custa ~6 ms de CPU por quadro. Use os níveis de qualidade nas Opções se ficar pesado.
 - Sem integração com Steam (conquistas/overlay), sem multiplayer, sem trilha sonora.
 - O modo "capô" substitui a visão de dentro do carro (não há interior modelado).
 

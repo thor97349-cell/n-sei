@@ -26,7 +26,11 @@ const CARGO_DAMAGE_PER_IMPACT := 6.0
 
 const FUEL_PRICE_PER_LITER := 1.4
 const TOW_PRICE := 150
+## Multa por avançar o sinal vermelho: 25% do saldo, entre R$ 15 e R$ 80 (no começo do
+## jogo, com pouco dinheiro, a multa pesa menos; nunca deixa o saldo negativo).
 const RED_LIGHT_FINE := 80
+const RED_LIGHT_FINE_MIN := 15
+const RED_LIGHT_FINE_SHARE := 0.25
 
 ## Relógio: minutos do jogo por segundo real (1 dia = 24 minutos reais).
 const CLOCK_SPEED := 1.0
@@ -40,3 +44,9 @@ const EVENT_DURATION := {
 	"storm": Vector2(90.0, 150.0),
 	"shortcut": Vector2(60.0, 85.0),
 }
+
+
+## Valor da multa do sinal vermelho para quem tem `balance` de saldo.
+static func red_light_fine(balance: int) -> int:
+	var amount := clampi(roundi(float(balance) * RED_LIGHT_FINE_SHARE), RED_LIGHT_FINE_MIN, RED_LIGHT_FINE)
+	return mini(amount, maxi(balance, 0))

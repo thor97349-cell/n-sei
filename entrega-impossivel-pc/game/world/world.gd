@@ -1,7 +1,7 @@
 class_name World
 extends Node3D
 ## O mundo do jogo: céu/clima (Atmosphere), cidade (CityBuilder), semáforos, trânsito,
-## luz dos postes perto da câmera e chuva. Criado uma vez e reaproveitado entre o
+## pedestres, luz dos postes perto da câmera e chuva. Criado uma vez e reaproveitado entre o
 ## menu (fundo animado) e o jogo.
 
 const STREET_LIGHTS := 14
@@ -12,6 +12,7 @@ var graph: RoadGraph
 var lights: TrafficLights
 var traffic: TrafficSystem
 var breakables: Breakables
+var pedestrians: Pedestrians
 var camera: Camera3D
 
 var _pool: Array[OmniLight3D] = []
@@ -42,6 +43,10 @@ func _ready() -> void:
 	# Poste derrubado não acende; volta a acender quando é recolocado.
 	breakables.broken.connect(func(light: Vector3) -> void: info.street_lamps.erase(light))
 	breakables.restored.connect(func(light: Vector3) -> void: info.street_lamps.append(light))
+	pedestrians = Pedestrians.new()
+	pedestrians.name = "Pedestrians"
+	add_child(pedestrians)
+	pedestrians.setup(info)
 	for i in STREET_LIGHTS:
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.8, 0.58)
@@ -60,10 +65,14 @@ func set_camera(value: Camera3D) -> void:
 	camera = value
 	traffic.camera = value
 	breakables.camera = value
+	pedestrians.camera = value
 
 
 func _process(delta: float) -> void:
 	traffic.night = atmosphere.night_factor > 0.5
+	pedestrians.night = traffic.night
+	pedestrians.rain = atmosphere.rain_amount()
+	pedestrians.player = traffic.player if is_instance_valid(traffic.player) else null
 	_pool_timer -= delta
 	if _pool_timer <= 0.0:
 		_pool_timer = 0.4
