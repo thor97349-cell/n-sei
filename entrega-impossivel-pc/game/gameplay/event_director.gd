@@ -1,10 +1,14 @@
 class_name EventDirector
 extends Node
-## Eventos aleatórios da cidade (um de cada vez):
+## Eventos da cidade (um de cada vez):
 ##   • ACIDENTE: uma rua fica bloqueada (carros batidos, cones, giroflex). O GPS e o
 ##     trânsito desviam.
 ##   • TEMPESTADE: chuva forte, pista molhada (menos aderência), relâmpagos.
 ##   • ATALHO: a ponte em obras ou o estacionamento do shopping abrem por um tempo.
+##   • TRÂNSITO PESADO: mais carros nas ruas (também na hora do rush: 7h30 e 17h30).
+## Além do sorteio de tempos em tempos, cada entrega tem uma chance (maior nas difíceis e
+## arriscadas, JobRules.EVENT_CHANCE) de algo acontecer no caminho — o acidente, nesse
+## caso, cai num trecho da rota do jogador. Nem toda entrega tem evento.
 
 var world: World
 var player: Vehicle
@@ -22,6 +26,16 @@ var _shortcut_id := ""
 var _closing_warned := false
 var _flash_time := 0.0
 var _flash_lights: Array[OmniLight3D] = []
+## Evento marcado para a entrega atual: id e segundos até começar (-1 = nenhum).
+var _planned_id := ""
+var _planned_in := -1.0
+var _route: PackedVector3Array = PackedVector3Array()
+var _traffic_before := -1
+var _last_clock := -1.0
+var _rush := false
+
+## Horas do rush (minutos do relógio do jogo).
+const RUSH_HOURS := [7.5 * 60.0, 17.5 * 60.0]
 
 
 func setup(world_ref: World) -> void:
@@ -38,17 +52,51 @@ func label() -> String:
 			return Loc.t("event.storm")
 		"shortcut":
 			return Loc.t("event.shortcut", [_shortcut_name(), roundi(time_left)])
+		"traffic":
+			return Loc.t("event.rush" if _rush else "event.traffic")
 	return ""
+
+
+## Uma entrega começou (encomenda carregada): talvez algo aconteça no caminho.
+func on_delivery_started(offer: Dictionary) -> void:
+	_planned_id = ""
+	_planned_in = -1.0
+	if not enabled or active_id != "" or world == null:
+		return
+	if _rng.randf() >= float(JobRules.EVENT_CHANCE.get(offer.get("tier", "safe"), 0.12)):
+		return
+	_route = world.graph.find_path(offer["pickup_zone"], offer["dropoff_zone"])
+	var options: Array[String] = ["storm", "traffic"]
+	if not _spots_on_route().is_empty():
+		options.append_array(["accident", "accident"])
+	_planned_id = options[_rng.randi() % options.size()]
+	_planned_in = _rng.randf_range(8.0, 25.0)
+
+
+## A entrega acabou: cancela o que estava marcado para ela.
+func on_delivery_ended() -> void:
+	_planned_id = ""
+	_planned_in = -1.0
+	_route = PackedVector3Array()
 
 
 func _process(delta: float) -> void:
 	if world == null:
 		return
 	if active_id == "":
+		if _planned_in >= 0.0:
+			_planned_in -= delta
+			if _planned_in < 0.0 and _planned_id != "":
+				start(_planned_id)
+				_planned_id = ""
+				return
 		if enabled:
+			if _rush_hour_started():
+				start("traffic", "rush")
+				return
 			_next -= delta
 			if _next <= 0.0:
-				start(["accident", "storm", "shortcut"][_rng.randi() % 3])
+				start(["accident", "storm", "shortcut", "traffic"][_rng.randi() % 4])
 		return
 	time_left -= delta
 	if active_id == "accident":
@@ -78,6 +126,11 @@ func start(id: String, variant: String = "") -> void:
 	match id:
 		"accident":
 			_start_accident()
+		"traffic":
+			_rush = variant == "rush"
+			var traffic := world.traffic
+			_traffic_before = traffic.target_count
+			traffic.target_count = mini(roundi(traffic.target_count * GameConfig.TRAFFIC_EVENT_FACTOR), traffic.target_count + GameConfig.TRAFFIC_EVENT_MAX_EXTRA)
 		"storm":
 			world.atmosphere.set_rain(true)
 			Bus.weather_changed.emit("storm")
@@ -114,6 +167,11 @@ func stop() -> void:
 				if edge:
 					edge.open = false
 			Bus.toast(Loc.t("event.shortcut_end"), "info")
+		"traffic":
+			if _traffic_before >= 0:
+				world.traffic.target_count = _traffic_before
+			_traffic_before = -1
+			Bus.toast(Loc.t("event.traffic_end"), "info")
 	var ended := active_id
 	active_id = ""
 	_next = _rng.randf_range(GameConfig.EVENT_INTERVAL.x, GameConfig.EVENT_INTERVAL.y)
@@ -140,8 +198,11 @@ func _player_on_shortcut() -> bool:
 
 
 func _start_accident() -> void:
-	# Escolhe um local longe do jogador (para dar tempo de desviar).
-	var spots := CityLayout.ACCIDENT_SPOTS.duplicate()
+	# Durante uma entrega, prefere um trecho da rota do jogador; senão, qualquer lugar.
+	# Sempre longe do carro, para dar tempo de desviar.
+	var spots: Array = _spots_on_route()
+	if spots.is_empty():
+		spots = CityLayout.ACCIDENT_SPOTS.duplicate()
 	spots.shuffle()
 	_accident_spot = spots[0]
 	for spot: Dictionary in spots:
@@ -204,3 +265,32 @@ func _start_accident() -> void:
 		light.position = position + Vector3(0, 2.5, 0) + basis * Vector3(-3.0 + i * 6.0, 0, 0)
 		_accident_node.add_child(light)
 		_flash_lights.append(light)
+
+
+## Locais de acidente que ficam em cima da rota da entrega (e longe do carro).
+func _spots_on_route() -> Array:
+	var result: Array = []
+	if _route.size() < 2:
+		return result
+	for spot: Dictionary in CityLayout.ACCIDENT_SPOTS:
+		var position: Vector3 = spot["position"]
+		if player and position.distance_to(player.global_position) < 80.0:
+			continue
+		for i in range(1, _route.size()):
+			var closest := Geometry3D.get_closest_point_to_segment(position, _route[i - 1], _route[i])
+			if Vector2(closest.x - position.x, closest.z - position.z).length() < 12.0:
+				result.append(spot)
+				break
+	return result
+
+
+## Passou das 7h30 ou das 17h30 agora? (hora do rush)
+func _rush_hour_started() -> bool:
+	var clock := world.atmosphere.minutes
+	var started := false
+	if _last_clock >= 0.0:
+		for hour: float in RUSH_HOURS:
+			if _last_clock < hour and clock >= hour:
+				started = true
+	_last_clock = clock
+	return started

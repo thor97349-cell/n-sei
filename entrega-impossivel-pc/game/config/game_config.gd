@@ -24,7 +24,11 @@ const MAX_TIP := 0.2
 const CARGO_IMPACT_THRESHOLD := 3.5
 const CARGO_DAMAGE_PER_IMPACT := 6.0
 
-const FUEL_PRICE_PER_LITER := 1.4
+## Combustível: o consumo de cada veículo (VehicleSpecs "consumption") vezes esta escala.
+## Com 2× um tanque do furgão dura ≈ 40 km (uns 50 min de jogo) e cada entrega gasta uns
+## R$ 8 no furgão e R$ 16 no caminhão; encher o tanque do furgão custa ≈ R$ 300.
+const FUEL_CONSUMPTION_SCALE := 2.0
+const FUEL_PRICE_PER_LITER := 5.0
 const TOW_PRICE := 150
 ## Multa por avançar o sinal vermelho: 25% do saldo, entre R$ 15 e R$ 80 (no começo do
 ## jogo, com pouco dinheiro, a multa pesa menos; nunca deixa o saldo negativo).
@@ -38,12 +42,16 @@ const AUTOSAVE_SECONDS := 60.0
 
 ## Eventos aleatórios: segundos entre eventos e duração (mín, máx).
 const EVENT_FIRST_DELAY := Vector2(100.0, 160.0)
-const EVENT_INTERVAL := Vector2(160.0, 260.0)
+const EVENT_INTERVAL := Vector2(200.0, 320.0)
 const EVENT_DURATION := {
 	"accident": Vector2(80.0, 120.0),
 	"storm": Vector2(90.0, 150.0),
 	"shortcut": Vector2(60.0, 85.0),
+	"traffic": Vector2(90.0, 130.0),
 }
+## Trânsito pesado: multiplica a quantidade de carros (no máximo + este tanto).
+const TRAFFIC_EVENT_FACTOR := 1.45
+const TRAFFIC_EVENT_MAX_EXTRA := 16
 
 
 ## Valor da multa do sinal vermelho para quem tem `balance` de saldo.

@@ -4,6 +4,7 @@ extends Node3D
 ##  2. entrega completa: aceitar → parar na vaga da coleta → parar na vaga do destino;
 ##  3. entrega atrasada (paga menos) e entrega que estoura o limite (paga 0, sem perder dinheiro);
 ##  4. eventos: acidente bloqueia a rua e o GPS desvia; atalho abre a ponte; tempestade molha a pista;
+##     trânsito pesado põe mais carros; entrega especial aparece e expira;
 ##  5. posto de gasolina, guincho e resgate;
 ##  6. multa do sinal vermelho (valor justo, uma só por passagem);
 ##  7. salvar e carregar o progresso.
@@ -86,7 +87,9 @@ func _physics_process(delta: float) -> void:
 		4:
 			var result := delivery.last_result
 			_check(not result.get("failed", true) and int(result["total"]) > 0, "recebeu pagamento: %s" % [result.get("total")])
-			_check(GameState.money == _money_before + int(result["total"]), "pagamento somado ao saldo")
+			_check(GameState.money == _money_before + int(result["total"]) + int(result["report"]["money"]), "pagamento (e contratos/desafios) somado ao saldo")
+			_check(GameState.career.combo == 1 and int(result["report"]["rep"]) > 0, "combo começou e ganhou reputação")
+			_check(delivery.offers.size() >= GameConfig.OFFERS_ON_PHONE, "pedidos novos no celular depois da entrega")
 			_check(int(GameState.stats["deliveries"]) == 1, "estatística de entregas")
 			_next(GameConfig.RESULT_SECONDS + 0.5)
 		5:
@@ -136,6 +139,11 @@ func _physics_process(delta: float) -> void:
 				_check(length > edge.length, "GPS desviou do acidente (%.0f m em vez de %.0f m)" % [length, edge.length - 40.0])
 			_session.events.stop()
 			_check(_find_blocked_edge() == null, "rua liberada no fim do acidente")
+			# Durante uma entrega o acidente prefere um trecho da rota do jogador.
+			_session.events._route = _world.graph.find_path(Vector3(-220, 0, -225), Vector3(-5, 0, -225))
+			var on_route: Array = _session.events._spots_on_route()
+			_check(on_route.size() == 1 and on_route[0]["road"] == "Rua dos Ipês", "acidente pode cair na rota da entrega")
+			_session.events.on_delivery_ended()
 			_session.events.start("shortcut")
 			var shortcut_open := _world.info.is_shortcut_open("bridge") or _world.info.is_shortcut_open("mall_gate")
 			_check(shortcut_open, "atalho aberto durante o evento")
@@ -148,6 +156,16 @@ func _physics_process(delta: float) -> void:
 			_check(_world.atmosphere.wetness > 0.5, "tempestade molhou a pista (%.2f)" % _world.atmosphere.wetness)
 			_check(vehicle.grip_factor < 0.9, "pneu perde aderência na chuva (%.2f)" % vehicle.grip_factor)
 			_session.events.stop()
+			# Trânsito pesado: mais carros durante o evento e volta ao normal depois.
+			var cars_before := _world.traffic.target_count
+			_session.events.start("traffic")
+			_check(_world.traffic.target_count > cars_before, "trânsito pesado aumenta os carros (%d → %d)" % [cars_before, _world.traffic.target_count])
+			_session.events.stop()
+			_check(_world.traffic.target_count == cars_before, "trânsito volta ao normal")
+			# Entrega especial: aparece no topo do celular e some quando o tempo acaba.
+			delivery.add_special("rush")
+			_check(delivery.offers[0]["special"] == "rush" and str(delivery.offers[0]["note"]) != "", "entrega especial no topo do celular")
+			delivery.offers[0]["expires"] = 0.05
 			# Guincho sem combustível: vai para o posto e nunca deixa saldo negativo.
 			GameState.money = 30
 			vehicle.fuel = 0.0
@@ -161,6 +179,7 @@ func _physics_process(delta: float) -> void:
 			_check(near_station, "guincho leva ao posto")
 			_next(1.0)
 		14:
+			_check(delivery.offers.is_empty() or delivery.offers[0].get("special", "") == "", "entrega especial expira")
 			# Resgate: vira o carro e aperta R.
 			vehicle.place(Transform3D(Basis(Vector3.FORWARD, PI), Vector3(-150, 0.5, -222)))
 			_next(1.5)

@@ -477,7 +477,7 @@ func _apply_aero() -> void:
 func _use_fuel(delta: float, drive: float) -> void:
 	if fuel <= 0.0:
 		return
-	var liters := float(spec["consumption"]) * absf(speed) * delta / 1000.0 * (0.35 + 0.65 * drive) + IDLE_FUEL_PER_SECOND * delta
+	var liters := (float(spec["consumption"]) * absf(speed) * delta / 1000.0 * (0.35 + 0.65 * drive) + IDLE_FUEL_PER_SECOND * delta) * GameConfig.FUEL_CONSUMPTION_SCALE
 	fuel = maxf(fuel - liters, 0.0)
 	if fuel <= 0.0 and not _out_of_fuel_sent:
 		_out_of_fuel_sent = true

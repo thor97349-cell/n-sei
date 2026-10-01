@@ -11,7 +11,8 @@ veículos melhores.
 | | |
 |---|---|
 | ![Cidade vista do alto](docs/cidade.jpg) | ![Dirigindo com o GPS e o prazo](docs/dirigindo.jpg) |
-| ![Celular com os pedidos](docs/celular.jpg) | ![Pagamento da entrega](docs/resultado.jpg) |
+| ![Celular com os pedidos (risco, modificadores, contrato)](docs/celular.jpg) | ![Resumo da entrega com combo, contrato e desafio](docs/resultado.jpg) |
+| ![Carreira: nível, contratos e desafios](docs/carreira.jpg) | ![Multa tira combo e reputação](docs/multa.jpg) |
 | ![Noite com tempestade](docs/noite-chuva.jpg) | ![Garagem](docs/garagem.jpg) |
 
 *(Capturas feitas em renderização por software, sem placa de vídeo; num PC real a imagem
@@ -62,19 +63,25 @@ Há 4 níveis de qualidade gráfica nas Opções.
 
 ## Como o jogo funciona
 
-- **Pedidos**: o celular mostra 3 pedidos com tipo, coleta, destino, distância da rota,
-  prazo, pagamento e tamanho da carga. Pedidos grandes (geladeira) só cabem no caminhão.
+- **Pedidos**: o celular mostra 3 pedidos (4 a partir de "Profissional") com tipo, nível
+  de risco, modificadores, coleta, destino (e região), distância, prazo, pagamento,
+  tamanho da carga e, nas viagens longas, quanto combustível vai gastar. Pedidos grandes
+  (geladeira) só cabem no caminhão.
 - **Coleta e entrega**: pare dentro da vaga amarela "CARGA" iluminada (≈2 s parado).
   O prazo só começa a contar na coleta. O GPS pinta a rota no asfalto e no minimapa.
 - **Pagamento** (sempre calculado pelo jogo, nunca pela interface):
   - no prazo: valor cheio, **+35%** se sobrar ≥45% do tempo, **+15%** se sobrar ≥25%;
   - atrasado: até 40 s de tolerância recebe **40%**; depois disso o pedido é cancelado
-    e paga **0** — você **nunca perde dinheiro** numa entrega;
+    e paga **0** — você **nunca perde dinheiro** numa entrega (só as multas da viagem);
   - batidas estragam a carga e reduzem pagamento e nota. Cada tipo aguenta batidas de
     um jeito (o celular mostra: documentos são resistentes, comida é sensível, bolo é
     muito frágil). Durante a entrega o HUD mostra o estado da carga em %, o "−X%" de cada
     batida e quanto a entrega está pagando agora;
-  - nota alta (4–5 ★) dá **gorjeta**.
+  - nota alta (4–5 ★) dá **gorjeta**; mais os bônus dos modificadores, adicional de
+    chuva (+15%) e noturno (+10%, das 22h às 5h) e o bônus do combo;
+  - o resumo no fim mostra cada parte: entrega, bônus, gorjeta, modificadores, combo,
+    multas da viagem e o **total**, e embaixo o combo, a reputação ganha, o progresso do
+    contrato e os desafios concluídos (só o que aconteceu).
 - **8 tipos de pedido**: pizza, hambúrguer, documentos, remédio, pacote, pacote urgente,
   bolo de festa e geladeira — cada um com prazo, fragilidade e valor diferentes.
 - **4 veículos**: furgão Pé-de-Boi (inicial), hatch Faísca, caminhão Brutão e esportivo
@@ -95,9 +102,91 @@ Há 4 níveis de qualidade gráfica nas Opções.
   menos aderência, relâmpagos) e 🔓 atalho temporário (ponte em obras ou shopping).
 - **Serviços**: posto de gasolina (segure E), guincho quando acaba o combustível (cobra só o
   que você tiver), resgate grátis do carro virado (R), garagem na Central (E).
+- **Gasolina**: cada veículo gasta diferente (o caminhão bebe o dobro do furgão). O
+  tanque do furgão dura uns 40 km; encher custa ≈ R$ 300. Quando falta, o guincho leva
+  ao posto e cobra.
 - **Salvamento**: automático a cada 60 s e a cada entrega, com arquivo reserva (.bak).
   Local: `%APPDATA%\EntregaImpossivel\` (Windows) ou `~/.local/share/EntregaImpossivel/` (Linux).
 - Idiomas: **português** e **inglês** (automático pelo sistema ou nas Opções).
+
+## Carreira: risco, combo, contratos, desafios e reputação
+
+O ciclo do jogo é **entrega → recompensa → escolha → risco → progressão → nova
+oportunidade**. Depois de cada entrega o celular já tem pedidos novos, o combo subiu (ou
+caiu), um contrato andou, talvez um desafio pagou — e às vezes aparece uma **entrega
+especial**.
+
+**Nível de risco** (cada pedido tem um):
+
+| | Recompensa | Prazo | Rota | Modificadores |
+|---|---|---|---|---|
+| 🟢 Segura | ×0,8 | folgado (×1,2) | curta | nenhum (às vezes um leve) |
+| 🟡 Difícil | ×1,1 | normal | média/longa | 1 |
+| 🔴 Arriscada (a partir de "Confiável") | ×1,35 | apertado (×0,92) | longa | 2 |
+
+**Modificadores** (nunca todos juntos; cada um combina só com encomendas que fazem
+sentido): ⏱ **Urgente** (prazo 22% menor, +35% se chegar no prazo), 🍷 **Frágil**
+(batidas estragam 70% mais, paga +15%), ⛽ **Longa distância** (uma das rotas mais longas
+da cidade, paga +12%), 🚦 **Sem multas** (+20% sem nenhuma multa) e ⭐ **Entrega perfeita**
+(+25% no prazo, com a carga ≥95% e sem multas). Durante a entrega o HUD mostra as
+etiquetas e risca (✖) o bônus que você já perdeu.
+
+**🔥 Combo**: cada entrega no prazo e com a carga acima de 50% soma 1. Bônus sobre a
+entrega: combo 2 +3%, 4 +6%, 6 +10%, 10 +15%, 15 +20%. Atraso corta o combo pela metade;
+falha, carga muito danificada (<50%) ou cancelar com a carga no carro zeram; multa tira 1.
+Combos 3, 5, 8 e 12 dão reputação extra.
+
+**🎯 Desafios**: 2 ativos (3 a partir de "Profissional"), aparecem no canto da tela: N
+entregas seguidas sem dano, entrega em menos de X, N entregas sem multa, entrega
+econômica (L/km), entregas difíceis, chegar a um combo, entregas perfeitas, entrega à
+noite. Pagam na hora (R$ 80–160); um novo entra no lugar depois de 3 entregas.
+
+**📋 Contratos** (aba Carreira do celular, **Q** troca de aba): clientes da cidade —
+Pizzaria Bella Napoli, Burger Boom, Padaria Pão de Ouro, Farmácia Vida+, Cartório
+Central, Centro de Distribuição, Shopping Centro, Supermercado Preço Bom e o Sr. Valente
+(VIP) — oferecem contratos: N entregas, N no prazo, N com a carga intacta, N para uma
+região, N perfeitas ou N seguidas no prazo. Assinado, sempre aparece um pedido do cliente
+no celular (📋). Concluir paga o contrato (R$ 165 a R$ 1.130) e reputação, e o cliente
+passa a oferecer contratos maiores (níveis 1 a 4).
+
+**🚨 Entregas especiais** (raras, ~1 a cada 10–12 entregas, mais frequentes com mais
+reputação): 🚨 Entrega especial ("preciso disso antes das 22h"), 👑 Cliente VIP, 🕶 Carga
+confidencial ("não abra esta encomenda") e 💰 Oportunidade única. Pagam bem mais,
+aparecem no topo do celular e **somem em 2,5 min** se ninguém aceitar.
+
+**🏅 Reputação**:
+
+| Nível | Reputação | Libera |
+|---|---|---|
+| Novato | 0 | entregas seguras e difíceis, contratos nível 1 |
+| Confiável | 120 | entregas arriscadas, a Chácara (zona rural), VIP e carga confidencial, contratos nível 2, +2% em tudo |
+| Profissional | 400 | 4 pedidos no celular, 2 contratos, 3 desafios, oportunidades únicas, contratos nível 3, +4% |
+| Especialista | 1000 | contratos nível 4, mais especiais, +7% |
+
+Sobe com entregas (×1 seguras, ×1,5 difíceis, ×2,2 arriscadas), perfeitas, combos e
+contratos; cai com falhas, carga muito danificada e multas — mas nunca abaixo do nível
+já alcançado (você não perde o que liberou). Saves antigos ganham reputação pelas
+entregas que já tinham.
+
+**Eventos durante as entregas**: além dos eventos de tempos em tempos, cada entrega tem
+uma chance (12% seguras, 28% difíceis, 45% arriscadas) de algo acontecer no caminho: um
+**acidente bloqueando um trecho da sua rota**, uma tempestade ou **trânsito pesado**. Às
+7h30 e às 17h30 tem **hora do rush**.
+
+**Economia** (simulada com `tools/economy_sim.tscn`, que usa o código de verdade; os
+números variam com o jeito de jogar): um jogador médio ganha ≈ R$ 8.500–9.000 por hora
+de jogo e compra o Faísca (R$ 10.500) em ≈ 1h20–1h40, o Brutão (R$ 25.000) em ≈ 2h40–3h
+e o Relâmpago (R$ 58.000) em ≈ 6h20–6h45. Antes deste update eram ≈ 1h40, 4h e mais de
+8h (com os preços antigos de R$ 7.500, 18.000 e 42.000). Os preços subiram porque agora
+dá para ganhar mais jogando bem (contratos, combos, desafios, especiais): o primeiro
+carro sai mais ou menos no mesmo ritmo e os seguintes um pouco mais rápido. A gasolina
+e as multas são os gastos do dia a dia (≈ 2% e 2–4% do que se ganha).
+
+**Para o futuro (história e missões especiais)**: cada cliente tem uma pessoa e falas
+(`game/config/clients.gd`), o save guarda o histórico com cada cliente e marcos de
+história (`Career.flags`), e o tipo de missão de um pedido é uma classe (`Mission`) —
+uma missão diferente (perseguição, fuga, cliente suspeito, missão de história) herda
+dela e muda só o que precisa.
 
 ## Modo dev (ver o jogo completo)
 
@@ -106,11 +195,13 @@ normal não é tocado), já começa com R$ 500.000 e **todos os veículos libera
 Durante o jogo, aperte **F1** para abrir o painel (o jogo pausa enquanto ele está aberto):
 
 - **Veículo**: troca na hora para o furgão, hatch, caminhão ou esportivo, no mesmo lugar.
-- **Eventos**: acidente, tempestade, atalho da ponte, atalho do shopping, encerrar evento
-  e ligar/desligar os eventos automáticos.
+- **Eventos**: acidente, tempestade, atalho da ponte, atalho do shopping, trânsito
+  pesado, encerrar evento e ligar/desligar os eventos automáticos.
 - **Hora e clima**: 7h, 12h, 18h, 22h e parar/andar o relógio.
 - **Dinheiro**: +R$ 10.000, +R$ 100.000 ou zerar (para testar a multa sem saldo).
 - **Entrega**: novos pedidos, ir direto para a vaga, carga 100%, tanque cheio, desvirar.
+- **Carreira**: +100 de reputação, combo +1, desafios novos, deixar o contrato a uma
+  entrega do fim e chamar cada entrega especial (Especial, VIP, Confidencial, Única).
 - **Teleporte**: para qualquer local de coleta/entrega ou para a Central.
 - **Cidade**: trânsito e pedestres normal/cheio/nenhum, mostrar FPS.
 
@@ -126,7 +217,11 @@ Onde mexer:
 
 | Quero mudar... | Arquivo |
 |---|---|
-| Preços, prazos, multas, eventos, relógio | `game/config/game_config.gd` |
+| Preços, prazos, multas, eventos, relógio, gasolina | `game/config/game_config.gd` |
+| Níveis de risco, modificadores, entregas especiais | `game/config/job_rules.gd` |
+| Reputação (níveis e o que liberam), combo | `game/config/career_rules.gd` |
+| Clientes, contratos e falas (história) | `game/config/clients.gd` |
+| Desafios | `game/config/challenges.gd` |
 | Tipos de pedido (valor, prazo, fragilidade) | `game/config/order_types.gd` |
 | Veículos (potência, peso, câmbio, preço) | `game/config/vehicle_specs.gd` |
 | Mapa, locais, ruas, temas dos bairros | `game/world/city_layout.gd` |
@@ -150,15 +245,27 @@ grande (`macro_noise.png`), para o chão não ficar com cara de "textura repetid
 mudar uma textura: edite o script, rode `python3 tools/gen_textures.py` e abra o projeto
 no Godot (ele reimporta sozinho).
 
+### Ferramentas de desenvolvimento
+
+- `tools/economy_sim.tscn` — simula horas de jogo com o código de verdade para três
+  perfis de jogador e compara com a economia antiga (dinheiro por hora, tempo até cada
+  veículo e nível). Rode depois de mexer em valores:
+  `godot --headless --path . res://tools/economy_sim.tscn -- 8`
+- `tools/subset_emoji.py` — o jogo embute só os emojis que usa (fonte recortada). Usou um
+  emoji novo num texto? Rode `python3 tools/subset_emoji.py` (precisa da fonte Noto Color
+  Emoji completa e de `fonttools`).
+
 ## Testes automáticos
 
 Rodam sem tela e também no GitHub Actions antes de gerar os executáveis:
 
 ```bash
 godot --headless --path . res://tests/compile_check.tscn            # todos os scripts compilam
+godot --headless --path . res://tests/career_test.tscn              # 59 verificações: pagamento, combo, contratos, desafios, pedidos
+godot --headless --fixed-fps 60 --path . res://tests/loop_test.tscn       # 30 entregas seguidas no jogo completo
 godot --headless --fixed-fps 120 --path . res://tests/vehicle_test.tscn   # física dos 4 veículos
 godot --headless --fixed-fps 120 --path . res://tests/handling_test.tscn  # curvas e batidas
-godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn   # 48 verificações do jogo
+godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn   # 55 verificações do jogo
 godot --headless --fixed-fps 60 --path . res://tests/traffic_test.tscn -- 180  # trânsito
 godot --headless --fixed-fps 60 --path . res://tests/pedestrian_test.tscn # pedestres
 ```

@@ -116,6 +116,42 @@ static func panel(color: Color = BACKGROUND, radius: int = 12, padding: int = 14
 	return node
 
 
+## Etiqueta pequena colorida (nível de risco, modificadores, contrato...).
+static func chip(text: String, color: Color, size: int = 14, text_color: Color = Color.WHITE) -> PanelContainer:
+	var node := PanelContainer.new()
+	var box := stylebox(color, 7, Color(0, 0, 0, 0), 0, 0)
+	box.content_margin_left = 7
+	box.content_margin_right = 7
+	box.content_margin_top = 2
+	box.content_margin_bottom = 2
+	node.add_theme_stylebox_override("panel", box)
+	node.add_child(label(text, size, text_color, true))
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return node
+
+
+## Linha que quebra sozinha (etiquetas lado a lado).
+static func flow(separation: int = 6) -> HFlowContainer:
+	var node := HFlowContainer.new()
+	node.add_theme_constant_override("h_separation", separation)
+	node.add_theme_constant_override("v_separation", separation)
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return node
+
+
+## Barra de progresso fina com a cor dada.
+static func bar(value: float, color: Color, height: int = 8, width: int = 0) -> ProgressBar:
+	var node := ProgressBar.new()
+	node.max_value = 1.0
+	node.value = value
+	node.show_percentage = false
+	node.custom_minimum_size = Vector2(width, height)
+	node.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	node.add_theme_stylebox_override("fill", stylebox(color, 4, Color(0, 0, 0, 0), 0, 0))
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return node
+
+
 static func vbox(separation: int = 8) -> VBoxContainer:
 	var node := VBoxContainer.new()
 	node.add_theme_constant_override("separation", separation)

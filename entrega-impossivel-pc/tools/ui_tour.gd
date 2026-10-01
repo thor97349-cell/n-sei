@@ -2,7 +2,7 @@ extends Node
 ## Ferramenta de desenvolvimento: abre o jogo de verdade (main.tscn), passa pelo menu,
 ## começa um jogo novo, aceita um pedido, dirige um pouco e tira prints de cada tela.
 ## Usa um save separado ("tour") para não mexer no save do jogador.
-## Uso: godot --path . res://tools/ui_tour.tscn -- prefixo
+## Uso: godot --path . res://tools/ui_tour.tscn -- prefixo [idioma: pt/en]
 
 var _prefix := "user://tour"
 var _main: Node
@@ -29,64 +29,90 @@ func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_prefix = args[0]
+	if args.size() > 1:
+		Loc.language = args[1]
 	_main = load("res://scenes/main.tscn").instantiate()
 	add_child(_main)
 	_steps = [
 		[90, "shot", "menu"],
 		[95, "call", func() -> void: _main._start(true)],
-		[149, "call", func() -> void: print("hud size ", _main.hud.size, " rect ", _main.hud.get_global_rect(), " anchors ", [_main.hud.anchor_left, _main.hud.anchor_right, _main.hud.anchor_bottom], " offsets ", [_main.hud.offset_left, _main.hud.offset_right, _main.hud.offset_bottom], " viewport ", get_viewport().get_visible_rect())],
+		# Carreira de exemplo: Confiável, combo 3 e um contrato assinado.
+		[100, "call", func() -> void:
+			var career := GameState.career
+			career.add_reputation(150)
+			career.combo = 3
+			career.refresh_contract_offers()
+			career.accept_contract(career.contract_offers[0]["id"])
+			_main.session.delivery.generate_offers()],
 		[150, "shot", "hud_start"],
 		[155, "call", func() -> void: _main.phone.visible = true],
 		[170, "shot", "phone"],
-		[175, "call", func() -> void:
+		[172, "call", func() -> void: _main.phone._set_tab(1)],
+		[185, "shot", "phone_career"],
+		[187, "call", func() -> void:
+			_main.phone._set_tab(0)
+			_main.session.delivery.add_special("vip")],
+		[200, "shot", "phone_special"],
+		[205, "call", func() -> void:
 			_main.phone.visible = false
 			var delivery: DeliveryManager = _main.session.delivery
+			var index := -1
 			for i in delivery.offers.size():
 				if VehicleSpecs.can_carry(GameState.current_vehicle, delivery.offers[i]["size"]):
-					delivery.accept(i)
-					break
+					if index < 0 or (delivery.offers[i]["tier"] == "risky" and delivery.offers[i]["special"] == ""):
+						index = i
+			delivery.accept(index)
 			_main.session.vehicle.use_player_input = false],
-		[180, "drive", 1.0],
-		[420, "shot", "driving"],
-		[432, "call", func() -> void:
+		[210, "drive", 1.0],
+		[450, "shot", "driving"],
+		[462, "call", func() -> void:
 			GameState.money = 200
 			_main.session._on_red_light()],
-		[442, "shot", "fine"],
-		[460, "call", func() -> void: _main.map_overlay.visible = true],
-		[475, "shot", "map"],
-		[480, "call", func() -> void:
+		[472, "shot", "fine"],
+		[490, "call", func() -> void: _main.map_overlay.visible = true],
+		[505, "shot", "map"],
+		[510, "call", func() -> void:
 			_main.map_overlay.visible = false
 			_main.hud.visible = true
 			_autopilot = false
 			_park(true)],
-		[505, "shot", "pickup_bay"],
-		[508, "call", func() -> void: _main.session.delivery._on_impact(9.0)],
-		[514, "shot", "cargo_hit"],
-		[555, "call", func() -> void: _park(false)],
-		[595, "shot", "delivering"],
-		[675, "shot", "result"],
-		[676, "call", func() -> void:
-			var payment := DeliveryManager.compute_payment(200, 120.0, 40.0, 62.0)
-			payment.merge({"failed": false, "condition": 62.0, "type": "pizza", "dropoff_name": "Casa Azul"})
-			_main.hud._show_result(payment)],
-		[679, "shot", "result_damaged"],
-		[680, "call", func() -> void: _main._open_garage()],
-		[695, "shot", "garage"],
-		[700, "call", func() -> void:
+		[535, "shot", "pickup_bay"],
+		[538, "call", func() -> void: _main.session.delivery._on_impact(9.0)],
+		[544, "shot", "cargo_hit"],
+		[585, "call", func() -> void: _park(false)],
+		[625, "shot", "delivering"],
+		[705, "shot", "result"],
+		[706, "call", func() -> void:
+			var offer := {"type": "pizza", "reward": 320, "time_limit": 120.0, "tier": "risky", "modifiers": ["urgent", "fragile"]}
+			var payout := Payout.compute(offer, {"time_left": 40.0, "condition": 62.0, "fines": 1, "fine_total": 50, "night": true}, 3)
+			payout.merge({"failed": false, "total": payout["payout"], "type": "pizza", "dropoff_name": "Casa Azul", "report": {
+				"combo_before": 3, "combo": 4, "rep": 15, "rank_up": false, "rank": 1,
+				"contracts": [{"client": "bella_napoli", "progress": 3, "target": 4, "counted": true, "completed": false, "reward": 0}],
+				"challenges": [{"text": Challenges.text({"kind": "tier", "target": 2}), "reward": 80}],
+			}})
+			_main.hud._show_result(payout)],
+		[712, "shot", "result_damaged"],
+		[713, "call", func() -> void:
+			_main.hud._result_panel.visible = false
+			_main.hud._queue_banner(Loc.t("banner.rank", [CareerRules.rank_name(2).to_upper()]), CareerRules.rank_unlocks(2), Color(0.45, 0.3, 0.05, 0.95))],
+		[730, "shot", "rank_up"],
+		[735, "call", func() -> void: _main._open_garage()],
+		[750, "shot", "garage"],
+		[755, "call", func() -> void:
 			_main._garage.queue_free()
 			_main._garage = null
 			_main._pause_game()],
-		[715, "shot", "pause"],
-		[720, "call", func() -> void: _main._open_settings()],
-		[735, "shot", "settings"],
-		[740, "call", func() -> void:
+		[770, "shot", "pause"],
+		[775, "call", func() -> void: _main._open_settings()],
+		[790, "shot", "settings"],
+		[795, "call", func() -> void:
 			_main._settings.queue_free()
 			_main._settings = null
 			_main._resume()
 			_main.world.atmosphere.minutes = 21.0 * 60.0
 			_main.session.events.start("storm")],
-		[835, "shot", "night_rain"],
-		[840, "quit"],
+		[890, "shot", "night_rain"],
+		[895, "quit"],
 	]
 
 

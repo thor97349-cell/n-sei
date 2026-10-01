@@ -100,6 +100,7 @@ func _build_panel() -> void:
 	_button(events, Loc.t("dev.storm"), _event.bind("storm", ""))
 	_button(events, Loc.t("dev.bridge"), _event.bind("shortcut", "bridge"))
 	_button(events, Loc.t("dev.mall"), _event.bind("shortcut", "mall_gate"))
+	_button(events, Loc.t("dev.traffic_event"), _event.bind("traffic", ""))
 	_button(events, Loc.t("dev.stop_event"), _stop_event)
 	_auto_events = _button(events, "", _toggle_auto_events)
 
@@ -119,6 +120,14 @@ func _build_panel() -> void:
 	_button(delivery, Loc.t("dev.cargo_fix"), _fix_cargo)
 	_button(delivery, Loc.t("dev.fuel"), _fill_tank)
 	_button(delivery, Loc.t("dev.recover"), _recover)
+
+	var career := _section(column, "dev.career")
+	_button(career, Loc.t("dev.rep"), _add_rep)
+	_button(career, Loc.t("dev.combo"), _add_combo)
+	_button(career, Loc.t("dev.challenges"), _new_challenges)
+	_button(career, Loc.t("dev.contract_done"), _finish_contract)
+	for kind: String in JobRules.SPECIALS:
+		_button(career, Loc.t("dev.special", ["%s %s" % [JobRules.SPECIALS[kind]["icon"], JobRules.special_title(kind)]]), _special.bind(kind))
 
 	var teleport := _section(column, "dev.teleport")
 	_places = OptionButton.new()
@@ -226,6 +235,37 @@ func _new_orders() -> void:
 
 
 ## Leva o carro direto para a vaga da coleta ou da entrega em andamento.
+func _add_rep() -> void:
+	var result := GameState.career.add_reputation(100)
+	if result["rank_up"]:
+		GameState.career.refresh_contract_offers()
+		GameState.career.ensure_challenges(session.world.atmosphere.minutes)
+		Bus.toast(Loc.t("banner.rank", [CareerRules.rank_name(int(result["rank"])).to_upper()]), "event")
+	GameState.career.changed.emit()
+
+
+func _add_combo() -> void:
+	GameState.career.combo += 1
+	GameState.career.changed.emit()
+
+
+func _new_challenges() -> void:
+	GameState.career.challenges.clear()
+	GameState.career.ensure_challenges(session.world.atmosphere.minutes)
+
+
+## Deixa o contrato ativo a uma entrega do fim.
+func _finish_contract() -> void:
+	for contract in GameState.career.contracts:
+		contract["progress"] = maxi(int(contract["target"]) - 1, 0)
+	GameState.career.changed.emit()
+
+
+func _special(kind: String) -> void:
+	session.delivery.add_special(kind)
+	set_open(false)
+
+
 func _go_to_bay() -> void:
 	var delivery := session.delivery
 	if not (delivery.stage == DeliveryManager.Stage.TO_PICKUP or delivery.stage == DeliveryManager.Stage.DELIVERING):

@@ -1,8 +1,9 @@
 class_name Hud
 extends Control
-## HUD da partida: dinheiro/avaliação/relógio, painel da entrega (estado, destino,
-## distância, prazo, estado da carga), avisos, ação contextual, minimapa, velocímetro
-## e o quadro de resultado ao terminar uma entrega.
+## HUD da partida: dinheiro/avaliação/relógio, nível e combo, contratos e desafios em
+## andamento, painel da entrega (estado, destino, risco, modificadores, distância, prazo,
+## estado da carga, pagamento estimado), avisos, ação contextual, minimapa, velocímetro,
+## o resumo ao terminar uma entrega e faixas de comemoração (nível novo, contrato).
 
 const TOAST_SECONDS := 4.5
 const TOAST_COLORS := {
@@ -45,7 +46,22 @@ var _fine_reason: Label
 var _fine_amount: Label
 var _fine_balance: Label
 var _fine_tween: Tween
+var _fine_penalty: Label
 var _blink := 0.0
+var _rank: Label
+var _rank_bar: ProgressBar
+var _combo: Label
+var _tracker: PanelContainer
+var _tracker_box: VBoxContainer
+var _tracker_dirty := true
+var _tags_holder: VBoxContainer
+var _tags_key := ""
+var _note: Label
+var _banner_panel: PanelContainer
+var _banner_title: Label
+var _banner_text: Label
+var _banners: Array[Array] = []
+var _banner_busy := false
 
 
 func _ready() -> void:
@@ -58,6 +74,7 @@ func _ready() -> void:
 	_build_result()
 	_build_toasts()
 	_build_fine()
+	_build_banner()
 	minimap = MiniMap.new()
 	minimap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	minimap.position = Vector2(24, -24 - 260)
@@ -92,14 +109,19 @@ func bind(game_session: GameSession) -> void:
 	session.vehicle_spawned.connect(func(v: Vehicle) -> void: speedometer.vehicle = v)
 	session.delivery.finished.connect(_show_result)
 	session.delivery.cargo_damaged.connect(_on_cargo_damaged)
+	session.delivery.special_offered.connect(_on_special)
+	GameState.career.changed.connect(func() -> void: _tracker_dirty = true)
 
 
 # --- construção ------------------------------------------------------------------------
 
 func _build_top_left() -> void:
+	var left := UiKit.vbox(8)
+	left.position = Vector2(24, 20)
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(left)
 	var box := UiKit.panel(UiKit.BACKGROUND, 12, 12)
-	box.position = Vector2(24, 20)
-	add_child(box)
+	left.add_child(box)
 	var column := UiKit.vbox(2)
 	box.add_child(column)
 	var row := UiKit.hbox(10)
@@ -115,10 +137,25 @@ func _build_top_left() -> void:
 	info.add_child(_rating)
 	_clock = UiKit.label("", 18, UiKit.MUTED)
 	info.add_child(_clock)
+	# Nível de reputação (com a barra até o próximo) e o combo atual.
+	var career := UiKit.hbox(8)
+	column.add_child(career)
+	_rank = UiKit.label("", 17, Color(0.75, 0.85, 1.0), true)
+	career.add_child(_rank)
+	_rank_bar = UiKit.bar(0.0, Color(0.45, 0.65, 1.0), 6, 70)
+	career.add_child(_rank_bar)
+	_combo = UiKit.label("", 18, UiKit.ACCENT, true)
+	career.add_child(_combo)
 	_event = UiKit.label("", 17, Color(0.85, 0.7, 1.0))
 	_event.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_event.custom_minimum_size = Vector2(320, 0)
 	column.add_child(_event)
+	# Contratos e desafios em andamento (só aparece se houver).
+	_tracker = UiKit.panel(Color(0.06, 0.07, 0.09, 0.72), 10, 10)
+	_tracker.custom_minimum_size = Vector2(330, 0)
+	left.add_child(_tracker)
+	_tracker_box = UiKit.vbox(3)
+	_tracker.add_child(_tracker_box)
 
 
 func _build_status() -> void:
@@ -140,6 +177,14 @@ func _build_status() -> void:
 	column.add_child(_status)
 	_detail = UiKit.label("", 19, UiKit.MUTED, false, HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(_detail)
+	# Nível de risco, modificadores e contrato do pedido em andamento.
+	_tags_holder = UiKit.vbox(0)
+	_tags_holder.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_child(_tags_holder)
+	_note = UiKit.label("", 16, Color(0.95, 0.85, 0.65), false, HORIZONTAL_ALIGNMENT_CENTER)
+	_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_note.custom_minimum_size = Vector2(520, 0)
+	column.add_child(_note)
 	var row := UiKit.hbox(24)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(row)
@@ -255,6 +300,32 @@ func _build_fine() -> void:
 	column.add_child(_fine_amount)
 	_fine_balance = UiKit.label("", 17, Color(1, 1, 1, 0.78), false, HORIZONTAL_ALIGNMENT_CENTER)
 	column.add_child(_fine_balance)
+	_fine_penalty = UiKit.label("", 16, Color(1.0, 0.8, 0.6), false, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_fine_penalty)
+
+
+## Faixa de comemoração (nível novo, contrato concluído, entrega especial).
+func _build_banner() -> void:
+	var holder := CenterContainer.new()
+	holder.anchor_left = 0.5
+	holder.anchor_right = 0.5
+	holder.offset_left = -330
+	holder.offset_right = 330
+	holder.offset_top = 205
+	holder.offset_bottom = 360
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(holder)
+	_banner_panel = UiKit.panel(Color(0.45, 0.3, 0.05, 0.95), 14, 22)
+	_banner_panel.visible = false
+	holder.add_child(_banner_panel)
+	var column := UiKit.vbox(4)
+	_banner_panel.add_child(column)
+	_banner_title = UiKit.label("", 30, Color(1.0, 0.92, 0.6), true, HORIZONTAL_ALIGNMENT_CENTER)
+	column.add_child(_banner_title)
+	_banner_text = UiKit.label("", 18, Color.WHITE, false, HORIZONTAL_ALIGNMENT_CENTER)
+	_banner_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_banner_text.custom_minimum_size = Vector2(560, 0)
+	column.add_child(_banner_text)
 
 
 # --- atualização ------------------------------------------------------------------------
@@ -269,6 +340,7 @@ func _process(delta: float) -> void:
 	_event.visible = events.active_id != ""
 	if _event.visible:
 		_event.text = "%s (%ds)" % [events.label(), maxi(int(events.time_left), 0)] if events.active_id != "shortcut" else events.label()
+	_update_career()
 	_update_status()
 	_prompt_panel.visible = session.prompt != ""
 	_prompt.text = session.prompt
@@ -284,11 +356,24 @@ func _update_status() -> void:
 	_cargo_row.visible = false
 	_cargo_pay.visible = false
 	_detail.visible = true
+	_note.visible = false
+	_detail.add_theme_color_override("font_color", UiKit.MUTED)
 	_status.add_theme_color_override("font_color", UiKit.TEXT)
+	if delivery.stage == DeliveryManager.Stage.TO_PICKUP or delivery.stage == DeliveryManager.Stage.DELIVERING:
+		_show_tags(delivery)
+	else:
+		_set_tags(null, "")
 	match delivery.stage:
 		DeliveryManager.Stage.IDLE:
 			_status.text = Loc.t("hud.no_delivery")
 			_detail.visible = false
+			# Entrega especial esperando no celular: avisa com o tempo que falta.
+			for offer in delivery.offers:
+				if offer.get("special", "") != "":
+					_detail.visible = true
+					_detail.text = Loc.t("hud.special_waiting", [JobRules.special(offer["special"])["icon"], JobRules.special_title(offer["special"]), UiKit.clock(maxf(float(offer["expires"]), 0.0))])
+					_detail.add_theme_color_override("font_color", Color(1.0, 0.6, 0.75) if int(_blink * 2.0) % 2 == 0 else Color(1.0, 0.85, 0.9))
+					break
 		DeliveryManager.Stage.TO_PICKUP:
 			var active := delivery.active
 			_status.text = Loc.t("hud.go_pickup")
@@ -299,6 +384,12 @@ func _update_status() -> void:
 			_timer.add_theme_color_override("font_color", UiKit.MUTED)
 			_hint.visible = true
 			_hint.text = Loc.t("hud.timer_starts")
+			_cargo_pay.visible = true
+			_cargo_pay.text = Loc.t("hud.reward", [UiKit.money(int(active["reward"]))])
+			_cargo_pay.add_theme_color_override("font_color", UiKit.MUTED)
+			var note := delivery.mission.hud_note() if delivery.mission else ""
+			_note.visible = note != ""
+			_note.text = "“%s”" % note
 			_show_distance()
 		DeliveryManager.Stage.DELIVERING:
 			var active := delivery.active
@@ -352,16 +443,21 @@ func _show_cargo(delivery: DeliveryManager) -> void:
 		_cargo_fill.bg_color = color
 		_cargo_percent.add_theme_color_override("font_color", color)
 	_cargo_percent.text = "%d%%" % roundi(condition)
-	var fragility := OrderTypes.fragility_level(active["type"])
+	var fragility := OrderTypes.fragility_level_of(float(active["fragility"]))
 	_cargo_kind.text = Loc.t("fragility.short.%d" % fragility)
 	_cargo_kind.add_theme_color_override("font_color", OrderTypes.fragility_color(fragility))
-	# Quanto o cliente pagaria se a entrega fosse feita agora (mesma conta do pagamento).
-	var now := DeliveryManager.compute_payment(active["reward"], active["time_limit"], delivery.time_left, condition)
+	# Quanto a entrega pagaria se fosse feita agora (a mesma conta do pagamento: bônus,
+	# modificadores, adicionais e combo).
+	var now := delivery.preview_payout()
+	var damage := 0
+	for line: Dictionary in now.get("lines", []):
+		if line["key"] == "result.damage":
+			damage = -int(line["amount"])
 	_cargo_pay.visible = true
-	_cargo_pay.text = Loc.t("hud.pay_now", [UiKit.money(int(now["total"]))])
-	if int(now["damage"]) > 0:
-		_cargo_pay.text += "  " + Loc.t("hud.pay_loss", [UiKit.money(int(now["damage"]))])
-	_cargo_pay.add_theme_color_override("font_color", UiKit.MUTED if int(now["damage"]) == 0 else UiKit.DANGER.lightened(0.25))
+	_cargo_pay.text = Loc.t("hud.pay_now", [UiKit.money(int(now.get("payout", 0)))])
+	if damage > 0:
+		_cargo_pay.text += "  " + Loc.t("hud.pay_loss", [UiKit.money(damage)])
+	_cargo_pay.add_theme_color_override("font_color", UiKit.MUTED if damage == 0 else UiKit.DANGER.lightened(0.25))
 
 
 func _on_cargo_damaged(loss: float, _condition: float) -> void:
@@ -387,39 +483,96 @@ func _show_result(result: Dictionary) -> void:
 	for child in _result_box.get_children():
 		child.queue_free()
 	var failed: bool = result.get("failed", false)
+	var report: Dictionary = result.get("report", {})
 	var title := Loc.t("result.failed") if failed else (Loc.t("result.done_late") if result.get("late", false) else Loc.t("result.done"))
 	_result_box.add_child(UiKit.label(title, 30, UiKit.DANGER if failed else UiKit.SUCCESS, true, HORIZONTAL_ALIGNMENT_CENTER))
 	_result_box.add_child(UiKit.label("%s  %s" % [OrderTypes.get_type(result.get("type", "package"))["icon"], result.get("dropoff_name", "")], 20, UiKit.MUTED, false, HORIZONTAL_ALIGNMENT_CENTER))
+	var extra := 0
 	if failed:
 		var text := UiKit.label(Loc.t("result.failed_text"), 19, UiKit.TEXT, false, HORIZONTAL_ALIGNMENT_CENTER)
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		text.custom_minimum_size = Vector2(400, 0)
+		text.custom_minimum_size = Vector2(420, 0)
 		_result_box.add_child(text)
 	else:
 		_result_box.add_child(HSeparator.new())
-		_line(Loc.t("result.base"), int(result["base"]), UiKit.TEXT)
-		if int(result["bonus"]) > 0:
-			_line(Loc.t("result.bonus"), int(result["bonus"]), UiKit.SUCCESS)
-		var condition := roundi(float(result.get("condition", 100.0)))
-		if int(result["damage"]) > 0:
-			_line(Loc.t("result.damage", [condition]), -int(result["damage"]), UiKit.DANGER)
-		if int(result["tip"]) > 0:
-			_line(Loc.t("result.tip"), int(result["tip"]), UiKit.WARNING)
+		for line: Dictionary in result.get("lines", []):
+			_payout_line(line)
 		_result_box.add_child(HSeparator.new())
-		_line(Loc.t("result.total"), int(result["total"]), UiKit.SUCCESS, 28)
-		_result_box.add_child(UiKit.label("%s  %s" % [UiKit.stars(float(result["rating"])), Loc.t("result.condition", [condition])], 20, UiKit.WARNING, false, HORIZONTAL_ALIGNMENT_CENTER))
-		var note := Loc.t("result.intact") if condition >= 100 else (Loc.t("result.damage_note") if int(result["damage"]) > 0 else "")
-		if note != "":
-			var label := UiKit.label(note, 16, UiKit.SUCCESS if condition >= 100 else UiKit.DANGER.lightened(0.3), false, HORIZONTAL_ALIGNMENT_CENTER)
-			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			label.custom_minimum_size = Vector2(400, 0)
-			_result_box.add_child(label)
+		_line(Loc.t("result.total"), int(result.get("net", result.get("total", 0))), UiKit.SUCCESS, 28)
+		var condition := roundi(float(result.get("condition", 100.0)))
+		_result_box.add_child(UiKit.label("%s  %s" % [UiKit.stars(float(result.get("rating", 5.0))), Loc.t("result.condition", [condition])], 19, UiKit.WARNING, false, HORIZONTAL_ALIGNMENT_CENTER))
+		extra = (result.get("lines", []) as Array).size()
+	# Carreira: combo, reputação, contratos e desafios (só o que aconteceu).
+	var career := UiKit.vbox(3)
+	var combo_before := int(report.get("combo_before", 0))
+	var combo := int(report.get("combo", 0))
+	if combo >= 2 and combo > combo_before:
+		career.add_child(UiKit.label(Loc.t("result.combo_up", [combo, roundi(CareerRules.combo_bonus(combo + 1) * 100.0)]), 22, UiKit.ACCENT, true, HORIZONTAL_ALIGNMENT_CENTER))
+	elif combo_before >= 2 and combo == 0:
+		career.add_child(UiKit.label(Loc.t("result.combo_lost", [combo_before]), 20, UiKit.DANGER, true, HORIZONTAL_ALIGNMENT_CENTER))
+	elif combo_before >= 2 and combo < combo_before:
+		career.add_child(UiKit.label(Loc.t("result.combo_cut", [combo_before, combo]), 20, UiKit.WARNING, true, HORIZONTAL_ALIGNMENT_CENTER))
+	var rep := int(report.get("rep", 0))
+	if rep != 0:
+		var rep_text := Loc.t("result.rep", ["%+d" % rep, CareerRules.rank_name(GameState.career.rank())])
+		career.add_child(UiKit.label(rep_text, 17, Color(0.75, 0.85, 1.0) if rep > 0 else UiKit.DANGER.lightened(0.2), false, HORIZONTAL_ALIGNMENT_CENTER))
+	for entry: Dictionary in report.get("contracts", []):
+		var name := Clients.display_name(entry["client"])
+		if entry["completed"]:
+			career.add_child(UiKit.label(Loc.t("result.contract_done", [name, UiKit.money(int(entry["reward"]))]), 20, UiKit.SUCCESS, true, HORIZONTAL_ALIGNMENT_CENTER))
+			_queue_banner(Loc.t("banner.contract"), Loc.t("banner.contract_text", [name, UiKit.money(int(entry["reward"]))]), Color(0.1, 0.4, 0.22, 0.95))
+		else:
+			var key := "result.contract" if entry["counted"] else "result.contract_miss"
+			career.add_child(UiKit.label(Loc.t(key, [name, entry["progress"], entry["target"]]), 18, Color(0.6, 0.78, 1.0) if entry["counted"] else UiKit.MUTED, false, HORIZONTAL_ALIGNMENT_CENTER))
+	for entry: Dictionary in report.get("challenges", []):
+		career.add_child(UiKit.label(Loc.t("result.challenge", [entry["text"], UiKit.money(int(entry["reward"]))]), 18, UiKit.WARNING, true, HORIZONTAL_ALIGNMENT_CENTER))
+	for text: String in report.get("new_challenges", []):
+		career.add_child(UiKit.label(Loc.t("result.new_challenge", [text]), 16, Color(1.0, 0.86, 0.55), false, HORIZONTAL_ALIGNMENT_CENTER))
+	if report.get("rank_up", false):
+		var rank := int(report["rank"])
+		_queue_banner(Loc.t("banner.rank", [CareerRules.rank_name(rank).to_upper()]), CareerRules.rank_unlocks(rank), Color(0.45, 0.3, 0.05, 0.95))
+	for child in career.get_children():
+		(child as Label).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		(child as Label).custom_minimum_size = Vector2(420, 0)
+	if career.get_child_count() > 0:
+		_result_box.add_child(HSeparator.new())
+		_result_box.add_child(career)
+		extra += career.get_child_count()
 	_result_panel.visible = true
 	_result_panel.modulate.a = 1.0
+	var seconds := clampf(GameConfig.RESULT_SECONDS + extra * 0.35, GameConfig.RESULT_SECONDS, 9.0)
 	var tween := create_tween()
-	tween.tween_interval(GameConfig.RESULT_SECONDS - 0.6)
+	tween.tween_interval(seconds - 0.6)
 	tween.tween_property(_result_panel, "modulate:a", 0.0, 0.6)
-	tween.tween_callback(func() -> void: _result_panel.visible = false)
+	tween.tween_callback(func() -> void:
+		_result_panel.visible = false
+		_next_banner())
+
+
+## Uma linha do pagamento (Payout): entrega, bônus, modificadores, adicionais, combo, multas.
+func _payout_line(line: Dictionary) -> void:
+	var amount := int(line["amount"])
+	match line["key"]:
+		"modifier":
+			var id: String = line["modifier"]
+			var data := JobRules.modifier(id)
+			var text := "%s %s" % [data["icon"], JobRules.modifier_name(id)]
+			if line.get("missed", false):
+				_line(text + " — " + Loc.t("result.missed"), 0, UiKit.MUTED, 19)
+			else:
+				_line(text, amount, UiKit.SUCCESS)
+		"result.combo":
+			_line(Loc.t("result.combo", [line["arg"], roundi(float(line["rate"]) * 100.0)]), amount, UiKit.ACCENT)
+		"result.fines":
+			_line(Loc.t("result.fines", [line["arg"]]), amount, UiKit.DANGER)
+		"result.damage":
+			_line(Loc.t("result.damage", [line["arg"]]), amount, UiKit.DANGER)
+		"result.tip":
+			_line(Loc.t("result.tip"), amount, UiKit.WARNING)
+		"result.base":
+			_line(Loc.t("result.base"), amount, UiKit.TEXT)
+		_:
+			_line(Loc.t(line["key"]), amount, UiKit.SUCCESS)
 
 
 func _line(text: String, amount: int, color: Color, size: int = 21) -> void:
@@ -428,6 +581,96 @@ func _line(text: String, amount: int, color: Color, size: int = 21) -> void:
 	row.add_child(UiKit.spacer())
 	row.add_child(UiKit.label(("+" if amount > 0 else "") + UiKit.money(amount), size, color, true))
 	_result_box.add_child(row)
+
+
+# --- carreira ---------------------------------------------------------------------------
+
+func _update_career() -> void:
+	var career := GameState.career
+	_rank.text = "🏅 " + CareerRules.rank_name(career.rank())
+	_rank_bar.value = career.rank_progress()
+	_combo.visible = career.combo >= 1
+	if _combo.visible:
+		var bonus := roundi(CareerRules.combo_bonus(career.combo + 1) * 100.0)
+		_combo.text = "🔥 %d" % career.combo + ("  " + Loc.t("hud.combo_next", [bonus]) if bonus > 0 else "")
+	if _tracker_dirty:
+		_tracker_dirty = false
+		_rebuild_tracker()
+
+
+## Contratos e desafios ativos, um por linha (com o progresso).
+func _rebuild_tracker() -> void:
+	for child in _tracker_box.get_children():
+		child.queue_free()
+	var career := GameState.career
+	for contract in career.contracts:
+		var row := UiKit.label(Loc.t("hud.contract_line", [Clients.get_client(contract["client"]).get("icon", "📋"), Clients.display_name(contract["client"]), contract["progress"], contract["target"]]), 15, Color(0.7, 0.82, 1.0))
+		_tracker_box.add_child(row)
+	for challenge in career.challenges:
+		var text := "🎯 %s" % Challenges.text(challenge)
+		if int(challenge["target"]) > 1:
+			text += "  %d/%d" % [int(challenge["progress"]), int(challenge["target"])]
+		var row := UiKit.label(text, 15, Color(1.0, 0.86, 0.55))
+		row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.custom_minimum_size = Vector2(320, 0)
+		_tracker_box.add_child(row)
+	_tracker.visible = _tracker_box.get_child_count() > 0
+
+
+func _show_tags(delivery: DeliveryManager) -> void:
+	var lost := JobTags.lost_modifiers(delivery.active, delivery.run, delivery.time_left if delivery.stage == DeliveryManager.Stage.DELIVERING else 1.0, delivery.cargo_condition)
+	var key := "%s|%s|%s" % [delivery.active.get("pickup_id", ""), delivery.active.get("dropoff_id", ""), str(lost)]
+	if key != _tags_key:
+		_set_tags(JobTags.build(delivery.active, 15, lost), key)
+
+
+func _set_tags(row: Control, key: String) -> void:
+	if key == _tags_key and row == null:
+		return
+	_tags_key = key
+	for child in _tags_holder.get_children():
+		child.queue_free()
+	if row:
+		(row as HFlowContainer).alignment = FlowContainer.ALIGNMENT_CENTER
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_tags_holder.add_child(row)
+
+
+func _on_special(offer: Dictionary) -> void:
+	var special := JobRules.special(offer.get("special", ""))
+	Sfx.play("event")
+	Bus.toast(Loc.t("toast.special", [special.get("icon", "🚨"), JobRules.special_title(offer.get("special", "")), UiKit.money(int(offer["reward"]))]), "event")
+
+
+func _queue_banner(title: String, text: String, color: Color) -> void:
+	_banners.append([title, text, color])
+	if not _result_panel.visible:
+		_next_banner()
+
+
+func _next_banner() -> void:
+	if _banner_busy or _banners.is_empty():
+		return
+	_banner_busy = true
+	var entry: Array = _banners.pop_front()
+	_banner_title.text = entry[0]
+	_banner_text.text = entry[1]
+	_banner_text.visible = entry[1] != ""
+	_banner_panel.add_theme_stylebox_override("panel", UiKit.stylebox(entry[2], 14, Color(1, 0.9, 0.5, 0.5), 2, 22))
+	_banner_panel.visible = true
+	_banner_panel.modulate.a = 0.0
+	_banner_panel.pivot_offset = _banner_panel.size / 2.0
+	_banner_panel.scale = Vector2(0.9, 0.9)
+	Sfx.play("success", -3.0)
+	var tween := create_tween()
+	tween.tween_property(_banner_panel, "modulate:a", 1.0, 0.2)
+	tween.parallel().tween_property(_banner_panel, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(3.6)
+	tween.tween_property(_banner_panel, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(func() -> void:
+		_banner_panel.visible = false
+		_banner_busy = false
+		_next_banner())
 
 
 func _on_money(total: int, delta: int) -> void:
@@ -467,6 +710,13 @@ func _on_fine(reason: String, amount: int) -> void:
 	else:
 		_fine_amount.text = UiKit.money(0)
 		_fine_balance.text = Loc.t("fine.no_money")
+	var penalty := GameState.career.last_penalty
+	_fine_penalty.visible = not penalty.is_empty()
+	if not penalty.is_empty():
+		var parts: Array[String] = [Loc.t("fine.rep", [int(penalty["rep"])])]
+		if int(penalty["combo_before"]) > int(penalty["combo"]):
+			parts.append(Loc.t("fine.combo", [penalty["combo_before"], penalty["combo"]]))
+		_fine_penalty.text = "  •  ".join(parts)
 	_flash.color.a = 0.55
 	var flash := create_tween()
 	flash.tween_property(_flash, "color:a", 0.0, 0.4).set_ease(Tween.EASE_OUT)

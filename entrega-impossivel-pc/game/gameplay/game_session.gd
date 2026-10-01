@@ -47,7 +47,9 @@ func start(world_ref: World) -> void:
 	world.add_child(markers)
 	delivery = DeliveryManager.new()
 	delivery.name = "Delivery"
+	delivery.atmosphere = world.atmosphere
 	add_child(delivery)
+	GameState.career.prepare(world.atmosphere.minutes)
 	events = EventDirector.new()
 	events.name = "Events"
 	add_child(events)
@@ -129,6 +131,10 @@ func switch_vehicle(id: String) -> bool:
 
 
 func _on_stage_changed() -> void:
+	if delivery.stage == DeliveryManager.Stage.DELIVERING:
+		events.on_delivery_started(delivery.active)
+	elif delivery.stage != DeliveryManager.Stage.TO_PICKUP:
+		events.on_delivery_ended()
 	match delivery.stage:
 		DeliveryManager.Stage.TO_PICKUP:
 			var icon: String = delivery.active["icon"]
@@ -307,8 +313,10 @@ func _update_route() -> void:
 
 
 func _on_red_light() -> void:
-	# O aviso grande (flash da câmera + valor) é mostrado pelo HUD ao receber fine_issued.
+	# O aviso grande (flash da câmera + valor) é mostrado pelo HUD ao receber fine_issued;
+	# a carreira perde 1 de combo e um pouco de reputação (Career.last_penalty).
 	var charged := GameState.charge(GameConfig.red_light_fine(GameState.money))
 	GameState.increment("fines")
+	GameState.career.on_fine()
 	Bus.fine_issued.emit("red_light", charged)
 	Sfx.play("fine")

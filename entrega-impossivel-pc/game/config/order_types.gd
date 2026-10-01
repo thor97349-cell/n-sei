@@ -78,7 +78,11 @@ static func tag(id: String) -> String:
 ## Quanto a encomenda aguenta batidas: 0 resistente (documentos), 1 normal,
 ## 2 sensível (comida, geladeira), 3 muito frágil (bolo).
 static func fragility_level(id: String) -> int:
-	var fragility := float(get_type(id)["fragility"])
+	return fragility_level_of(float(get_type(id)["fragility"]))
+
+
+## Mesmo nível a partir do valor (pedidos com o modificador FRÁGIL ficam mais sensíveis).
+static func fragility_level_of(fragility: float) -> int:
 	if fragility <= 0.2:
 		return 0
 	if fragility <= 0.7:

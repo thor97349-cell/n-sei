@@ -1,5 +1,5 @@
 extends Node
-## Progresso do jogador (dinheiro, estatísticas, veículos) e o salvamento em disco.
+## Progresso do jogador (dinheiro, estatísticas, veículos, carreira) e o salvamento em disco.
 ##
 ## Salvamento seguro: grava num arquivo temporário e só então substitui o save; o save
 ## anterior vira backup (.bak). Se o arquivo principal estiver corrompido, o backup é usado.
@@ -8,7 +8,8 @@ extends Node
 var slot := "save"
 ## Modo dev: tudo liberado e o painel de testes (F1). Usa o save "dev".
 var dev_mode := false
-const SAVE_VERSION := 1
+## 2: carreira (reputação, combo, contratos, desafios). Saves da versão 1 são convertidos.
+const SAVE_VERSION := 2
 const MAX_MONEY := 999_999_999
 
 var money := 0
@@ -21,6 +22,8 @@ var fuel := {}
 var clock_minutes := 9.0 * 60.0
 var rating_sum := 0.0
 var rating_count := 0
+## Reputação, combo, contratos, desafios e histórico com os clientes.
+var career := Career.new()
 
 
 func _ready() -> void:
@@ -37,6 +40,11 @@ func reset() -> void:
 		"earned": 0,
 		"fines": 0,
 		"distance_km": 0.0,
+		"perfect": 0,
+		"contracts": 0,
+		"challenges": 0,
+		"specials": 0,
+		"best_combo": 0,
 	}
 	owned_vehicles = ["van"]
 	current_vehicle = "van"
@@ -44,6 +52,7 @@ func reset() -> void:
 	clock_minutes = 9.0 * 60.0
 	rating_sum = 0.0
 	rating_count = 0
+	career = Career.new()
 
 
 func has_save() -> bool:
@@ -127,6 +136,7 @@ func to_dict() -> Dictionary:
 		"clock_minutes": clock_minutes,
 		"rating_sum": rating_sum,
 		"rating_count": rating_count,
+		"career": career.to_dict(),
 	}
 
 
@@ -159,6 +169,11 @@ func from_dict(data: Dictionary) -> void:
 	clock_minutes = fmod(maxf(_number(data.get("clock_minutes"), 540), 0.0), 1440.0)
 	rating_sum = maxf(_number(data.get("rating_sum"), 0), 0.0)
 	rating_count = maxi(int(_number(data.get("rating_count"), 0)), 0)
+	var loaded_career: Variant = data.get("career")
+	if loaded_career is Dictionary:
+		career.from_dict(loaded_career)
+	else:
+		career.from_legacy(int(stats["deliveries"]))
 
 
 func save_game() -> bool:

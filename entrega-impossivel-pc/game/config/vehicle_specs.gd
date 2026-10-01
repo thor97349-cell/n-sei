@@ -32,7 +32,7 @@ const DATA := {
 		"name": "Faísca",
 		"description_pt": "Hatch ligeiro e esperto. Ótimo para comida, péssimo para caixas.",
 		"description_en": "Quick, nimble hatchback. Great for food, bad for boxes.",
-		"price": 7500,
+		"price": 10500,
 		"style": "hatch", "limiter_kmh": 185.0,
 		"length": 4.05, "width": 1.76, "height": 1.47,
 		"wheelbase": 2.55, "track": 1.52, "wheel_radius": 0.31, "wheel_width": 0.21,
@@ -50,7 +50,7 @@ const DATA := {
 		"name": "Brutão",
 		"description_pt": "Caminhão baú. Lento e pesado, mas leva geladeira, sofá e mudança.",
 		"description_en": "Box truck. Slow and heavy, but hauls fridges, sofas and house moves.",
-		"price": 18000,
+		"price": 25000,
 		"style": "truck", "limiter_kmh": 110.0,
 		"length": 6.6, "width": 2.2, "height": 3.0,
 		"wheelbase": 3.9, "track": 1.8, "wheel_radius": 0.42, "wheel_width": 0.28,
@@ -68,7 +68,7 @@ const DATA := {
 		"name": "Relâmpago",
 		"description_pt": "Esportivo de verdade. Chega antes de todo mundo — se não bater.",
 		"description_en": "A real sports car. Gets there first — if it doesn't crash.",
-		"price": 42000,
+		"price": 58000,
 		"style": "sport", "limiter_kmh": 250.0,
 		"length": 4.45, "width": 1.92, "height": 1.24,
 		"wheelbase": 2.62, "track": 1.64, "wheel_radius": 0.33, "wheel_width": 0.26,
@@ -107,3 +107,12 @@ static func top_speed(id: String) -> float:
 	var last: float = gears[gears.size() - 1]
 	var wheel_rpm: float = spec["max_rpm"] / (last * spec["final_drive"])
 	return wheel_rpm * TAU * spec["wheel_radius"] / 60.0
+
+
+## Consumo típico (litros por km) dirigindo normalmente na cidade: o mesmo cálculo do
+## Vehicle (consumo × escala × acelerador médio) mais o motor em marcha lenta.
+static func liters_per_km(id: String) -> float:
+	var spec := get_spec(id)
+	var driving := float(spec["consumption"]) * (0.35 + 0.65 * 0.5)
+	var idle := Vehicle.IDLE_FUEL_PER_SECOND * 1000.0 / GameConfig.REFERENCE_SPEED
+	return (driving + idle) * GameConfig.FUEL_CONSUMPTION_SCALE

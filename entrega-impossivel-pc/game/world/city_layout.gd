@@ -146,6 +146,31 @@ const ACCIDENT_SPOTS := [
 ]
 
 
+## Regiões da cidade (contratos e descrição dos pedidos). A Zona Rural é a chácara, fora
+## do anel; a Zona Sul fica além do canal.
+const REGIONS := {
+	"north": {"name_pt": "Zona Norte", "name_en": "North Side"},
+	"center": {"name_pt": "Centro", "name_en": "Downtown"},
+	"south": {"name_pt": "Zona Sul", "name_en": "South Side"},
+	"rural": {"name_pt": "Zona Rural", "name_en": "Countryside"},
+}
+
+
+static func region_of(p: Vector3) -> String:
+	if absf(p.x) > RING + 4.0 or absf(p.z) > RING + 4.0:
+		return "rural"
+	if p.z < -140.0:
+		return "north"
+	if p.z > CANAL_Z_MAX:
+		return "south"
+	return "center"
+
+
+static func region_name(id: String) -> String:
+	var data: Dictionary = REGIONS.get(id, REGIONS["center"])
+	return data["name_pt"] if Loc.language == "pt" else data["name_en"]
+
+
 static func road_width(coordinate: float) -> float:
 	return RING_WIDTH if absf(absf(coordinate) - RING) < 0.1 else AVENUE_WIDTH
 
