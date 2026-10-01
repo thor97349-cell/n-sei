@@ -20,16 +20,40 @@ static func _shader_material(key: String, path: String) -> ShaderMaterial:
 	return _cache[key]
 
 
+## Textura do chão gerada por tools/gen_textures.py (assets/textures).
+static func texture(name: String) -> Texture2D:
+	var key := "tex:" + name
+	if not _cache.has(key):
+		_cache[key] = load("res://assets/textures/%s.png" % name)
+	return _cache[key]
+
+
 static func road() -> ShaderMaterial:
-	return _shader_material("road", "res://game/world/shaders/road.gdshader")
+	if not _cache.has("road"):
+		var material := _shader_material("road", "res://game/world/shaders/road.gdshader")
+		material.set_shader_parameter("asphalt_albedo", texture("asphalt_albedo"))
+		material.set_shader_parameter("asphalt_normal", texture("asphalt_normal"))
+		material.set_shader_parameter("macro", texture("macro_noise"))
+	return _cache["road"]
 
 
 static func sidewalk() -> ShaderMaterial:
-	return _shader_material("sidewalk", "res://game/world/shaders/sidewalk.gdshader")
+	if not _cache.has("sidewalk"):
+		var material := _shader_material("sidewalk", "res://game/world/shaders/sidewalk.gdshader")
+		for name: String in ["concrete_albedo", "concrete_normal", "pavers_albedo", "pavers_normal", "mosaic_data", "mosaic_normal"]:
+			material.set_shader_parameter(name, texture(name))
+		material.set_shader_parameter("macro", texture("macro_noise"))
+		material.set_shader_parameter("sidewalk_width", CityLayout.SIDEWALK)
+	return _cache["sidewalk"]
 
 
 static func facade() -> ShaderMaterial:
-	return _shader_material("facade", "res://game/world/shaders/facade.gdshader")
+	if not _cache.has("facade"):
+		var material := _shader_material("facade", "res://game/world/shaders/facade.gdshader")
+		material.set_shader_parameter("concrete_albedo", texture("concrete_albedo"))
+		material.set_shader_parameter("concrete_normal", texture("concrete_normal"))
+		material.set_shader_parameter("macro", texture("macro_noise"))
+	return _cache["facade"]
 
 
 static func water() -> ShaderMaterial:
@@ -51,13 +75,24 @@ static func foliage_pine() -> ShaderMaterial:
 	return _cache["foliage_pine"]
 
 
-## kind: 0 grama, 1 terra, 2 asfalto de pátio, 3 praça de pedra.
+## kind: 0 grama, 1 terra, 2 asfalto de pátio, 3 praça de pedra, 4 piso de concreto.
+## Cada tipo usa uma textura principal e uma secundária (veja ground.gdshader).
+const GROUND_TEXTURES := [["grass", "dirt", 2.2], ["dirt", "dirt", 3.0], ["asphalt", "asphalt", 3.5], ["setts", "concrete", 2.0], ["concrete", "concrete", 3.0]]
+
+
 static func ground(kind: int) -> ShaderMaterial:
 	var key := "ground:%d" % kind
 	if not _cache.has(key):
 		var material := ShaderMaterial.new()
 		material.shader = _shader("res://game/world/shaders/ground.gdshader")
 		material.set_shader_parameter("kind", kind)
+		var textures: Array = GROUND_TEXTURES[clampi(kind, 0, GROUND_TEXTURES.size() - 1)]
+		material.set_shader_parameter("surface_albedo", texture(textures[0] + "_albedo"))
+		material.set_shader_parameter("surface_normal", texture(textures[0] + "_normal"))
+		material.set_shader_parameter("detail_albedo", texture(textures[1] + "_albedo"))
+		material.set_shader_parameter("detail_normal", texture(textures[1] + "_normal"))
+		material.set_shader_parameter("macro", texture("macro_noise"))
+		material.set_shader_parameter("tile", textures[2])
 		_cache[key] = material
 	return _cache[key]
 

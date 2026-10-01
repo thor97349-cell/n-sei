@@ -29,6 +29,8 @@ var _graph: RoadGraph
 var _info: CityBuilder.CityInfo
 var _holder: Node3D
 var _rng := RandomNumberGenerator.new()
+## Sorteios só de aparência (inclinação das árvores): separado para não mudar a cidade.
+var _detail_rng := RandomNumberGenerator.new()
 var _blocks: Array[Dictionary] = []
 var _detail := MeshKit.new()
 var _paint := MeshKit.new()
@@ -49,6 +51,7 @@ func _init(root: Node3D, static_body: StaticBody3D, graph: RoadGraph, info: City
 	_graph = graph
 	_info = info
 	_rng.seed = 99_1234
+	_detail_rng.seed = 31_337
 
 
 func build_all() -> void:
@@ -75,6 +78,8 @@ func build_all() -> void:
 	_countryside()
 	for point in _info.yard_trees:
 		_add_tree(Vector3(point.x, _ground_y(point), point.z), false)
+	_hedges()
+	_ground_cover()
 	_commit()
 
 
@@ -167,13 +172,16 @@ func _add_tree(base: Vector3, pine: bool, collide: bool = true, species: String 
 	var scale := _rng.randf_range(0.8, 1.25)
 	if species == "palm":
 		scale = _rng.randf_range(0.85, 1.15)
-	var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(scale, scale * _rng.randf_range(0.9, 1.12), scale))
+	# Cada árvore um pouco torta (até ~3°) e com proporções levemente diferentes.
+	var lean_axis := Vector3.RIGHT.rotated(Vector3.UP, _detail_rng.randf() * TAU)
+	var basis := (Basis(lean_axis, _detail_rng.randf_range(0.0, 0.05)) * Basis(Vector3.UP, _rng.randf() * TAU)).scaled(Vector3(scale, scale * _rng.randf_range(0.9, 1.12), scale))
 	if not _trees.has(species):
 		_trees[species] = [] as Array[Transform3D]
 		_tree_custom[species] = []
 	(_trees[species] as Array[Transform3D]).append(Transform3D(basis, base))
-	# Cor: variação de verde; alguns ipês floridos (amarelos ou rosas) entre as folhosas.
-	var flowering := 1.0 if species in ["round", "umbrella"] and _rng.randf() < 0.12 else 0.0
+	# Cor: variação de verde; alguns ipês floridos (amarelos ou rosas) entre as folhosas
+	# e alguns arbustos com flor.
+	var flowering := 1.0 if (species in ["round", "umbrella"] and _rng.randf() < 0.12) or (species == "bush" and _rng.randf() < 0.25) else 0.0
 	(_tree_custom[species] as Array).append(Color(_rng.randf(), flowering, 1.0 if _rng.randf() < 0.5 else 0.0, 0.0))
 	if collide:
 		_cylinder_collider(base, 0.25 * scale, 3.0)
@@ -675,6 +683,79 @@ func _park() -> void:
 		_bench(p + side * (trail_width / 2.0 + 1.2), _yaw_to(-side))
 		_add_lamp(p - side * (trail_width / 2.0 + 0.8), _yaw_to(side))
 		distance += 26.0
+
+
+# --- vegetação dos jardins -----------------------------------------------------------------
+
+## Cercas vivas (lugares vindos do BuildingBuilder): miolo + cartões de folhas por pedaço
+## da cidade; de longe fica só o miolo. Alguns arbustos do lado de dentro do jardim.
+func _hedges() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 515
+	var chunks := {}
+	for entry: Array in _info.hedges:
+		var xform: Transform3D = entry[0]
+		var size: Vector3 = entry[1]
+		var key := Vector2i(floori(xform.origin.x / CHUNK), floori(xform.origin.z / CHUNK))
+		if not chunks.has(key):
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			chunks[key] = [st, MeshKit.new()]
+		FoliageKit.add_hedge(chunks[key][0], chunks[key][1], xform, size, rng)
+		if rng.randf() < 0.45 and size.x > 2.0:
+			_add_tree(xform * Vector3(rng.randf_range(-0.35, 0.35) * size.x, 0, -1.2), false, false, "bush")
+	for key: Vector2i in chunks:
+		var core := _mesh((chunks[key][1] as MeshKit).commit(FoliageKit.core_material("hedge")), "HedgeCore_%d_%d" % [key.x, key.y])
+		core.visibility_range_end = 700.0
+		var st: SurfaceTool = chunks[key][0]
+		st.set_material(FoliageKit.leaf_material("hedge"))
+		var cards := _mesh(st.commit(), "HedgeLeaves_%d_%d" % [key.x, key.y])
+		cards.visibility_range_end = 170.0
+
+
+## Tufos de grama e flores nos gramados (jardins, parque, escola) e arbustos no parque.
+func _ground_cover() -> void:
+	var cover := GroundCover.new(_static, float(Settings.quality().get("grass", 1.0)))
+	var y := CityLayout.CURB_HEIGHT + 0.02
+	var trail_from: Vector3 = CityLayout.PARK_TRAIL["from"]
+	var trail_to: Vector3 = CityLayout.PARK_TRAIL["to"]
+	var trail_half: float = float(CityLayout.PARK_TRAIL["width"]) / 2.0
+	var pond: Vector3 = CityLayout.PARK_POND["center"]
+	var pond_radius: float = CityLayout.PARK_POND["radius"]
+	var park_skip := func(p: Vector2) -> bool:
+		return _distance_to_segment(Vector3(p.x, 0, p.y), trail_from, trail_to) < trail_half + 0.3 \
+			or Vector2(pond.x, pond.z).distance_to(p) < pond_radius + 1.2
+	for block in _blocks:
+		var theme: String = block["theme"]
+		if not theme in ["residential", "park", "school"]:
+			continue
+		var bmin: Vector2 = block["min"]
+		var bmax: Vector2 = block["max"]
+		var imin := bmin + Vector2.ONE * CityLayout.SIDEWALK
+		var imax := bmax - Vector2.ONE * CityLayout.SIDEWALK
+		if block["canal_side"] == "S":
+			imax.y = bmax.y - 1.0
+		elif block["canal_side"] == "N":
+			imin.y = bmin.y + 1.0
+		var rect := Rect2(imin, imax - imin)
+		match theme:
+			"residential":
+				cover.scatter(rect, y, 0.6, 2.0, 1.0, 0.05)
+			"park":
+				cover.scatter(rect, y, 0.5, 1.8, 1.0, 0.07, park_skip)
+				# Arbustos soltos e em grupinhos pelo gramado.
+				for i in 70:
+					var p := rect.position + Vector2(_rng.randf(), _rng.randf()) * rect.size
+					if cover.is_free(p) and not park_skip.call(p):
+						for k in (1 if _rng.randf() < 0.6 else 3):
+							var q := p + Vector2(_rng.randf_range(-1.2, 1.2), _rng.randf_range(-1.2, 1.2)) * float(k > 0)
+							_add_tree(Vector3(q.x, CityLayout.CURB_HEIGHT, q.y), false, false, "bush")
+			_:
+				cover.scatter(rect, y, 0.0, 1.6, 0.8, 0.03)
+	var holder := Node3D.new()
+	holder.name = "GroundCover"
+	_holder.add_child(holder)
+	cover.commit(holder)
 
 
 func _distance_to_segment(p: Vector3, a: Vector3, b: Vector3) -> float:

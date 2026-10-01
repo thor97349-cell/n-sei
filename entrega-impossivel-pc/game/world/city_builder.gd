@@ -15,6 +15,8 @@ class CityInfo:
 	var yard_trees: Array[Vector3] = []
 	## Postes de luz que quebram: [CollisionShape3D, MultiMesh, índice, Transform3D, posição da luz].
 	var breakable_lamps: Array = []
+	## Cercas vivas dos jardins: [Transform3D (base, direção), tamanho].
+	var hedges: Array = []
 	## Pontos de ônibus: [lugar onde as pessoas esperam, direção (yaw) olhando para a rua].
 	var bus_stops: Array = []
 	var building_count := 0
@@ -43,6 +45,12 @@ class CityInfo:
 
 
 const CONCRETE := Color(0.62, 0.61, 0.58)
+## Piso da calçada por tema: 0 concreto, 1 bloquete cinza, 2 bloquete de barro,
+## 3 pedra portuguesa, 4 granito.
+const SIDEWALK_STYLES := {
+	"downtown": 4, "commercial": 1, "mall": 1, "apartments": 2, "school": 2,
+	"promenade": 3, "waterfront": 3, "plaza": 3,
+}
 
 var info := CityInfo.new()
 var graph: RoadGraph
@@ -95,9 +103,14 @@ func _mesh(mesh: Mesh, node_name: String, parent: Node3D = null) -> MeshInstance
 	return instance
 
 
-func _flat_quad(kit: MeshKit, xmin: float, xmax: float, zmin: float, zmax: float, y: float, color: Color = Color.WHITE) -> void:
+## Retângulo plano. `local` = UV em metros a partir do canto (o shader do chão usa isso
+## para fazer a transição na beira do gramado/praça; COLOR.r = 0 marca esse modo).
+func _flat_quad(kit: MeshKit, xmin: float, xmax: float, zmin: float, zmax: float, y: float, color: Color = Color.WHITE, local: bool = false) -> void:
 	var corners: Array[Vector3] = [Vector3(xmin, y, zmin), Vector3(xmax, y, zmin), Vector3(xmax, y, zmax), Vector3(xmin, y, zmax)]
 	var uvs: Array[Vector2] = [Vector2(xmin, zmin), Vector2(xmax, zmin), Vector2(xmax, zmax), Vector2(xmin, zmax)]
+	if local:
+		uvs = [Vector2(0, 0), Vector2(xmax - xmin, 0), Vector2(xmax - xmin, zmax - zmin), Vector2(0, zmax - zmin)]
+		color = Color(0, 1, 1, 1)
 	kit.add_quad(corners, uvs, Vector3.UP, color, Vector2(xmax - xmin, zmax - zmin))
 
 
@@ -324,7 +337,7 @@ func _closed_bridge(x: float, width: float) -> void:
 
 func _build_blocks() -> void:
 	var slabs := MeshKit.new()
-	var covers := {0: MeshKit.new(), 2: MeshKit.new(), 3: MeshKit.new(), 1: MeshKit.new()}
+	var covers := {0: MeshKit.new(), 2: MeshKit.new(), 3: MeshKit.new(), 1: MeshKit.new(), 4: MeshKit.new()}
 	var rails := MeshKit.new()
 	var curb := CityLayout.CURB_HEIGHT
 	for block in CityLayout.blocks():
@@ -332,7 +345,9 @@ func _build_blocks() -> void:
 		var bmax: Vector2 = block["max"]
 		var size := Vector3(bmax.x - bmin.x, curb, bmax.y - bmin.y)
 		var center := Vector3((bmin.x + bmax.x) / 2.0, 0.0, (bmin.y + bmax.y) / 2.0)
-		slabs.add_box(Transform3D(Basis(), center), size, Color.WHITE, Vector2.ZERO, true, false)
+		# Piso da calçada conforme o bairro (veja sidewalk.gdshader); UV2 = tamanho da quadra.
+		var style: int = SIDEWALK_STYLES.get(block["theme"], 0)
+		slabs.add_box(Transform3D(Basis(), center), size, Color(style / 4.0, 1, 1, 1), Vector2(size.x, size.z), true, false)
 		_collider_box(center + Vector3(0, curb / 2.0, 0), size)
 
 		var theme: String = block["theme"]
@@ -344,6 +359,8 @@ func _build_blocks() -> void:
 				kind = 3
 			"construction":
 				kind = 1
+			"downtown", "commercial", "mall", "apartments", "waterfront":
+				kind = 4
 		var inset := CityLayout.SIDEWALK
 		var imin := bmin + Vector2(inset, inset)
 		var imax := bmax - Vector2(inset, inset)
@@ -352,7 +369,7 @@ func _build_blocks() -> void:
 			imax.y = bmax.y - 1.0
 		elif canal_side == "N":
 			imin.y = bmin.y + 1.0
-		_flat_quad(covers[kind], imin.x, imax.x, imin.y, imax.y, curb + 0.02)
+		_flat_quad(covers[kind], imin.x, imax.x, imin.y, imax.y, curb + 0.02, Color.WHITE, true)
 
 		# Grade na beira do canal.
 		if canal_side != "":

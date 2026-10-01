@@ -131,9 +131,24 @@ Onde mexer:
 | Veículos (potência, peso, câmbio, preço) | `game/config/vehicle_specs.gd` |
 | Mapa, locais, ruas, temas dos bairros | `game/world/city_layout.gd` |
 | Textos (português/inglês) | `autoload/loc.gd` |
+| Chão: asfalto, grama, terra, praça | `game/world/shaders/road.gdshader`, `ground.gdshader` |
+| Calçadas (piso de cada bairro) | `game/world/shaders/sidewalk.gdshader` + `SIDEWALK_STYLES` em `city_builder.gd` |
+| Fachadas (tijolo, reboco, concreto, janelas) | `game/world/shaders/facade.gdshader` |
+| Grama alta, flores, arbustos, cercas vivas | `game/world/ground_cover.gd`, `foliage_kit.gd` |
+| Sol, céu, neblina, exposição | `game/world/atmosphere.gd` |
 
 Tudo o que se vê é gerado por código (não há modelos 3D nem imagens externas), então
 mudar um número já muda o jogo.
+
+### Texturas do chão
+
+As texturas de asfalto, grama, terra, concreto, bloquete, paralelepípedo e pedra
+portuguesa (`assets/textures/`) também são geradas por código, pelo script
+`tools/gen_textures.py` (Python 3 com `numpy` e `Pillow`). São pequenas (512 px, que se
+repetem sem emenda) e os shaders as usam em duas escalas giradas, misturadas por um ruído
+grande (`macro_noise.png`), para o chão não ficar com cara de "textura repetida". Para
+mudar uma textura: edite o script, rode `python3 tools/gen_textures.py` e abra o projeto
+no Godot (ele reimporta sozinho).
 
 ## Testes automáticos
 
@@ -216,8 +231,9 @@ com a extensão gratuita **GodotSteam**). Isso **ainda não foi feito**.
 
 ## O que ainda falta / limitações (honestamente)
 
-- **Visual**: prédios, carros e objetos são gerados por código (formas + shaders). Fica
-  coerente e limpo, mas não é fotorrealista. Para vender bem na Steam, o próximo passo é
+- **Visual**: prédios, carros e objetos são gerados por código (formas + shaders), com
+  texturas de chão também geradas por código. Fica coerente e bem acabado, mas não é
+  fotorrealista. Para vender bem na Steam, o próximo passo é
   trocar por modelos 3D e texturas de verdade (há pacotes gratuitos CC0, como Kenney e
   Poly Haven — os sites estavam bloqueados neste ambiente, por isso não foram usados).
 - Pedestres só andam nas calçadas (ainda não atravessam na faixa); os carros da IA não

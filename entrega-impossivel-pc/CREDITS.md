@@ -12,5 +12,5 @@
   usados no jogo). © 2013-2017 Google Inc. Texto completo: `assets/fonts/OFL-NotoColorEmoji.txt`.
 
 ## Todo o resto
-Cidade, prédios, veículos, texturas (shaders), sons e música do motor são **gerados por
+Cidade, prédios, veículos, texturas (shaders e `tools/gen_textures.py`), sons e música do motor são **gerados por
 código** neste projeto. Não há modelos 3D, imagens ou áudios de terceiros.

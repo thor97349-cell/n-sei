@@ -140,7 +140,7 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 	if truck:
 		_truck_box(root, spec, y0, float(profile["start"]) * length - length / 2.0, branded, BRAND_COLOR if branded else color)
 	elif branded and style == "van":
-		_brand_labels(root, width / 2.0 + 0.012, y0 + 1.5, -0.55, 0.42)
+		_van_livery(root, spec, y0)
 	var wheels := wheel_mesh(radius, float(spec["wheel_width"]))
 	var rear_wheels := wheels
 	if truck:
@@ -456,6 +456,40 @@ static func _truck_box(root: Node3D, spec: Dictionary, y0: float, cab_z: float, 
 	root.add_child(instance)
 	if branded:
 		_brand_labels(root, half + 0.014, base + 1.3, center_z, 0.44, Color.WHITE, false)
+
+
+## Identificação discreta do furgão da firma: friso fino na lateral, selinho laranja e o
+## nome pequeno na área de carga (como um carro de empresa de verdade).
+static func _van_livery(root: Node3D, spec: Dictionary, y0: float) -> void:
+	var half := float(spec["width"]) / 2.0
+	var length: float = spec["length"]
+	var kit := MeshKit.new()
+	var charcoal := Color(0.14, 0.14, 0.15)
+	for side: float in [-1.0, 1.0]:
+		kit.add_box(Transform3D(Basis(), Vector3(side * (half + 0.004), y0 + 0.96, -0.1)), Vector3(0.008, 0.035, length - 0.7), charcoal, Vector2.ZERO, false, false)
+		# Selinho (quadrado laranja com uma "caixinha" branca) antes do nome.
+		var badge_z := -0.55 + (0.5 if side > 0.0 else -0.5)
+		kit.add_box(Transform3D(Basis(), Vector3(side * (half + 0.006), y0 + 1.36, badge_z)), Vector3(0.008, 0.2, 0.2), BRAND_COLOR, Vector2.ZERO, false, false)
+		kit.add_box(Transform3D(Basis(), Vector3(side * (half + 0.011), y0 + 1.41, badge_z)), Vector3(0.006, 0.09, 0.1), Color(0.97, 0.95, 0.9), Vector2.ZERO, false, false)
+	var instance := MeshInstance3D.new()
+	instance.name = "Livery"
+	instance.mesh = kit.commit(Mats.vertex_colored("livery", 0.4, 0.1))
+	root.add_child(instance)
+	for side: float in [-1.0, 1.0]:
+		var label := Label3D.new()
+		label.text = "EntregaJá"
+		label.font = Mats.sign_font()
+		label.font_size = 64
+		label.pixel_size = 0.14 / 64.0
+		label.modulate = charcoal
+		label.outline_size = 0
+		label.double_sided = false
+		label.alpha_cut = Label3D.ALPHA_CUT_OPAQUE_PREPASS
+		label.shaded = true
+		label.position = Vector3(side * (half + 0.012), y0 + 1.46, -0.55 - (0.08 if side > 0.0 else -0.08))
+		label.rotation.y = PI / 2.0 if side > 0.0 else -PI / 2.0
+		label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(label)
 
 
 static func _brand_labels(root: Node3D, half_width: float, y: float, z: float, height: float, color: Color = BRAND_COLOR, outline: bool = true) -> void:

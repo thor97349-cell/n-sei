@@ -22,7 +22,8 @@ void vertex() {
 	vec4 custom = INSTANCE_CUSTOM;
 	vec3 green = mix(color_a, color_b, custom.r);
 	vec3 flower = mix(vec3(0.95, 0.78, 0.16), vec3(0.93, 0.45, 0.66), custom.b);
-	tint = mix(green, flower, custom.g * 0.85);
+	// O miolo de perto (darken < 1) fica mais verde: as flores ficam nos cartões de fora.
+	tint = mix(green, flower, custom.g * (darken < 0.99 ? 0.35 : 0.85));
 	float strength = (1.0 + wetness * 1.5) * 0.022;
 	float sway = sin(TIME * 1.3 + origin.x * 0.1 + origin.z * 0.13) * strength;
 	VERTEX.x += sway * max(VERTEX.y, 0.0);

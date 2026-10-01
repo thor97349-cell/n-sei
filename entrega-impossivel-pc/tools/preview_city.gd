@@ -21,12 +21,24 @@ const VIEWS := {
 	"trees_close": [Vector3(300, 2.2, -50), Vector3(318, 4, -20)],
 	"palms": [Vector3(-30, 2.0, 108), Vector3(10, 4, 124)],
 	"street_trees": [Vector3(245, 1.8, -228), Vector3(320, 4, -236)],
+	"road_low": [Vector3(-150, 1.3, -228.5), Vector3(-128, 0.0, -226.5)],
+	"curb": [Vector3(130, 1.5, -234.2), Vector3(146, 0.0, -230.5)],
+	"downtown_walk": [Vector3(20, 1.7, -84.6), Vector3(40, 0.0, -82.5)],
+	"mosaic_walk": [Vector3(-10, 1.7, 84.2), Vector3(8, 0.0, 82.8)],
+	"pavers_walk": [Vector3(-150, 1.7, -216.2), Vector3(-132, 0.0, -217.6)],
+	"lawn": [Vector3(100, 1.7, -229), Vector3(114, 0.0, -243)],
+	"park_ground": [Vector3(236, 1.7, -2), Vector3(256, 0.0, 12)],
+	"dirt": [Vector3(-392, 2.2, 318), Vector3(-420, 0.0, 300)],
+	"street_wide": [Vector3(-40, 4.5, -228), Vector3(40, 2.0, -222)],
 }
 
 var _prefix := "user://city"
 var _queue: Array = []
 var _frames := 0
 var _camera: Camera3D
+var _info: CityBuilder.CityInfo
+var _atmosphere: Atmosphere
+var _lights: Array[OmniLight3D] = []
 
 
 func _ready() -> void:
@@ -39,6 +51,8 @@ func _ready() -> void:
 	atmosphere.clock_running = false
 	var started := Time.get_ticks_msec()
 	var info := CityBuilder.new().build(self)
+	_info = info
+	_atmosphere = atmosphere
 	print("cidade construída em %d ms; prédios: %d; postes: %d" % [Time.get_ticks_msec() - started, info.building_count, info.street_lamps.size()])
 	var shapes := 0
 	for child in info.root.find_child("StaticColliders", false, false).get_children():
@@ -58,6 +72,9 @@ func _ready() -> void:
 
 func _next_view() -> void:
 	if _queue.is_empty():
+		for light in _lights:
+			light.free()
+		_lights.clear()
 		get_tree().quit()
 		return
 	var view: String = _queue[0]
@@ -65,6 +82,7 @@ func _next_view() -> void:
 	_camera.position = spec[0]
 	_camera.look_at(spec[1])
 	_frames = 0
+	_place_street_lights()
 
 
 func _process(_delta: float) -> void:
@@ -75,5 +93,30 @@ func _process(_delta: float) -> void:
 		var view: String = _queue.pop_front()
 		var path := "%s_%s.png" % [_prefix, view]
 		get_viewport().get_texture().get_image().save_png(path)
-		print("salvo ", path)
+		print("salvo %s | objetos %d, draw calls %d, triângulos %d, memória de vídeo %d MB" % [path,
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_VIDEO_MEM_USED) / 1048576])
 		_next_view()
+
+
+## Igual ao World: luz de verdade nos postes mais perto da câmera (só à noite).
+func _place_street_lights() -> void:
+	for light in _lights:
+		light.queue_free()
+	_lights.clear()
+	var night := 1.0 - smoothstep(-6.0, 8.0, _atmosphere.sun_elevation_degrees())
+	if night < 0.05:
+		return
+	var lamps: Array = _info.street_lamps.duplicate()
+	lamps.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.distance_squared_to(_camera.position) < b.distance_squared_to(_camera.position))
+	for i in mini(World.STREET_LIGHTS, lamps.size()):
+		var light := OmniLight3D.new()
+		light.light_color = Color(1.0, 0.8, 0.58)
+		light.omni_range = World.STREET_LIGHT_RANGE
+		light.omni_attenuation = World.STREET_LIGHT_ATTENUATION
+		light.light_energy = World.STREET_LIGHT_ENERGY * night
+		add_child(light)
+		light.global_position = (lamps[i] as Vector3) + Vector3.DOWN * 0.4
+		_lights.append(light)

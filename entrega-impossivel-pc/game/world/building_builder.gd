@@ -50,6 +50,8 @@ var _static: StaticBody3D
 var _info: CityBuilder.CityInfo
 var _holder: Node3D
 var _rng := RandomNumberGenerator.new()
+## Sorteios só de enfeites (ar-condicionado...): separado para não mudar a cidade.
+var _detail_rng := RandomNumberGenerator.new()
 ## chave → {"facade": MeshKit, "detail": MeshKit, "signs": Node3D}
 var _chunks := {}
 var _occupied: Array[Rect2] = []
@@ -62,6 +64,7 @@ func _init(root: Node3D, static_body: StaticBody3D, info: CityBuilder.CityInfo) 
 	_static = static_body
 	_info = info
 	_rng.seed = 7_2024
+	_detail_rng.seed = 9_1337
 
 
 func build_all() -> int:
@@ -389,6 +392,9 @@ func _house(chunk: Dictionary, center: Vector3, yaw: float, width: float, depth:
 	roof_color.a = STYLE_ALPHA["house"]
 	var roof_height := minf(depth * 0.32, 3.2)
 	(chunk["facade"] as MeshKit).add_gable_roof(Transform3D(Basis(Vector3.UP, yaw), center + Vector3(0, wall_height, 0)), width, depth, roof_height, 0.5, roof_color, Vector2(_rng.randf(), wall_height))
+	# Calhas (tubos de descida) nas quinas da frente.
+	for corner: float in [-1.0, 1.0]:
+		_detail_box(chunk, center, yaw, Vector3(corner * (width / 2.0 - 0.12), 0, depth / 2.0 + 0.08), Vector3(0.09, wall_height, 0.09), Color(0.85, 0.85, 0.82))
 	# Porta, varandinha e (às vezes) garagem.
 	var door_x := _rng.randf_range(-width * 0.25, width * 0.25)
 	_door(chunk, center, yaw, depth, door_x, Vector2(1.0, 2.2), DOOR_WOOD)
@@ -399,7 +405,6 @@ func _house(chunk: Dictionary, center: Vector3, yaw: float, width: float, depth:
 	# Cerca viva na divisa com a calçada (com passagem).
 	if setback > 2.0:
 		var hedge_z := depth / 2.0 + setback - 0.5
-		var hedge := Color(0.16, 0.3, 0.12)
 		var gap_x := door_x
 		var left := -lot_width / 2.0 + 0.3
 		var right := lot_width / 2.0 - 0.3
@@ -408,7 +413,8 @@ func _house(chunk: Dictionary, center: Vector3, yaw: float, width: float, depth:
 			if length < 0.8:
 				continue
 			var local := Vector3((span.x + span.y) / 2.0, 0, hedge_z)
-			_detail_box(chunk, center, yaw, local, Vector3(length, 0.95, 0.7), hedge)
+			# A folhagem é montada pelo PropsBuilder (cartões de folhas); aqui só o lugar.
+			_info.hedges.append([Transform3D(Basis(Vector3.UP, yaw), _at(center, yaw, local)), Vector3(length, 0.95, 0.7)])
 			_collider(_at(center, yaw, local) + Vector3(0, 0.47, 0), Vector3(length, 0.95, 0.7), yaw)
 		_info.yard_trees.append(_at(center, yaw, Vector3(-door_x * 0.3 + (lot_width * 0.3 if door_x < 0.0 else -lot_width * 0.3), 0, depth / 2.0 + setback * 0.45)))
 	if _rng.randf() < 0.6:
@@ -428,6 +434,7 @@ func _shop(chunk: Dictionary, center: Vector3, yaw: float, size: Vector3, color:
 
 func _apartment(chunk: Dictionary, center: Vector3, yaw: float, size: Vector3, color: Color) -> void:
 	_body(chunk, center, yaw, size, color, "apartment")
+	_ac_units(chunk, center, yaw, size, 3.4, 3.2)
 	_roof(chunk, center, yaw, size, color)
 	_door(chunk, center, yaw, size.z, 0.0, Vector2(2.2, 2.5), DARK_GLASS)
 	_detail_box(chunk, center, yaw, Vector3(0, 2.9, size.z / 2.0 + 1.0), Vector3(4.0, 0.2, 2.0), TRIM)
@@ -445,8 +452,25 @@ func _apartment(chunk: Dictionary, center: Vector3, yaw: float, size: Vector3, c
 			_detail_box(chunk, center, yaw, Vector3(x, y + 0.16, size.z / 2.0 + 1.17), Vector3(3.0, 0.95, 0.06), Color(0.2, 0.24, 0.28))
 
 
+## Aparelhos de ar-condicionado nas laterais, entre as janelas (mesma grade de janelas
+## do shader de fachada: colunas de `column` m, andares de 3,2 m a partir de `ground`).
+func _ac_units(chunk: Dictionary, center: Vector3, yaw: float, size: Vector3, column: float, ground: float) -> void:
+	var floors := int((size.y - ground - 0.8) / 3.2)
+	var piers := int(size.z / column) - 1
+	for side: float in [-1.0, 1.0]:
+		for floor_index in floors:
+			for pier in piers:
+				if _detail_rng.randf() > 0.12:
+					continue
+				var z := size.z / 2.0 - (pier + 1) * column
+				var y := ground + floor_index * 3.2 + 1.1
+				var shade := _detail_rng.randf_range(0.78, 0.9)
+				_detail_box(chunk, center, yaw, Vector3(side * (size.x / 2.0 + 0.16), y, z), Vector3(0.3, 0.55, 0.8), Color(shade, shade, shade * 0.98))
+
+
 func _office(chunk: Dictionary, center: Vector3, yaw: float, size: Vector3, color: Color) -> void:
 	_body(chunk, center, yaw, size, color, "office")
+	_ac_units(chunk, center, yaw, size, 3.0, 4.2)
 	_door(chunk, center, yaw, size.z, 0.0, Vector2(3.2, 3.0), DARK_GLASS)
 	_detail_box(chunk, center, yaw, Vector3(0, 3.4, size.z / 2.0 + 1.2), Vector3(6.0, 0.25, 2.4), color.darkened(0.3))
 	if size.y > 30.0 and size.x > 16.0 and size.z > 16.0:

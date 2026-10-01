@@ -19,6 +19,8 @@ const SHAPES := {
 	"round": {"trunk": 3.0, "trunk_radius": 0.17, "crown": Vector3(0, 4.7, 0), "radii": Vector3(2.5, 2.1, 2.5), "cards": 78, "card": Vector2(1.3, 1.9)},
 	"tall": {"trunk": 3.6, "trunk_radius": 0.15, "crown": Vector3(0, 5.9, 0), "radii": Vector3(1.7, 3.0, 1.7), "cards": 70, "card": Vector2(1.1, 1.6)},
 	"umbrella": {"trunk": 3.3, "trunk_radius": 0.2, "crown": Vector3(0, 5.0, 0), "radii": Vector3(3.3, 1.25, 3.3), "cards": 86, "card": Vector2(1.4, 2.0)},
+	# Arbusto (sem tronco), para jardins e parque.
+	"bush": {"trunk": 0.0, "trunk_radius": 0.0, "crown": Vector3(0, 0.55, 0), "radii": Vector3(0.85, 0.62, 0.85), "cards": 30, "card": Vector2(0.5, 0.8)},
 }
 
 static var _cache := {}
@@ -160,6 +162,11 @@ static func leaf_material(kind: String) -> ShaderMaterial:
 			material.set_shader_parameter("leaf_texture", frond_texture())
 			material.set_shader_parameter("color_a", Color(0.2, 0.34, 0.1))
 			material.set_shader_parameter("color_b", Color(0.36, 0.44, 0.14))
+		"hedge":
+			# Cerca viva (malha comum, sem dados por árvore): um verde médio fixo.
+			material.set_shader_parameter("leaf_texture", leaf_texture())
+			material.set_shader_parameter("color_a", Color(0.22, 0.38, 0.11))
+			material.set_shader_parameter("color_b", Color(0.22, 0.38, 0.11))
 		_:
 			material.set_shader_parameter("leaf_texture", leaf_texture())
 			material.set_shader_parameter("color_a", Color(0.16, 0.33, 0.09))
@@ -174,6 +181,9 @@ static func core_material(kind: String) -> ShaderMaterial:
 		return _cache[key]
 	var material := (Mats.foliage_pine() if kind == "pine" else Mats.foliage()).duplicate() as ShaderMaterial
 	material.set_shader_parameter("darken", 0.72)
+	if kind == "hedge":
+		material.set_shader_parameter("darken", 0.98)
+		material.set_shader_parameter("color_a", Color(0.15, 0.27, 0.08))
 	_cache[key] = material
 	return material
 
@@ -216,15 +226,17 @@ static func _broadleaf(species: String, detailed: bool) -> ArrayMesh:
 	var trunk: float = shape["trunk"]
 	var center: Vector3 = shape["crown"]
 	var radii: Vector3 = shape["radii"]
-	var bark := _bark_kit(trunk, shape["trunk_radius"])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(species)
-	# Galhos saindo do alto do tronco para dentro da copa.
-	for i in 4:
-		var angle := TAU * i / 4.0 + rng.randf_range(-0.4, 0.4)
-		var tip := center + Vector3(cos(angle) * radii.x * 0.6, radii.y * rng.randf_range(-0.1, 0.35), sin(angle) * radii.z * 0.6)
-		_branch(bark, Vector3(0, trunk * 0.85, 0), tip, float(shape["trunk_radius"]) * 0.55)
-	var mesh := bark.commit(Mats.vertex_colored("bark", 0.9))
+	var mesh := ArrayMesh.new()
+	if trunk > 0.0:
+		var bark := _bark_kit(trunk, shape["trunk_radius"])
+		# Galhos saindo do alto do tronco para dentro da copa.
+		for i in 4:
+			var angle := TAU * i / 4.0 + rng.randf_range(-0.4, 0.4)
+			var tip := center + Vector3(cos(angle) * radii.x * 0.6, radii.y * rng.randf_range(-0.1, 0.35), sin(angle) * radii.z * 0.6)
+			_branch(bark, Vector3(0, trunk * 0.85, 0), tip, float(shape["trunk_radius"]) * 0.55)
+		mesh = bark.commit(Mats.vertex_colored("bark", 0.9))
 	# Miolo (esconde o vazio entre os cartões e dá volume).
 	var core_scale := radii * (0.72 if detailed else 1.0)
 	var st := SurfaceTool.new()
@@ -386,3 +398,27 @@ static func _palm(detailed: bool) -> ArrayMesh:
 	cards.set_material(leaf_material("palm"))
 	cards.commit(mesh)
 	return mesh
+
+
+## Folhas de uma cerca viva (caixa `size`, base no chão, em `xform`): cartões no topo e
+## nas duas faces compridas. `cards` recebe os cartões e `core` a caixa de miolo.
+static func add_hedge(cards: SurfaceTool, core: MeshKit, xform: Transform3D, size: Vector3, rng: RandomNumberGenerator) -> void:
+	core.add_box(Transform3D(xform.basis, xform.origin), Vector3(size.x - 0.08, size.y - 0.06, size.z - 0.1), Color.WHITE)
+	var count := int(size.x * 15.0)
+	for i in count:
+		# 1/4 no alto, o resto dividido entre os dois lados compridos.
+		var face := 0 if rng.randf() < 0.25 else (1 if rng.randf() < 0.5 else 2)
+		var local: Vector3
+		var normal: Vector3
+		if face == 0:
+			local = Vector3(rng.randf_range(-0.5, 0.5) * size.x, size.y - 0.02, rng.randf_range(-0.45, 0.45) * size.z)
+			normal = Vector3.UP
+		else:
+			var side := 1.0 if face == 1 else -1.0
+			local = Vector3(rng.randf_range(-0.5, 0.5) * size.x, rng.randf_range(0.15, 0.95) * size.y, side * size.z * 0.5)
+			normal = Vector3(0, 0.25, side).normalized()
+		var point := xform * local
+		var world_normal := (xform.basis * normal).normalized()
+		var facing := (world_normal + Vector3(rng.randf_range(-0.5, 0.5), rng.randf_range(-0.2, 0.5), rng.randf_range(-0.5, 0.5))).normalized()
+		var card := rng.randf_range(0.45, 0.7)
+		_card(cards, point, facing, world_normal, card, card, rng.randf() * TAU, rng.randf_range(0.75, 1.0))

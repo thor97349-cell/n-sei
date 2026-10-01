@@ -11,22 +11,22 @@ const QUALITY := {
 	"low": {
 		"shadow_size": 2048, "shadow_distance": 160.0, "ssao": false, "ssil": false, "ssr": false,
 		"sdfgi": false, "volumetric_fog": false, "taa": false, "msaa": 0, "fxaa": true,
-		"traffic_cars": 14, "pedestrians": 20, "view_distance": 900.0, "lod_threshold": 4.0, "street_lights": 6,
+		"traffic_cars": 14, "pedestrians": 20, "grass": 0.35, "view_distance": 900.0, "lod_threshold": 4.0, "street_lights": 6,
 	},
 	"medium": {
 		"shadow_size": 2048, "shadow_distance": 240.0, "ssao": true, "ssil": false, "ssr": false,
 		"sdfgi": false, "volumetric_fog": false, "taa": true, "msaa": 0, "fxaa": false,
-		"traffic_cars": 22, "pedestrians": 28, "view_distance": 1200.0, "lod_threshold": 2.0, "street_lights": 10,
+		"traffic_cars": 22, "pedestrians": 28, "grass": 0.65, "view_distance": 1200.0, "lod_threshold": 2.0, "street_lights": 10,
 	},
 	"high": {
 		"shadow_size": 4096, "shadow_distance": 320.0, "ssao": true, "ssil": true, "ssr": true,
 		"sdfgi": false, "volumetric_fog": true, "taa": true, "msaa": 0, "fxaa": false,
-		"traffic_cars": 30, "pedestrians": 38, "view_distance": 1600.0, "lod_threshold": 1.0, "street_lights": 16,
+		"traffic_cars": 30, "pedestrians": 38, "grass": 1.0, "view_distance": 1600.0, "lod_threshold": 1.0, "street_lights": 16,
 	},
 	"ultra": {
 		"shadow_size": 4096, "shadow_distance": 450.0, "ssao": true, "ssil": true, "ssr": true,
 		"sdfgi": true, "volumetric_fog": true, "taa": true, "msaa": 2, "fxaa": false,
-		"traffic_cars": 40, "pedestrians": 50, "view_distance": 2000.0, "lod_threshold": 0.5, "street_lights": 24,
+		"traffic_cars": 40, "pedestrians": 50, "grass": 1.25, "view_distance": 2000.0, "lod_threshold": 0.5, "street_lights": 24,
 	},
 }
 

@@ -5,6 +5,10 @@ extends Node3D
 ## menu (fundo animado) e o jogo.
 
 const STREET_LIGHTS := 14
+## Luz dos postes: forte o bastante para fazer uma "poça" de luz na calçada e na rua.
+const STREET_LIGHT_RANGE := 18.0
+const STREET_LIGHT_ENERGY := 4.0
+const STREET_LIGHT_ATTENUATION := 1.0
 
 var atmosphere: Atmosphere
 var info: CityBuilder.CityInfo
@@ -50,8 +54,8 @@ func _ready() -> void:
 	for i in STREET_LIGHTS:
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.8, 0.58)
-		light.omni_range = 16.0
-		light.omni_attenuation = 1.2
+		light.omni_range = STREET_LIGHT_RANGE
+		light.omni_attenuation = STREET_LIGHT_ATTENUATION
 		light.light_energy = 0.0
 		light.shadow_enabled = false
 		light.visible = false
@@ -99,7 +103,7 @@ func _update_street_lights() -> void:
 		var light := _pool[i]
 		if i < nearest.size():
 			light.global_position = (nearest[i][1] as Vector3) + Vector3.DOWN * 0.4
-			light.light_energy = 2.2 * night
+			light.light_energy = STREET_LIGHT_ENERGY * night
 			light.visible = true
 		else:
 			light.visible = false

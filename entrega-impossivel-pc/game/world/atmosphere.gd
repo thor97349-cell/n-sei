@@ -66,8 +66,8 @@ func _ready() -> void:
 	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	environment.fog_enabled = true
 	environment.fog_light_color = Color(0.62, 0.68, 0.78)
-	environment.fog_density = 0.0006
-	environment.fog_aerial_perspective = 0.35
+	environment.fog_density = 0.00035
+	environment.fog_aerial_perspective = 0.3
 	environment.fog_sky_affect = 0.12
 	environment.volumetric_fog_density = 0.004
 	environment.volumetric_fog_albedo = Color(0.85, 0.88, 0.92)
@@ -75,8 +75,8 @@ func _ready() -> void:
 	environment.volumetric_fog_anisotropy = 0.6
 	environment.volumetric_fog_sky_affect = 0.0
 	environment.adjustment_enabled = true
-	environment.adjustment_contrast = 1.06
-	environment.adjustment_saturation = 1.15
+	environment.adjustment_contrast = 1.08
+	environment.adjustment_saturation = 1.08
 
 	var world_environment := WorldEnvironment.new()
 	world_environment.environment = environment
@@ -157,8 +157,9 @@ func _update_sky(_delta: float) -> void:
 	var golden := 1.0 - smoothstep(4.0, 22.0, elevation)
 	var storm := _rain_amount
 
-	sun.light_energy = day * lerpf(1.25, 0.35, storm) + _flash * 2.5
-	sun.light_color = Color(1.0, 1.0, 1.0).lerp(Color(1.0, 0.72, 0.45), golden * day)
+	sun.light_energy = day * lerpf(1.55, 0.35, storm) + _flash * 2.5
+	# Sol levemente quente de dia, alaranjado no fim de tarde.
+	sun.light_color = Color(1.0, 0.96, 0.9).lerp(Color(1.0, 0.7, 0.42), golden * day)
 	sun.shadow_opacity = lerpf(1.0, 0.45, storm)
 	sun.visible = day > 0.01 or _flash > 0.0
 	moon.light_energy = night_factor * 0.12
@@ -168,13 +169,14 @@ func _update_sky(_delta: float) -> void:
 	sky_material.turbidity = lerpf(5.0, 30.0, storm)
 	sky_material.rayleigh_color = Color(0.22, 0.42, 0.78).lerp(Color(0.36, 0.38, 0.42), storm)
 	environment.ambient_light_energy = lerpf(1.0, 0.35, night_factor) + _flash
+	# De dia: luz do céu misturada com um ambiente neutro (sombras menos azuladas).
 	# À noite o céu quase não ilumina: um ambiente azulado fraco mantém a rua legível.
-	environment.ambient_light_sky_contribution = lerpf(1.0, 0.0, night_factor)
-	environment.ambient_light_color = Color(0.09, 0.11, 0.18)
-	environment.fog_density = lerpf(0.0006, 0.006, storm) + night_factor * 0.0006
+	environment.ambient_light_sky_contribution = lerpf(0.72, 0.0, night_factor) * lerpf(1.0, 0.85, storm)
+	environment.ambient_light_color = Color(0.5, 0.5, 0.47).lerp(Color(0.09, 0.11, 0.18), night_factor).lerp(Color(0.36, 0.38, 0.42), storm * day)
+	environment.fog_density = lerpf(0.00035, 0.006, storm) + night_factor * 0.0006
 	environment.fog_light_color = Color(0.62, 0.68, 0.78).lerp(Color(0.06, 0.07, 0.1), night_factor).lerp(Color(0.4, 0.43, 0.48), storm * day)
 	environment.volumetric_fog_density = lerpf(0.003, 0.02, storm)
-	environment.tonemap_exposure = lerpf(1.08, 1.6, night_factor)
+	environment.tonemap_exposure = lerpf(1.02, 1.6, night_factor)
 
 	# Estrelas só à noite e sem chuva (o céu físico soma a textura sempre).
 	var show_stars := night_factor > 0.6 and storm < 0.3

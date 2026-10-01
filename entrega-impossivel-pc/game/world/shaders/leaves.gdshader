@@ -21,6 +21,11 @@ void vertex() {
 	vec3 green = mix(color_a, color_b, custom.r);
 	vec3 flower = mix(vec3(0.95, 0.78, 0.16), vec3(0.93, 0.45, 0.66), custom.b);
 	tint = mix(green, flower, custom.g * 0.85);
+	// Cada cartão com um tom um pouco diferente (a sombra do cartão serve de semente) e
+	// as folhas do alto da copa um pouco mais amareladas pelo sol.
+	float card = fract(COLOR.r * 97.13 + origin.x * 0.37);
+	tint *= mix(vec3(0.88, 0.94, 0.86), vec3(1.1, 1.08, 0.92), card);
+	tint = mix(tint, tint * vec3(1.14, 1.1, 0.82), clamp(NORMAL.y, 0.0, 1.0) * 0.35 * (1.0 - custom.g));
 	occlusion = COLOR.r;
 	float height = max(VERTEX.y - 2.0, 0.0);
 	float phase = TIME * 1.4 + origin.x * 0.13 + origin.z * 0.11;
@@ -40,5 +45,5 @@ void fragment() {
 	ALBEDO = albedo;
 	ROUGHNESS = mix(0.75, 0.35, wetness);
 	SPECULAR = 0.35;
-	BACKLIGHT = albedo * 0.6;
+	BACKLIGHT = albedo * vec3(0.75, 0.85, 0.55);
 }
