@@ -4,7 +4,8 @@ extends Node3D
 ## quarteirão (nunca atravessa a rua nem entra em prédios), dá meia-volta no fim do
 ## trecho, desvia do carro do jogador e aparece/some em volta da câmera. Alguns ficam
 ## parados nos pontos de ônibus. Todos são desenhados numa única MultiMesh; o passo é
-## animado no shader (sem esqueleto), então custa pouco.
+## animado no shader (sem esqueleto), então custa pouco. De vez em quando alguém para
+## no meio do caminho para olhar uma vitrine ou o celular, e uns andam em dupla.
 ##
 ## Os trechos livres são descobertos uma vez, testando a colisão ao longo da calçada
 ## (postes, árvores, bancas, muretas... tudo o que tiver colisão corta o trecho).
@@ -21,6 +22,13 @@ const SPAWN_MAX := 130.0
 const DESPAWN := 160.0
 const MAX_PEOPLE := 64
 const WALK_CYCLE := 1.25
+## Fração de quem anda em dupla (casal, amigos) lado a lado.
+const PAIR_CHANCE := 0.22
+## Distância lateral (à direita de quem anda) de quem guia e de quem acompanha a dupla.
+const PAIR_LATERALS := Vector2(-0.12, 0.42)
+## Intervalo (s) entre as chances de uma paradinha no meio do caminho.
+const WANDER_MIN := 14.0
+const WANDER_MAX := 40.0
 ## Trechos onde a calçada foi coberta de asfalto (saída da frota na Central): ninguém anda
 ## ali, senão parece gente andando no meio da rua bem onde o jogador sai.
 const NO_WALK: Array[Rect2] = [Rect2(-44.0, 58.0, 88.0, 12.0)]
@@ -71,6 +79,15 @@ class Person:
 	var side := 0.0
 	var phase := 0.0
 	var pause := 0.0
+	## Passo atual (m/s; 0 parado). Quem acompanha uma dupla copia o de quem guia.
+	var pace := 0.0
+	## Para onde olha enquanto está parado (yaw da vitrine) ou NAN (para a frente).
+	var gaze := NAN
+	## Tempo até a próxima chance de uma paradinha.
+	var wander := 0.0
+	## Dupla: quem acompanha segue quem guia (mesmo ponto do trecho, ao lado).
+	var leader: Person
+	var follower: Person
 	var yaw := 0.0
 	var scale := 1.0
 	var look := Color()
@@ -85,6 +102,8 @@ class Person:
 
 var camera: Camera3D
 var player: Vehicle
+## Carros batidos soltos (TrafficWreck): quem está perto também sai da frente deles.
+var wrecks: Array[TrafficWreck] = []
 var night := false
 var rain := 0.0
 var target_count := 36
@@ -370,15 +389,17 @@ func _spawn_walker(focus: Vector3, min_distance: float) -> bool:
 		# Nem colado em outra pessoa.
 		if _people.any(func(other: Person) -> bool: return other.position.distance_squared_to(point) < 4.0):
 			continue
-		add_walker(segment, s, 1 if _rng.randf() < 0.5 else -1)
+		var person := add_walker(segment, s, 1 if _rng.randf() < 0.5 else -1)
+		if person != null and _rng.randf() < PAIR_CHANCE:
+			_add_partner(person)
 		return true
 	return false
 
 
 ## Coloca uma pessoa andando no trecho `segment`, na distância `s`.
-func add_walker(segment: Segment, s: float, direction: int) -> void:
+func add_walker(segment: Segment, s: float, direction: int) -> Person:
 	if _people.size() >= MAX_PEOPLE:
-		return
+		return null
 	var sample: Array = segment.sample(s)
 	var person := Person.new()
 	person.segment = segment
@@ -392,7 +413,48 @@ func add_walker(segment: Segment, s: float, direction: int) -> void:
 	person.look = _random_look()
 	person.position = sample[0]
 	person.yaw = _yaw_of((sample[1] as Vector3) * float(direction))
+	person.wander = _rng.randf_range(4.0, WANDER_MAX)
 	_people.append(person)
+	return person
+
+
+## Põe alguém andando ao lado de `lead` (os dois no mesmo passo e no mesmo sentido).
+func _add_partner(lead: Person) -> void:
+	var mate := add_walker(lead.segment, lead.s, lead.direction)
+	if mate == null:
+		return
+	mate.leader = lead
+	lead.follower = mate
+	mate.speed = lead.speed
+	lead.lateral = PAIR_LATERALS.x
+	mate.lateral = PAIR_LATERALS.y
+	lead.side = lead.lateral * float(lead.direction)
+	mate.side = mate.lateral * float(mate.direction)
+	mate.yaw = lead.yaw
+
+
+## Desfaz a dupla de `person` (cada um volta a andar por conta própria).
+func _split(person: Person) -> void:
+	var other := person.leader if person.leader != null else person.follower
+	if other == null:
+		return
+	for member: Person in [person, other]:
+		member.leader = null
+		member.follower = null
+		member.lateral = _rng.randf_range(0.26, 0.36)
+
+
+## Paradinha no meio do caminho: olha uma vitrine (se tiver parede do lado dos prédios) ou
+## fica um pouco parado (quem tem celular aproveita para olhar). Na chuva ninguém para.
+func _wander(person: Person) -> void:
+	person.wander = _rng.randf_range(WANDER_MIN, WANDER_MAX)
+	if rain > 0.3 or _rng.randf() < 0.45:
+		return
+	person.pause = _rng.randf_range(2.5, 7.0)
+	var tangent: Vector3 = person.segment.sample(person.s)[1]
+	# A linha de caminhada contorna o quarteirão com o lado de dentro (prédios) à direita.
+	var inside := Vector3(-tangent.z, 0, tangent.x)
+	person.gaze = _yaw_of(inside) if _blocked(person.position, inside, 1.5) else NAN
 
 
 ## Uma ou duas pessoas esperando no ponto de ônibus.
@@ -421,11 +483,15 @@ func _spawn_waiting(stop_index: int, slot: int) -> void:
 	_people.append(person)
 
 
+## Aparência de uma pessoa: dois inteiros (roupa e estilo) que o shader decodifica (veja o
+## cabeçalho de pedestrian.gdshader). As escolhas têm pesos para a rua parecer real.
 func _random_look() -> Color:
-	return Color(_rng.randf(), 0, (float(_rng.randi() % 10) + 0.5) / 10.0, (float(_rng.randi() % 16) + 0.5) / 16.0)
+	var look := PedestrianLooks.random(_rng)
+	return Color(_rng.randf(), 0, float(look.x), float(look.y))
 
 
 func _remove(person: Person) -> void:
+	_split(person)
 	_people.erase(person)
 	if person.stop >= 0:
 		var others := _people.any(func(p: Person) -> bool: return p.stop == person.stop)
@@ -453,7 +519,7 @@ func _process(delta: float) -> void:
 		_maintain_timer = 0.5
 		_maintain()
 	delta = minf(delta, 0.1)
-	var danger := _player_danger()
+	var dangers := _dangers()
 	# Quem anda no mesmo trecho e no mesmo sentido (para manter distância de quem vai à frente).
 	var lanes := {}
 	for person in _people:
@@ -466,19 +532,44 @@ func _process(delta: float) -> void:
 		if person.stop >= 0:
 			person.phase = fmod(person.phase + delta * 0.1, 1.0)
 		else:
-			var pace := person.speed * (1.25 if rain > 0.3 else 1.0)
-			if person.scared > 0.0:
-				person.scared -= delta
-				pace = 3.2
-			elif person.pause <= 0.0:
-				# Alguém logo à frente no mesmo sentido: diminui o passo (e espera, se colar).
-				var gap := _gap_ahead(person, lanes.get(_lane_key(person), []))
-				if gap < 1.8:
-					pace *= clampf((gap - 0.9) / 0.9, 0.0, 1.0)
-			if person.pause > 0.0:
-				person.pause -= delta
-			elif pace > 0.05:
-				_walk(person, pace * delta)
+			var pace := 0.0
+			var lead := person.leader
+			if lead != null:
+				# Em dupla: fica ao lado de quem guia. Quando os dois dão meia-volta, trocam
+				# de lado (assim continuam à direita sem passar um pelo outro).
+				if lead.direction != person.direction:
+					var swap := lead.lateral
+					lead.lateral = person.lateral
+					person.lateral = swap
+					person.direction = lead.direction
+				person.s = lead.s
+				person.pause = lead.pause
+				person.gaze = lead.gaze
+				pace = lead.pace
+			else:
+				pace = person.speed * (1.25 if rain > 0.3 else 1.0)
+				if person.scared > 0.0:
+					person.scared -= delta
+					pace = 3.2
+				elif person.pause <= 0.0:
+					# Alguém logo à frente no mesmo sentido: diminui o passo (e espera, se colar).
+					var gap := _gap_ahead(person, lanes.get(_lane_key(person), []))
+					if gap < 1.8:
+						pace *= clampf((gap - 0.9) / 0.9, 0.0, 1.0)
+					person.wander -= delta
+					if person.wander <= 0.0:
+						_wander(person)
+				if person.pause > 0.0:
+					person.pause -= delta
+					pace = 0.0
+					if person.pause <= 0.0:
+						person.gaze = NAN
+				elif pace > 0.05:
+					_walk(person, pace * delta)
+				else:
+					pace = 0.0
+			person.pace = pace
+			if pace > 0.05:
 				stride = 1.6 if person.scared > 0.0 else clampf(pace / person.speed, 0.45, 1.0)
 				person.phase = fmod(person.phase + pace * delta / WALK_CYCLE, 1.0)
 			var sample: Array = person.segment.sample(person.s)
@@ -487,8 +578,8 @@ func _process(delta: float) -> void:
 			# Mão direita: quem vai e quem vem passam cada um do seu lado.
 			person.side = move_toward(person.side, person.lateral * float(person.direction), 0.6 * delta)
 			person.position = (sample[0] as Vector3) + right * person.side + person.offset
-			facing = _yaw_of(tangent * float(person.direction))
-		if not danger.is_empty():
+			facing = person.gaze if pace <= 0.0 and not is_nan(person.gaze) else _yaw_of(tangent * float(person.direction))
+		for danger: Dictionary in dangers:
 			_avoid(person, danger)
 		if person.dodge_time > 0.0:
 			person.dodge_time -= delta
@@ -516,7 +607,7 @@ func _gap_ahead(person: Person, lane: Array) -> float:
 	var best := INF
 	var length := person.segment.length()
 	for other: Person in lane:
-		if other == person:
+		if other == person or other == person.follower:
 			continue
 		var gap := (other.s - person.s) * float(person.direction)
 		if person.segment.closed:
@@ -537,25 +628,36 @@ func _walk(person: Person, distance: float) -> void:
 		person.s = clampf(person.s, 0.0, end)
 		person.direction = -person.direction
 		person.pause = _rng.randf_range(0.5, 2.0)
+		person.gaze = NAN
 
 
-# --- desviar do carro do jogador -----------------------------------------------------------------
+# --- desviar do carro do jogador (e dos carros batidos) ------------------------------------------
 
-## Área que o carro do jogador vai varrer no próximo segundo (vazia se estiver parado).
-func _player_danger() -> Dictionary:
-	if player == null or not is_instance_valid(player):
-		return {}
-	var velocity := player.linear_velocity
+## Carros dos quais as pessoas desviam: o do jogador e os batidos que estão perto.
+func _dangers() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	if player != null and is_instance_valid(player):
+		result.append(_danger_of(player, player.spec))
+	var focus := _focus()
+	for wreck in wrecks:
+		if is_instance_valid(wreck) and wreck.global_position.distance_squared_to(focus) < SPAWN_MAX * SPAWN_MAX:
+			result.append(_danger_of(wreck, wreck.spec))
+	return result
+
+
+## Área que o carro vai varrer no próximo segundo (na direção em que anda).
+func _danger_of(body: RigidBody3D, spec: Dictionary) -> Dictionary:
+	var velocity := body.linear_velocity
 	velocity.y = 0.0
 	var speed := velocity.length()
-	var forward := player.global_basis.z
+	var forward := body.global_basis.z
 	forward.y = 0.0
 	forward = forward.normalized()
 	if speed > 1.0:
 		forward = velocity / speed
 	return {
-		"origin": player.global_position, "forward": forward, "right": Vector3(-forward.z, 0, forward.x),
-		"half_width": float(player.spec.get("width", 1.9)) / 2.0, "half_length": float(player.spec.get("length", 4.5)) / 2.0,
+		"origin": body.global_position, "forward": forward, "right": Vector3(-forward.z, 0, forward.x),
+		"half_width": float(spec.get("width", 1.9)) / 2.0, "half_length": float(spec.get("length", 4.5)) / 2.0,
 		"speed": speed,
 	}
 
@@ -581,11 +683,13 @@ func _avoid(person: Person, danger: Dictionary) -> void:
 		return
 	if speed < 2.0:
 		# Carro parado ou devagar na calçada: quem vem andando dá meia-volta antes de encostar.
-		if absf(ahead) < half_length + 1.2 and absf(side) < half_width + 1.2 and person.stop < 0 and person.pause <= 0.0 and person.scared <= 0.0:
+		# (Numa dupla, quem decide é quem guia; o outro acompanha.)
+		if absf(ahead) < half_length + 1.2 and absf(side) < half_width + 1.2 and person.stop < 0 and person.leader == null and person.pause <= 0.0 and person.scared <= 0.0:
 			var heading: Vector3 = (person.segment.sample(person.s)[1] as Vector3) * float(person.direction)
 			if heading.dot(-relative) > 0.0:
 				person.direction = -person.direction
 				person.pause = _rng.randf_range(0.3, 0.8)
+				person.gaze = NAN
 		return
 	if person.dodge_time > 0.0:
 		return
@@ -599,10 +703,13 @@ func _avoid(person: Person, danger: Dictionary) -> void:
 	if _blocked(person.position, right * sign, needed):
 		sign = -sign
 		needed = margin - sign * side + 0.3
+	# Num susto cada um corre para um lado: a dupla se desfaz.
+	_split(person)
 	person.dodge = right * sign * 6.5
 	person.dodge_time = clampf(needed / 6.5, 0.12, 0.75)
 	person.scared = 2.5
 	person.pause = 0.0
+	person.gaze = NAN
 	# Depois do susto, corre no mesmo sentido do carro (para longe dele).
 	if person.stop < 0:
 		var tangent: Vector3 = person.segment.sample(person.s)[1]

@@ -60,7 +60,11 @@ var _shift_timer := 0.0
 var _reverse_hold := 0.0
 var _steer := 0.0
 var _last_velocity := Vector3.ZERO
+var _last_spin := Vector3.ZERO
 var _impact_cooldown := 0.0
+## Onde foi a última batida (ponto e normal, para faíscas e fumaça).
+var last_impact_point := Vector3.ZERO
+var last_impact_normal := Vector3.UP
 var _frontal_area := 2.0
 var _out_of_fuel_sent := false
 var _audio: EngineAudio
@@ -214,6 +218,7 @@ func place(xform: Transform3D) -> void:
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
 	_last_velocity = Vector3.ZERO
+	_last_spin = Vector3.ZERO
 	gear = 1
 	_steer = 0.0
 	reset_physics_interpolation()
@@ -242,6 +247,7 @@ func _physics_process(delta: float) -> void:
 	_apply_aero()
 	_use_fuel(delta, drive)
 	_check_breakables(delta)
+	_resolve_traffic_hits()
 	_detect_impacts(delta)
 	_update_squeal(delta)
 	_update_lights(brake_input)
@@ -490,6 +496,39 @@ func refuel(liters: float) -> void:
 		_out_of_fuel_sent = false
 
 
+## Rodas físicas (para marcas de pneu e fumaça).
+func wheels() -> Array[VehicleWheel3D]:
+	return _wheels
+
+
+## Batida num carro do trânsito: para a física ele é "parede" (anda em trilhos), então o
+## TrafficSystem refaz a batida com as massas dos dois e devolve a velocidade certa (o
+## jogador perde só parte da velocidade e o outro carro é empurrado).
+func _resolve_traffic_hits() -> void:
+	if TrafficSystem.current == null or get_contact_count() == 0:
+		return
+	var state := PhysicsServer3D.body_get_direct_state(get_rid())
+	if state == null:
+		return
+	for i in state.get_contact_count():
+		var car := state.get_contact_collider_object(i) as TrafficCar
+		if car == null:
+			continue
+		var result := TrafficSystem.current.ram(self, _last_velocity, mass, car, state.get_contact_collider_position(i))
+		if result.is_empty():
+			continue
+		var wall := linear_velocity
+		var corrected: Vector3 = result["velocity"]
+		corrected.y = linear_velocity.y
+		linear_velocity = corrected
+		# O tranco de giro que a "parede" deu fica proporcional à pancada de verdade.
+		var wall_change := (wall - _last_velocity).length()
+		if wall_change > 0.01:
+			var share := clampf((corrected - _last_velocity).length() / wall_change, 0.0, 1.0)
+			angular_velocity = _last_spin + (angular_velocity - _last_spin) * share
+		return
+
+
 func _detect_impacts(delta: float) -> void:
 	_impact_cooldown = maxf(_impact_cooldown - delta, 0.0)
 	var change := (linear_velocity - _last_velocity).length()
@@ -500,9 +539,29 @@ func _detect_impacts(delta: float) -> void:
 		if _impact_cooldown <= 0.0:
 			_impact_cooldown = 0.35
 			var strength := change - expected
+			_locate_impact(linear_velocity - _last_velocity)
 			impacted.emit(strength)
 			Sfx.play("impact", linear_to_db(clampf(strength / 12.0, 0.15, 1.0)), randf_range(0.85, 1.1))
 	_last_velocity = linear_velocity
+	_last_spin = angular_velocity
+
+
+## Ponto da batida: o contato da carroceria (se houver) ou a ponta do carro do lado de onde
+## veio o tranco.
+func _locate_impact(change: Vector3) -> void:
+	var push := change.normalized() if change.length() > 0.01 else -global_basis.z
+	last_impact_normal = push
+	var state := PhysicsServer3D.body_get_direct_state(get_rid())
+	if state and state.get_contact_count() > 0:
+		var best := 0
+		for i in state.get_contact_count():
+			if state.get_contact_local_position(i).y > state.get_contact_local_position(best).y:
+				best = i
+		last_impact_point = state.get_contact_local_position(best)
+		return
+	var local := global_basis.inverse() * -push
+	var half := Vector3(float(spec["width"]) / 2.0, 0.0, float(spec["length"]) / 2.0)
+	last_impact_point = global_transform * Vector3(clampf(local.x * 3.0, -1.0, 1.0) * half.x, 0.2, clampf(local.z * 3.0, -1.0, 1.0) * half.z)
 
 
 ## Pneu cantando: derrapagem lateral de verdade (ângulo entre para onde o carro aponta e
@@ -548,6 +607,7 @@ func _check_breakables(delta: float) -> void:
 		return
 	var before := linear_velocity
 	linear_velocity = before * 0.8
+	_locate_impact(-before)
 	_last_velocity = linear_velocity
 	_impact_assist = IMPACT_ASSIST_SECONDS
 	var strength := before.length() * 0.2

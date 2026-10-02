@@ -30,6 +30,8 @@ const VIEWS := {
 	"park_ground": [Vector3(236, 1.7, -2), Vector3(256, 0.0, 12)],
 	"dirt": [Vector3(-392, 2.2, 318), Vector3(-420, 0.0, 300)],
 	"street_wide": [Vector3(-40, 4.5, -228), Vector3(40, 2.0, -222)],
+	"sky_up": [Vector3(-40, 5.0, -228), Vector3(60, 70, -170)],
+	"sky_west": [Vector3(60, 6.0, 60), Vector3(-200, 50, 30)],
 }
 
 var _prefix := "user://city"
@@ -49,6 +51,8 @@ func _ready() -> void:
 	add_child(atmosphere)
 	atmosphere.minutes = float(args[1]) if args.size() > 1 else 15.0 * 60.0
 	atmosphere.clock_running = false
+	if args.size() > 3 and args[3] == "rain":
+		atmosphere.set_rain_now(true)
 	var started := Time.get_ticks_msec()
 	var info := CityBuilder.new().build(self)
 	_info = info

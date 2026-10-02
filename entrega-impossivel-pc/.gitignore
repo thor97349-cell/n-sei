@@ -7,3 +7,6 @@
 *.exe
 *.pck
 *.x86_64
+
+# Cache do Python (ferramentas)
+__pycache__/

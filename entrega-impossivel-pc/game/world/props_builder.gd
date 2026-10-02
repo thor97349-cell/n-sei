@@ -22,6 +22,9 @@ const PAINT_WHITE := Color(0.93, 0.93, 0.9)
 const PAINT_YELLOW := Color(0.98, 0.78, 0.1)
 ## Temas cujas calçadas recebem árvores.
 const LEAFY_THEMES := ["residential", "apartments", "school", "park", "promenade", "plaza", "waterfront", "stadium"]
+## Temas com lixeiras soltas na calçada (dá para derrubar com o carro).
+const BIN_THEMES := ["downtown", "commercial", "plaza", "mall", "promenade", "apartments", "waterfront", "school"]
+const BIN_COLORS: Array[Color] = [Color(0.93, 0.45, 0.08), Color(0.93, 0.45, 0.08), Color(0.16, 0.4, 0.23), Color(0.36, 0.38, 0.4)]
 
 var _root: Node3D
 var _static: StaticBody3D
@@ -265,6 +268,14 @@ func _street_lamps_and_trees() -> void:
 						continue
 					t.y = CityLayout.CURB_HEIGHT
 					_add_tree(t, false)
+				# Lixeira solta entre os postes, perto do meio-fio (uma em cada três vagas).
+				var b := edge.from + edge.dir * (along + LAMP_SPACING / 2.0) + outward * (edge.width / 2.0 + 1.25)
+				var pick := absi(roundi(b.x * 7.0) * 31 + roundi(b.z * 13.0))
+				if pick % 3 == 0 and along + LAMP_SPACING / 2.0 < edge.length - end_margin and not (edge.axis == "z" and _in_canal(b, 3.0)) and _clear(b):
+					var bin_block := _block_at(b)
+					if not bin_block.is_empty() and BIN_THEMES.has(bin_block["theme"]):
+						b.y = CityLayout.CURB_HEIGHT
+						_loose_bin(b, BIN_COLORS[pick % BIN_COLORS.size()])
 				along += LAMP_SPACING
 
 
@@ -951,6 +962,49 @@ func _ramp(base: Vector3, yaw: float, size: Vector3, color: Color) -> void:
 	convex.points = PackedVector3Array([a, b, c, d, e, f])
 	shape.shape = convex
 	_static.add_child(shape)
+
+
+## Lixeira de calçada com física: parada (dormindo) até o carro acertar.
+func _loose_bin(position: Vector3, color: Color) -> void:
+	var body := RigidBody3D.new()
+	body.name = "Bin"
+	body.mass = 12.0
+	body.position = position
+	body.can_sleep = true
+	body.sleeping = true
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = _bin_mesh(color)
+	mesh.visibility_range_end = 140.0
+	body.add_child(mesh)
+	var shape := CollisionShape3D.new()
+	var cylinder := CylinderShape3D.new()
+	cylinder.radius = 0.25
+	cylinder.height = 0.86
+	shape.shape = cylinder
+	shape.position.y = 0.43
+	body.add_child(shape)
+	_holder.add_child(body)
+
+
+var _bin_meshes := {}
+
+
+func _bin_mesh(color: Color) -> ArrayMesh:
+	if _bin_meshes.has(color):
+		return _bin_meshes[color]
+	var kit := MeshKit.new()
+	var dark := color.darkened(0.35)
+	kit.add_cylinder(Transform3D(), 0.22, 0.74, 14, color)
+	# Aro de cima, tampa basculante e a abertura escura.
+	kit.add_cylinder(Transform3D(Basis(), Vector3(0, 0.72, 0)), 0.245, 0.06, 14, dark)
+	kit.add_cylinder(Transform3D(Basis(), Vector3(0, 0.78, 0)), 0.2, 0.07, 14, color.lightened(0.08))
+	kit.add_box(Transform3D(Basis(), Vector3(0, 0.6, 0.2)), Vector3(0.24, 0.08, 0.05), Color(0.05, 0.05, 0.05), Vector2.ZERO, false, false)
+	# Base mais larga e faixa refletiva.
+	kit.add_cylinder(Transform3D(), 0.25, 0.05, 14, dark)
+	kit.add_cylinder(Transform3D(Basis(), Vector3(0, 0.36, 0)), 0.226, 0.05, 14, Color(0.9, 0.9, 0.86))
+	var mesh := kit.commit(Mats.vertex_colored("street_bin", 0.55))
+	_bin_meshes[color] = mesh
+	return mesh
 
 
 ## Cone ou tambor com física (pode ser derrubado pelo carro).

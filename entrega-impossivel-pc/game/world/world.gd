@@ -17,6 +17,8 @@ var lights: TrafficLights
 var traffic: TrafficSystem
 var breakables: Breakables
 var pedestrians: Pedestrians
+## Faíscas, fumaça e marcas de pneu do carro do jogador.
+var effects: VehicleEffects
 var camera: Camera3D
 
 var _pool: Array[OmniLight3D] = []
@@ -51,6 +53,10 @@ func _ready() -> void:
 	pedestrians.name = "Pedestrians"
 	add_child(pedestrians)
 	pedestrians.setup(info)
+	effects = VehicleEffects.new()
+	effects.name = "VehicleEffects"
+	add_child(effects)
+	traffic.crash.connect(effects.burst)
 	for i in STREET_LIGHTS:
 		var light := OmniLight3D.new()
 		light.light_color = Color(1.0, 0.8, 0.58)
@@ -77,6 +83,10 @@ func _process(delta: float) -> void:
 	pedestrians.night = traffic.night
 	pedestrians.rain = atmosphere.rain_amount()
 	pedestrians.player = traffic.player if is_instance_valid(traffic.player) else null
+	pedestrians.wrecks = traffic.wrecks()
+	if effects.vehicle != pedestrians.player:
+		effects.attach(pedestrians.player)
+	effects.wetness = atmosphere.wetness
 	_pool_timer -= delta
 	if _pool_timer <= 0.0:
 		_pool_timer = 0.4

@@ -8,7 +8,8 @@ signal lightning
 var environment: Environment
 var sun: DirectionalLight3D
 var moon: DirectionalLight3D
-var sky_material: PhysicalSkyMaterial
+## Céu com nuvens (shaders/sky.gdshader: céu físico + nuvens, lua e estrelas).
+var sky_material: ShaderMaterial
 
 ## Minutos desde a meia-noite (o relógio avança se `clock_running`).
 var minutes := 9.0 * 60.0
@@ -18,25 +19,25 @@ var night_factor := 0.0
 var wetness := 0.0
 
 var _rain_amount := 0.0
+var _cloud_offset := Vector2(0.37, 0.61)
+## Vento das nuvens (unidades da textura por segundo).
+const CLOUD_WIND := Vector2(0.0022, 0.0009)
 var _next_lightning := 8.0
 var _flash := 0.0
 var _stars: ImageTexture
 
 
 func _ready() -> void:
-	sky_material = PhysicalSkyMaterial.new()
-	sky_material.rayleigh_coefficient = 2.0
-	sky_material.mie_coefficient = 0.004
-	sky_material.mie_eccentricity = 0.8
-	sky_material.turbidity = 5.0
-	sky_material.sun_disk_scale = 1.4
-	sky_material.ground_color = Color(0.22, 0.2, 0.18)
-	sky_material.energy_multiplier = 1.0
-	sky_material.use_debanding = true
 	_stars = _star_texture()
+	sky_material = ShaderMaterial.new()
+	sky_material.shader = load("res://game/world/shaders/sky.gdshader")
+	sky_material.set_shader_parameter("cloud_noise", load("res://assets/textures/cloud_noise.png"))
+	sky_material.set_shader_parameter("night_sky", _stars)
 	var sky := Sky.new()
 	sky.sky_material = sky_material
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
+	# O céu muda devagar: o reflexo/luz ambiente do céu é recalculado aos poucos.
+	sky.process_mode = Sky.PROCESS_MODE_INCREMENTAL
 
 	environment = Environment.new()
 	environment.background_mode = Environment.BG_SKY
@@ -121,6 +122,14 @@ func set_rain(active: bool) -> void:
 	_next_lightning = randf_range(6.0, 14.0)
 
 
+## Liga/desliga a chuva na hora, já com a pista molhada (ferramentas e testes).
+func set_rain_now(active: bool) -> void:
+	set_rain(active)
+	_rain_amount = 1.0 if active else 0.0
+	wetness = _rain_amount
+	_update_sky(0.0)
+
+
 func _process(delta: float) -> void:
 	if clock_running:
 		minutes = fmod(minutes + delta * GameConfig.CLOCK_SPEED, 1440.0)
@@ -165,9 +174,20 @@ func _update_sky(_delta: float) -> void:
 	moon.light_energy = night_factor * 0.12
 	moon.visible = night_factor > 0.01
 
-	sky_material.energy_multiplier = lerpf(1.0, 0.08, night_factor) * lerpf(1.0, 0.45, storm) + _flash * 2.0
-	sky_material.turbidity = lerpf(5.0, 30.0, storm)
-	sky_material.rayleigh_color = Color(0.22, 0.42, 0.78).lerp(Color(0.36, 0.38, 0.42), storm)
+	sky_material.set_shader_parameter("exposure", lerpf(1.0, 0.45, storm) + _flash * 2.0)
+	sky_material.set_shader_parameter("turbidity", lerpf(5.0, 30.0, storm))
+	sky_material.set_shader_parameter("rayleigh_color", Color(0.22, 0.42, 0.78).lerp(Color(0.36, 0.38, 0.42), storm))
+	sky_material.set_shader_parameter("night", night_factor)
+	sky_material.set_shader_parameter("storm", storm)
+	sky_material.set_shader_parameter("flash", _flash)
+	# Nuvens: a cobertura muda devagar ao longo do dia (céu limpo, poucas nuvens,
+	# parcialmente nublado) e fecha na tempestade; o vento as leva devagar.
+	var day_cycle := minutes / 1440.0 * TAU
+	var coverage := 0.47 + 0.1 * sin(day_cycle * 1.7 + 0.8) + 0.05 * sin(day_cycle * 4.3)
+	sky_material.set_shader_parameter("cloud_coverage", lerpf(coverage, 0.97, storm))
+	_cloud_offset += CLOUD_WIND * _delta * (1.0 + storm * 2.5)
+	sky_material.set_shader_parameter("cloud_offset", Vector2(fposmod(_cloud_offset.x, 1.0), fposmod(_cloud_offset.y, 1.0)))
+	sky_material.set_shader_parameter("moon_direction", moon.global_transform.basis.z)
 	environment.ambient_light_energy = lerpf(1.0, 0.35, night_factor) + _flash
 	# De dia: luz do céu misturada com um ambiente neutro (sombras menos azuladas).
 	# À noite o céu quase não ilumina: um ambiente azulado fraco mantém a rua legível.
@@ -178,10 +198,8 @@ func _update_sky(_delta: float) -> void:
 	environment.volumetric_fog_density = lerpf(0.003, 0.02, storm)
 	environment.tonemap_exposure = lerpf(1.02, 1.6, night_factor)
 
-	# Estrelas só à noite e sem chuva (o céu físico soma a textura sempre).
-	var show_stars := night_factor > 0.6 and storm < 0.3
-	if show_stars != (sky_material.night_sky != null):
-		sky_material.night_sky = _stars if show_stars else null
+	# Estrelas só à noite e sem chuva.
+	sky_material.set_shader_parameter("star_strength", 0.12 * smoothstep(0.55, 0.9, night_factor) * (1.0 - storm))
 	RenderingServer.global_shader_parameter_set("night", night_factor)
 	RenderingServer.global_shader_parameter_set("wetness", wetness)
 

@@ -6,8 +6,16 @@ extends Node3D
 ## antes de acidentes. Os carros aparecem e somem em volta do jogador.
 ##
 ## Também detecta quando o JOGADOR avança o sinal vermelho (multa).
+##
+## Batidas: para a física, os carros da IA andam "em trilhos" (como se tivessem massa
+## infinita). Quando o jogador (ou um destroço) bate num deles, `ram` refaz a batida com
+## as massas de verdade; numa pancada forte o carro vira um TrafficWreck (corpo solto).
 
 signal red_light_run
+## Batida entre um destroço e outro carro do trânsito (para faíscas e som).
+signal crash(point: Vector3, normal: Vector3, strength: float)
+
+static var current: TrafficSystem
 
 const LANE_OFFSET := CityLayout.LANE_WIDTH / 2.0
 ## Distância da linha de retenção até o fim do trecho de rua (igual ao shader da rua).
@@ -21,6 +29,11 @@ const DESPAWN := 470.0
 const TICK := 1.0 / 60.0
 ## Tolerância logo depois que o sinal fica vermelho (quem já estava em cima da faixa).
 const RED_GRACE := 0.6
+## Coeficiente de restituição das batidas entre carros (0 = grudam, 1 = bola de bilhar).
+const RESTITUTION := 0.2
+## Variação de velocidade (m/s) a partir da qual o carro batido vira destroço solto.
+const WRECK_MIN_DV := 2.0
+const MAX_WRECKS := 8
 
 var graph: RoadGraph
 var lights: TrafficLights
@@ -32,6 +45,7 @@ var night := false
 var target_count := 22
 
 var _cars: Array[TrafficCar] = []
+var _wrecks: Array[TrafficWreck] = []
 var _rng := RandomNumberGenerator.new()
 var _accum := 0.0
 var _frame := 0
@@ -40,6 +54,15 @@ var _player_track := {}
 var _fine_cooldown := 0.0
 ## Cruzamentos já multados: "nó:eixo" → número da fase vermelha em que a multa saiu.
 var _fined := {}
+
+
+func _enter_tree() -> void:
+	current = self
+
+
+func _exit_tree() -> void:
+	if current == self:
+		current = null
 
 
 func setup(road_graph: RoadGraph, traffic_lights: TrafficLights) -> void:
@@ -67,6 +90,16 @@ func car_count() -> int:
 	return _cars.size()
 
 
+func wrecks() -> Array[TrafficWreck]:
+	return _wrecks
+
+
+## Põe na lista um carro já montado e posicionado (para testes: sem rede de ruas, ele fica
+## parado onde está, mas pode ser atingido e virar destroço).
+func adopt(car: TrafficCar) -> void:
+	_cars.append(car)
+
+
 ## Preenche a cidade de uma vez (início do jogo), longe do ponto informado.
 func fill(around: Vector3) -> void:
 	_focus = around
@@ -80,6 +113,9 @@ func clear() -> void:
 	for car in _cars:
 		car.queue_free()
 	_cars.clear()
+	for wreck in _wrecks:
+		wreck.queue_free()
+	_wrecks.clear()
 
 
 func _physics_process(delta: float) -> void:
@@ -99,6 +135,8 @@ func _physics_process(delta: float) -> void:
 		_maintain_population()
 	for car in _cars:
 		_update_car(car, dt)
+	for wreck in _wrecks:
+		wreck.night = night
 	_fine_cooldown = maxf(_fine_cooldown - dt, 0.0)
 	if player and is_instance_valid(player):
 		_check_red_light()
@@ -113,6 +151,13 @@ func _maintain_population() -> void:
 		if distance > DESPAWN or (car.stuck_time > 45.0 and distance > 60.0 and hidden) or (car.next_edge == null and not car.turning and car.s > car.edge.length - 20.0 and hidden):
 			_cars.erase(car)
 			car.queue_free()
+	# Destroços: somem quando ficam longe, ou parados há um tempo fora da vista.
+	for wreck: TrafficWreck in _wrecks.duplicate():
+		var distance := wreck.global_position.distance_to(_focus)
+		var hidden := camera == null or not camera.is_position_in_frustum(wreck.global_position)
+		if distance > DESPAWN or (hidden and distance > 40.0 and (wreck.still_time > 25.0 or wreck.age > 120.0)):
+			_wrecks.erase(wreck)
+			wreck.queue_free()
 	var spawned := 0
 	while _cars.size() < target_count and spawned < 2:
 		if _try_spawn(SPAWN_MIN):
@@ -234,6 +279,7 @@ func _begin_turn(car: TrafficCar) -> void:
 	var p1 := (p0 + p2) / 2.0
 	if d_in.dot(d_out) < 0.9:
 		p1 = node_position + right_in * LANE_OFFSET + right_out * LANE_OFFSET
+	car.turn_blinker = _turn_signal(car)
 	car.turn_points = [p0, p1, p2]
 	var length := 0.0
 	var previous := p0
@@ -262,11 +308,23 @@ func _stop_speed(distance: float) -> float:
 	return sqrt(maxf(distance, 0.0) * 2.0 * BRAKE * 0.8)
 
 
+## Seta da próxima conversão (Blinker.LEFT/RIGHT) ou NONE se for seguir reto.
+func _turn_signal(car: TrafficCar) -> int:
+	if car.next_edge == null:
+		return CarLights.Blinker.NONE
+	var d_in := car.edge.dir * float(car.direction)
+	var d_out := car.next_edge.dir * float(car.next_direction)
+	if d_in.dot(d_out) > 0.9:
+		return CarLights.Blinker.NONE
+	return CarLights.Blinker.RIGHT if d_in.cross(d_out).y < 0.0 else CarLights.Blinker.LEFT
+
+
 func _update_car(car: TrafficCar, dt: float) -> void:
 	if car.crashed_time > 0.0:
 		car.crashed_time -= dt
 		car.speed = 0.0
 		car.show_brake(true, night)
+		car.show_signal(CarLights.Blinker.HAZARD, CarLights.blink_lit())
 		return
 	if (_frame + car.scan_offset) % 3 == 0:
 		car.obstacle_distance = _scan_ahead(car)
@@ -329,6 +387,16 @@ func _update_car(car: TrafficCar, dt: float) -> void:
 		forward = car.edge.dir * float(car.direction)
 	car.place(position, forward)
 	car.spin_wheels(distance, steer)
+	# Seta ligada uns 40 m antes da esquina e durante a curva (desliga no fim dela).
+	var blinker := CarLights.Blinker.NONE
+	if car.turning:
+		if car.turn_t < 0.8:
+			blinker = car.turn_blinker
+	else:
+		var to_end := car.edge.length - graph.crossing_width(_end_node_of(car.edge, car.direction), car.edge) / 2.0 - car.s
+		if to_end < 40.0:
+			blinker = _turn_signal(car)
+	car.show_signal(blinker, CarLights.blink_lit())
 
 
 ## Distância (do centro do carro) até o obstáculo mais próximo à frente, na mesma faixa.
@@ -361,7 +429,73 @@ func _scan_ahead(car: TrafficCar) -> float:
 		var ahead := relative.dot(forward)
 		if ahead > 0.0 and ahead < look + 8.0 and absf(relative.dot(right)) < 4.0:
 			best = minf(best, ahead - 6.0)
+	for wreck in _wrecks:
+		var relative := wreck.global_position - origin
+		var ahead := relative.dot(forward)
+		if ahead > 0.0 and ahead < look + wreck.length and absf(relative.dot(right)) < 2.2:
+			best = minf(best, ahead - wreck.length / 2.0)
 	return best
+
+
+# --- batidas --------------------------------------------------------------------------------
+
+## Batida de um corpo solto (`body`: o jogador ou um destroço, com a velocidade de antes da
+## batida e a massa) no carro `car`, no ponto `point`. Faz a troca de quantidade de
+## movimento como se os dois fossem soltos e devolve {"velocity": nova velocidade de quem
+## bateu}; numa pancada forte o carro vira destroço (no fim do quadro). Pancada fraca (ou
+## sem aproximação) devolve {}: o carro só para com o pisca-alerta e a física cuida do resto.
+func ram(body: Node3D, velocity: Vector3, body_mass: float, car: TrafficCar, point: Vector3) -> Dictionary:
+	if not is_instance_valid(car) or car.wrecked:
+		return {}
+	# Normal da batida: a face da caixa do carro mais perto do ponto de contato.
+	var local := car.global_transform.affine_inverse() * point
+	var half_width := float(car.spec["width"]) / 2.0
+	var half_length := car.length / 2.0
+	var normal_local := Vector3(signf(local.x), 0, 0) if absf(local.x) / half_width > absf(local.z) / half_length else Vector3(0, 0, signf(local.z))
+	var normal := car.global_basis * normal_local
+	normal.y = 0.0
+	if normal.length_squared() < 0.01:
+		return {}
+	normal = normal.normalized()
+	var car_velocity := car.global_basis.z * car.speed
+	var approach := (velocity - car_velocity).dot(normal)
+	if approach > -0.5:
+		return {}
+	var car_mass := float(car.spec.get("mass", 1300.0))
+	var impulse := -(1.0 + RESTITUTION) * approach / (1.0 / body_mass + 1.0 / car_mass)
+	var car_change := impulse / car_mass
+	car.crashed_time = maxf(car.crashed_time, 6.0)
+	if car_change < WRECK_MIN_DV:
+		return {}
+	car.wrecked = true
+	# Batida fora do centro faz o carro girar.
+	var arm := point - car.global_position
+	arm.y = 0.0
+	var width := half_width * 2.0
+	var inertia := car_mass * (car.length * car.length + width * width) / 12.0
+	var spin := clampf(arm.cross(-normal * impulse).y / inertia, -3.0, 3.0)
+	_make_wreck.call_deferred(car, car_velocity - normal * car_change, spin, -normal * car_change)
+	if body is TrafficWreck:
+		crash.emit(point, normal, car_change)
+	return {"velocity": velocity + normal * impulse / body_mass}
+
+
+func _make_wreck(car: TrafficCar, velocity: Vector3, spin: float, push: Vector3) -> void:
+	if not is_instance_valid(car) or not _cars.has(car):
+		return
+	_cars.erase(car)
+	car.disable_collision()
+	var wreck := TrafficWreck.new()
+	wreck.name = "Wreck"
+	add_child(wreck)
+	wreck.setup_from(car)
+	wreck.night = night
+	wreck.hit(velocity, spin, push)
+	car.queue_free()
+	_wrecks.append(wreck)
+	while _wrecks.size() > MAX_WRECKS:
+		var old: TrafficWreck = _wrecks.pop_front()
+		old.queue_free()
 
 
 func _on_player_impact(strength: float) -> void:

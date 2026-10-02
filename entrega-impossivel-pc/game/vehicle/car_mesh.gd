@@ -18,6 +18,18 @@ const PROFILES := {
 		[0.0, 0.9, 0.93, 0.94], [0.04, 0.98, 1.04, 0.99], [0.13, 0.98, 1.36, 1.0], [0.22, 0.98, 1.44, 1.0],
 		[0.55, 0.98, 1.44, 1.0], [0.72, 0.93, 0.98, 1.0], [0.93, 0.86, 0.87, 0.97], [1.0, 0.66, 0.68, 0.9],
 	]},
+	"sedan": {"bottom": 0.25, "start": 0.0, "keys": [
+		[0.0, 0.88, 0.9, 0.93], [0.05, 0.98, 1.0, 0.99], [0.22, 1.0, 1.04, 1.0], [0.3, 1.0, 1.4, 1.0],
+		[0.6, 1.0, 1.45, 1.0], [0.74, 0.97, 1.0, 1.0], [0.93, 0.88, 0.9, 0.98], [1.0, 0.7, 0.72, 0.9],
+	]},
+	"suv": {"bottom": 0.38, "start": 0.0, "keys": [
+		[0.0, 1.05, 1.12, 0.95], [0.03, 1.08, 1.68, 0.99], [0.62, 1.08, 1.74, 1.0], [0.76, 1.04, 1.12, 1.0],
+		[0.93, 1.0, 1.04, 0.98], [1.0, 0.85, 0.88, 0.92],
+	]},
+	"pickup": {"bottom": 0.42, "start": 0.0, "keys": [
+		[0.0, 1.02, 1.04, 0.96], [0.03, 1.05, 1.07, 1.0], [0.4, 1.05, 1.07, 1.0], [0.42, 1.05, 1.76, 1.0],
+		[0.62, 1.05, 1.78, 1.0], [0.72, 1.03, 1.1, 1.0], [0.93, 0.98, 1.02, 0.98], [1.0, 0.85, 0.88, 0.92],
+	]},
 	"sport": {"bottom": 0.2, "start": 0.0, "keys": [
 		[0.0, 0.76, 0.78, 0.93], [0.07, 0.86, 0.9, 1.0], [0.3, 0.87, 1.2, 1.0], [0.52, 0.87, 1.22, 1.0],
 		[0.68, 0.85, 0.88, 1.0], [0.9, 0.8, 0.81, 0.98], [1.0, 0.54, 0.56, 0.9],
@@ -37,7 +49,7 @@ const BRAND_COLOR := Color(0.96, 0.5, 0.1)
 ## "materials": {headlight, brake, reverse}, "headlights": Array[Vector3], "wheel_mesh": Mesh}.
 static func build(spec: Dictionary, color: Color, ground_offset: float, branded: bool = true) -> Dictionary:
 	var style: String = spec["style"]
-	var profile: Dictionary = PROFILES.get(style, PROFILES["hatch"])
+	var profile: Dictionary = PROFILES.get(spec.get("profile", style), PROFILES["hatch"])
 	var length: float = spec["length"]
 	var width: float = spec["width"]
 	var radius: float = spec["wheel_radius"]
@@ -78,6 +90,7 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 		"headlight": _light_material(Color(1.0, 0.97, 0.88), 0.4),
 		"brake": _light_material(Color(1.0, 0.08, 0.05), 0.6),
 		"reverse": _light_material(Color(0.95, 0.95, 1.0), 0.0),
+		"indicator": _light_material(Color(1.0, 0.48, 0.04), 0.0),
 	}
 	var parts := MeshKit.new()
 	var front: Dictionary = sections[sections.size() - 1]
@@ -96,6 +109,9 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 		# Caminhão: a traseira da cabine fica escondida pelo baú; grade, portas etc. à parte.
 		_truck_cab_details(parts, sections, y0, color, BRAND_COLOR if branded else Color(0, 0, 0, 0))
 	else:
+		if style != "van":
+			_doors(parts, sections, y0, color)
+		_style_details(parts, root, sections, y0, style, length)
 		parts.add_box(Transform3D(Basis(), Vector3(0, y0 + rear_bottom - 0.04, rear_z + 0.08)), Vector3(rear_w * 2.0 + 0.04, 0.26, 0.24), plastic, Vector2.ZERO, false, false)
 		parts.add_box(Transform3D(Basis(), Vector3(0, y0 + lerpf(front_bottom, front_belt, 0.35), front_z + 0.005)), Vector3(front_w * 0.9, (front_belt - front_bottom) * 0.3, 0.05), Color(0.03, 0.03, 0.035), Vector2.ZERO, false, false)
 	# Placas (a de trás do caminhão fica na barra das lanternas do baú).
@@ -122,6 +138,18 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 		tail_z = -length / 2.0 - 0.13
 		tail_w = width / 2.0 - 0.02
 	var lamp_size := Vector3(0.44, 0.22, 0.08) if truck else Vector3(0.34, 0.16, 0.08)
+	# Piscas (cada lado numa malha, para piscar separado): na frente no para-choque, atrás
+	# embaixo da lanterna (no caminhão: na cabine acima do farol e na barra, ao lado da ré).
+	var indicators := {-1.0: MeshKit.new(), 1.0: MeshKit.new()}
+	for side: float in [-1.0, 1.0]:
+		var kit: MeshKit = indicators[side]
+		var tx := side * (tail_w - 0.16)
+		if truck:
+			kit.add_box(Transform3D(Basis(), Vector3(side * (front_w - 0.2), y0 + front_bottom + 0.535, front_z - 0.02)), Vector3(0.31, 0.1, 0.07), Color.WHITE, Vector2.ZERO, false, false)
+			kit.add_box(Transform3D(Basis(), Vector3(tx - side * 0.37, tail_y - 0.1, tail_z + 0.03)), Vector3(0.14, 0.2, 0.08), Color.WHITE, Vector2.ZERO, false, false)
+		else:
+			kit.add_box(Transform3D(Basis(), Vector3(side * (front_w - 0.24), y0 + front_bottom + 0.06, front_z + 0.035)), Vector3(0.2, 0.06, 0.03), Color.WHITE, Vector2.ZERO, false, false)
+			kit.add_box(Transform3D(Basis(), Vector3(tx, tail_y - 0.17, tail_z + 0.03)), Vector3(0.24, 0.06, 0.08), Color.WHITE, Vector2.ZERO, false, false)
 	for side: float in [-1.0, 1.0]:
 		var x := side * (front_w - (0.3 if truck else 0.22))
 		lamps.add_box(Transform3D(Basis(), Vector3(x, lamp_y - lamp_size.y / 2.0, front_z - 0.03)), lamp_size, Color.WHITE, Vector2.ZERO, false, false)
@@ -129,7 +157,8 @@ static func build(spec: Dictionary, color: Color, ground_offset: float, branded:
 		var tx := side * (tail_w - 0.16)
 		tail.add_box(Transform3D(Basis(), Vector3(tx, tail_y - 0.1, tail_z + 0.03)), Vector3(0.24, 0.2, 0.08), Color.WHITE, Vector2.ZERO, false, false)
 		reverse.add_box(Transform3D(Basis(), Vector3(tx - side * 0.2, tail_y - 0.06, tail_z + 0.03)), Vector3(0.12, 0.12, 0.07), Color.WHITE, Vector2.ZERO, false, false)
-	for pair: Array in [[lamps, materials["headlight"], "Headlamps"], [tail, materials["brake"], "TailLamps"], [reverse, materials["reverse"], "ReverseLamps"]]:
+	for pair: Array in [[lamps, materials["headlight"], "Headlamps"], [tail, materials["brake"], "TailLamps"], [reverse, materials["reverse"], "ReverseLamps"],
+			[indicators[1.0], materials["indicator"], "IndicatorLeft"], [indicators[-1.0], materials["indicator"], "IndicatorRight"]]:
 		var instance := MeshInstance3D.new()
 		instance.name = pair[2]
 		instance.mesh = (pair[0] as MeshKit).commit(pair[1])
@@ -319,6 +348,131 @@ static func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, outwa
 	st.add_vertex(a)
 	st.add_vertex(b)
 	st.add_vertex(c)
+
+
+## Cabine de passageiros: seções com vidro (teto bem acima da cintura). [traseira, frente].
+static func _cabin_range(sections: Array[Dictionary]) -> Array[float]:
+	var low := INF
+	var high := -INF
+	for s: Dictionary in sections:
+		if float(s["roof"]) - float(s["belt"]) > 0.4:
+			low = minf(low, float(s["z"]))
+			high = maxf(high, float(s["z"]))
+	return [low, high]
+
+
+static func _section_at(sections: Array[Dictionary], z: float) -> Dictionary:
+	var best: Dictionary = sections[0]
+	for s: Dictionary in sections:
+		if absf(float(s["z"]) - z) < absf(float(best["z"]) - z):
+			best = s
+	return best
+
+
+## Portas: frisos (vãos) na lataria, colunas B e C escuras entre os vidros e maçanetas.
+static func _doors(parts: MeshKit, sections: Array[Dictionary], y0: float, paint: Color) -> void:
+	var cabin := _cabin_range(sections)
+	if cabin[0] == INF or cabin[1] - cabin[0] < 1.0:
+		return
+	var rear := cabin[0]
+	var front := cabin[1]
+	var span := front - rear
+	var seam := Color(0.04, 0.04, 0.045)
+	var handle := paint.darkened(0.35)
+	# Quatro portas em carro comprido, duas em cabine curta (esportivo, picape simples).
+	var pillar_b := rear + span * 0.52
+	var cuts: Array[float] = [front - 0.06, rear + 0.12]
+	if span > 1.6:
+		cuts.insert(1, pillar_b)
+	for side: float in [-1.0, 1.0]:
+		for i in cuts.size():
+			var z: float = cuts[i]
+			var s := _section_at(sections, z)
+			var w: float = s["w"]
+			var bottom := float(s["bottom"]) + 0.08
+			var belt: float = s["belt"]
+			parts.add_box(Transform3D(Basis(), Vector3(side * (w + 0.003), y0 + bottom, z)), Vector3(0.008, belt - bottom - 0.04, 0.014), seam, Vector2.ZERO, false, false)
+			if i < cuts.size() - 1:
+				# Maçaneta logo atrás do vão da frente da porta.
+				parts.add_box(Transform3D(Basis(), Vector3(side * (w + 0.008), y0 + belt - 0.15, z - 0.24)), Vector3(0.02, 0.035, 0.15), handle, Vector2.ZERO, false, false)
+		# Coluna B (entre os vidros), inclinada como a lateral do vidro.
+		if span > 1.6:
+			var s := _section_at(sections, pillar_b)
+			var w: float = s["w"]
+			var belt: float = s["belt"]
+			var roof: float = s["roof"]
+			var top := roof - float(s["gap"])
+			var roof_w := lerpf(w - 0.06, w * float(s["tumble"]), clampf((roof - belt) / 0.5, 0.0, 1.0))
+			var lean := atan2(w - 0.06 - roof_w, top - belt)
+			parts.add_box(Transform3D(Basis(Vector3.FORWARD, -lean * side), Vector3(side * (w - 0.055), y0 + belt, pillar_b)), Vector3(0.02, (top - belt) / cos(lean), 0.09), seam, Vector2.ZERO, false, false)
+
+
+## Detalhes de cada modelo: caçamba da picape, rack e para-lamas da SUV, luminoso do táxi.
+static func _style_details(parts: MeshKit, root: Node3D, sections: Array[Dictionary], y0: float, style: String, length: float) -> void:
+	var black := Color(0.05, 0.05, 0.055)
+	match style:
+		"pickup":
+			# Caçamba aberta: o fundo escuro aparece por dentro das bordas da lataria.
+			var bed_rear := 0.035 * length - length / 2.0
+			var bed_front := 0.405 * length - length / 2.0
+			var s := _section_at(sections, (bed_rear + bed_front) / 2.0)
+			var w: float = s["w"]
+			var top := y0 + float(s["roof"])
+			parts.add_box(Transform3D(Basis(), Vector3(0, top + 0.006, (bed_rear + bed_front) / 2.0)), Vector3(w * 2.0 - 0.14, 0.012, bed_front - bed_rear - 0.06), black, Vector2.ZERO, false, false)
+			for x: float in [-0.45, 0.0, 0.45]:
+				parts.add_box(Transform3D(Basis(), Vector3(x, top + 0.016, (bed_rear + bed_front) / 2.0)), Vector3(0.05, 0.008, bed_front - bed_rear - 0.1), Color(0.12, 0.12, 0.13), Vector2.ZERO, false, false)
+			# Vão da tampa traseira.
+			var rear_s: Dictionary = sections[0]
+			parts.add_box(Transform3D(Basis(), Vector3(0, y0 + float(rear_s["belt"]) - 0.1, float(rear_s["z"]) - 0.004)), Vector3(float(rear_s["w"]) * 1.8, 0.012, 0.01), black, Vector2.ZERO, false, false)
+		"suv":
+			# Rack de teto e a faixa plástica escura em volta das caixas de roda.
+			var cabin := _cabin_range(sections)
+			var s := _section_at(sections, (cabin[0] + cabin[1]) / 2.0)
+			var roof_y := y0 + float(s["roof"])
+			var rail_x := float(s["w"]) * float(s["tumble"]) - 0.12
+			for side: float in [-1.0, 1.0]:
+				parts.add_box(Transform3D(Basis(), Vector3(side * rail_x, roof_y + 0.01, (cabin[0] + cabin[1]) / 2.0 - 0.1)), Vector3(0.045, 0.05, cabin[1] - cabin[0] - 0.4), Color(0.15, 0.15, 0.16), Vector2.ZERO, false, false)
+				for s2: Dictionary in sections:
+					var w2: float = s2["w"]
+					parts.add_box(Transform3D(Basis(), Vector3(side * (w2 + 0.004), y0 + float(s2["bottom"]) - 0.01, float(s2["z"]))), Vector3(0.012, 0.14, SECTION_STEP + 0.01), Color(0.09, 0.09, 0.095), Vector2.ZERO, false, false)
+		"taxi":
+			# Luminoso no teto (acende à noite junto com os faróis) com "TÁXI" na frente e atrás.
+			var cabin := _cabin_range(sections)
+			var middle := (cabin[0] + cabin[1]) / 2.0 + 0.1
+			var s := _section_at(sections, middle)
+			var roof_y := y0 + float(s["roof"]) + 0.01
+			parts.add_box(Transform3D(Basis(), Vector3(0, roof_y - 0.01, middle)), Vector3(0.62, 0.035, 0.24), black, Vector2.ZERO, false, false)
+			var sign := MeshKit.new()
+			sign.add_box(Transform3D(Basis(), Vector3(0, roof_y + 0.02, middle)), Vector3(0.56, 0.15, 0.17), Color.WHITE, Vector2.ZERO, false, false)
+			var instance := MeshInstance3D.new()
+			instance.name = "TaxiSign"
+			instance.mesh = sign.commit(_light_material(Color(1.0, 0.82, 0.3), 0.3))
+			root.add_child(instance)
+			for face: float in [-1.0, 1.0]:
+				var label := Label3D.new()
+				label.text = "TÁXI"
+				label.font = Mats.sign_font()
+				label.font_size = 64
+				label.pixel_size = 0.1 / 64.0
+				label.modulate = Color(0.1, 0.1, 0.12)
+				label.outline_size = 0
+				label.double_sided = false
+				label.alpha_cut = Label3D.ALPHA_CUT_OPAQUE_PREPASS
+				label.position = Vector3(0, roof_y + 0.095, middle + face * 0.09)
+				label.rotation.y = 0.0 if face > 0.0 else PI
+				label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				root.add_child(label)
+			# Faixa quadriculada fina nas portas.
+			for side: float in [-1.0, 1.0]:
+				var z := cabin[0] + 0.2
+				var k := 0
+				while z < cabin[1] - 0.2:
+					var s2 := _section_at(sections, z)
+					var y := y0 + float(s2["belt"]) - 0.24
+					var w2: float = s2["w"]
+					parts.add_box(Transform3D(Basis(), Vector3(side * (w2 + 0.005), y + (0.04 if k % 2 == 0 else 0.0), z)), Vector3(0.008, 0.04, 0.08), Color(0.08, 0.08, 0.1), Vector2.ZERO, false, false)
+					z += 0.08
+					k += 1
 
 
 static func _mirrors(root: Node3D, sections: Array[Dictionary], y0: float, truck: bool = false) -> void:

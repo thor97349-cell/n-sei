@@ -90,10 +90,26 @@ Há 4 níveis de qualidade gráfica nas Opções.
   (atalho arriscado, sem grade), ponte em obras, becos, estacionamento do shopping,
   parque, estádio, obra, chácara fora da cidade; ciclo de dia e noite (1 dia = 24 min).
   Árvores variadas (copa redonda, alta, guarda-chuva, pinheiros, palmeiras e ipês
-  floridos), pontos de ônibus e postes de luz que caem quando você bate.
-- **Pedestres**: andam pelas calçadas (nunca atravessam a rua), esperam nos pontos de
-  ônibus e pulam para o lado quando você sobe na calçada. Menos gente à noite e na chuva.
-- **Trânsito**: carros da IA respeitam semáforos e distância e param para você.
+  floridos), pontos de ônibus, postes de luz que caem quando você bate e lixeiras que
+  voam longe. Céu com nuvens que andam com o vento (douradas no fim da tarde, carregadas
+  na tempestade, iluminadas de laranja pela cidade à noite), lua e estrelas.
+- **Pedestres**: centenas de combinações de roupa (camiseta, manga longa, jaqueta,
+  bermuda, saia, vestido), cabelo (curto, comprido, coque, volumoso, boné), tom de pele,
+  mochila ou bolsa. Andam pelas calçadas (nunca atravessam a rua), alguns em dupla lado a
+  lado; às vezes param para olhar uma vitrine ou o celular; esperam nos pontos de ônibus;
+  abrem o guarda-chuva quando chove; pulam para o lado quando você sobe na calçada (ou
+  quando vem um carro batido escorregando). Menos gente à noite e na chuva.
+- **Trânsito**: 8 modelos (hatch, sedã, SUV, picape, furgão, táxi com luminoso,
+  esportivo e caminhão baú). Os carros da IA respeitam semáforos e distância, param para
+  você, dão seta antes de virar e, à noite, iluminam o chão com os faróis.
+- **Batidas de verdade**: bater num carro do trânsito troca a quantidade de movimento com
+  as massas dos dois — a 50 km/h num sedã parado o furgão segue a ~25 km/h e o sedã é
+  empurrado uns 7 m, girando se a batida for fora do centro (o caminhão arrasta um hatch;
+  o hatch quase não mexe o caminhão). O carro atingido escorrega de lado com atrito de
+  pneu, balança a carroceria, liga o pisca-alerta e pode acertar outro carro
+  (engavetamento). Encostadas leves só fazem o carro parar com o alerta ligado. Faíscas,
+  cacos e poeira nas batidas; fumaça e marcas de pneu (que somem aos poucos) nas freadas
+  e derrapagens.
 - **Multa do sinal vermelho** (câmera): 25% do seu saldo, entre R$ 15 e R$ 80 — nunca
   deixa o saldo negativo. Uma multa só por cruzamento em cada sinal vermelho, com uma
   pequena tolerância para quem pegou o vermelho em cima da faixa. A tela pisca (flash) e
@@ -231,6 +247,12 @@ Onde mexer:
 | Fachadas (tijolo, reboco, concreto, janelas) | `game/world/shaders/facade.gdshader` |
 | Grama alta, flores, arbustos, cercas vivas | `game/world/ground_cover.gd`, `foliage_kit.gd` |
 | Sol, céu, neblina, exposição | `game/world/atmosphere.gd` |
+| Nuvens, lua, estrelas (shader do céu) | `game/world/shaders/sky.gdshader` (+ `cloud_noise.png` de `gen_textures.py`) |
+| Pedestres: corpo, roupas, cabelos, acessórios | `game/world/pedestrian_mesh.gd`, `shaders/pedestrian.gdshader`, `pedestrian_looks.gd` (pesos) |
+| Pedestres: comportamento (duplas, paradas) | `game/world/pedestrians.gd` (`PAIR_CHANCE`, `WANDER_MIN/MAX`) |
+| Modelos do trânsito e quanto aparece cada um | `TRAFFIC` em `vehicle_specs.gd`, `PROFILES` em `car_mesh.gd`, `STYLES` em `traffic_car.gd` |
+| Batidas (restituição, quando vira destroço) | `game/traffic/traffic_system.gd` (`ram`), `traffic_wreck.gd` (atrito) |
+| Faíscas, fumaça e marcas de pneu | `game/vehicle/vehicle_effects.gd` |
 
 Tudo o que se vê é gerado por código (não há modelos 3D nem imagens externas), então
 mudar um número já muda o jogo.
@@ -246,6 +268,10 @@ mudar uma textura: edite o script, rode `python3 tools/gen_textures.py` e abra o
 no Godot (ele reimporta sozinho).
 
 ### Ferramentas de desenvolvimento
+
+- `tools/preview_models.tscn`, `tools/preview_traffic.tscn`, `tools/preview_city.tscn` —
+  tiram prints dos pedestres (inclusive na chuva), dos carros do trânsito (dia e noite)
+  e de vistas da cidade em qualquer hora: `godot --path . res://tools/preview_traffic.tscn -- /tmp/t`.
 
 - `tools/economy_sim.tscn` — simula horas de jogo com o código de verdade para três
   perfis de jogador e compara com a economia antiga (dinheiro por hora, tempo até cada
@@ -268,6 +294,7 @@ godot --headless --fixed-fps 120 --path . res://tests/handling_test.tscn  # curv
 godot --headless --fixed-fps 60 --path . res://tests/gameplay_test.tscn   # 55 verificações do jogo
 godot --headless --fixed-fps 60 --path . res://tests/traffic_test.tscn -- 180  # trânsito
 godot --headless --fixed-fps 60 --path . res://tests/pedestrian_test.tscn # pedestres
+godot --headless --fixed-fps 60 --path . res://tests/crash_test.tscn      # batidas entre carros
 ```
 
 Resultados atuais (Godot 4.7.2):
@@ -290,6 +317,11 @@ outro, nenhum carro da IA avançou o vermelho.
 Pedestres (1 min simulado): ~5 mil posições verificadas, nenhuma fora da calçada nem
 dentro de prédio/poste/árvore; um carro andando pela calçada a 30 km/h não encosta em
 ninguém.
+
+Batidas: furgão a 50 km/h no meio de um sedã parado → o sedã vira destroço, é empurrado
+~7 m e fica de pé; o furgão mantém ~47% da velocidade (num muro pararia). A 8 km/h o
+carro só para com o pisca-alerta. A 70 km/h o carro atingido escorrega e acerta o de
+trás (engavetamento).
 
 ## Gerar os executáveis no seu computador
 

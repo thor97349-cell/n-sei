@@ -84,6 +84,33 @@ const DATA := {
 	},
 }
 
+## Modelos que só aparecem no trânsito (não estão à venda). Só o que o visual e a batida
+## precisam: medidas, rodas, suspensão (altura do chão) e massa. "profile" escolhe o
+## perfil da carroceria em CarMesh e "paint" fixa a cor (táxi é sempre branco).
+const TRAFFIC := {
+	"sedan": {
+		"style": "sedan", "length": 4.5, "width": 1.78, "height": 1.46,
+		"wheelbase": 2.65, "track": 1.54, "wheel_radius": 0.31, "wheel_width": 0.21,
+		"stiffness": 32.0, "rest_length": 0.22, "mass": 1250.0,
+	},
+	"suv": {
+		"style": "suv", "length": 4.6, "width": 1.88, "height": 1.76,
+		"wheelbase": 2.7, "track": 1.62, "wheel_radius": 0.36, "wheel_width": 0.24,
+		"stiffness": 30.0, "rest_length": 0.26, "mass": 1750.0,
+	},
+	"pickup": {
+		"style": "pickup", "length": 5.25, "width": 1.86, "height": 1.8,
+		"wheelbase": 3.1, "track": 1.6, "wheel_radius": 0.37, "wheel_width": 0.25,
+		"stiffness": 30.0, "rest_length": 0.27, "mass": 1950.0,
+	},
+	"taxi": {
+		"style": "taxi", "profile": "sedan", "paint": Color(0.93, 0.93, 0.91),
+		"length": 4.5, "width": 1.78, "height": 1.46,
+		"wheelbase": 2.65, "track": 1.54, "wheel_radius": 0.31, "wheel_width": 0.21,
+		"stiffness": 32.0, "rest_length": 0.22, "mass": 1250.0,
+	},
+}
+
 const CARGO_RANK := {"S": 1, "M": 2, "L": 3}
 
 
@@ -92,6 +119,8 @@ static func has(id: String) -> bool:
 
 
 static func get_spec(id: String) -> Dictionary:
+	if TRAFFIC.has(id):
+		return TRAFFIC[id]
 	return DATA.get(id, DATA["van"])
 
 

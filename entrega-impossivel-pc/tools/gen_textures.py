@@ -97,10 +97,10 @@ def save_rgb(name: str, rgb: np.ndarray) -> None:
     _write_import(name, normal=False)
 
 
-def save_rgba(name: str, rgba: np.ndarray) -> None:
+def save_rgba(name: str, rgba: np.ndarray, lossless: bool = False) -> None:
     img = Image.fromarray((np.clip(rgba, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
     img.save(os.path.join(OUT, name + ".png"), optimize=True)
-    _write_import(name, normal=False)
+    _write_import(name, normal=False, lossless=lossless)
 
 
 def save_normal(name: str, height: np.ndarray, strength: float) -> None:
@@ -115,7 +115,7 @@ def save_normal(name: str, height: np.ndarray, strength: float) -> None:
     _write_import(name, normal=True)
 
 
-def _write_import(name: str, normal: bool) -> None:
+def _write_import(name: str, normal: bool, lossless: bool = False) -> None:
     text = f"""[remap]
 
 importer="texture"
@@ -127,7 +127,7 @@ source_file="res://assets/textures/{name}.png"
 
 [params]
 
-compress/mode=2
+compress/mode={0 if lossless else 2}
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -360,8 +360,22 @@ def macro() -> None:
     N = keep
 
 
+def clouds() -> None:
+    """Ruído das nuvens do céu (sem compressão, para não ficar "quadriculado" no céu):
+    R = formato grande e fofo (cúmulos), G = detalhe médio, B = fiapos finos,
+    A = "erosão" (bolinhas) que recorta as bordas."""
+    rng = np.random.default_rng(97)
+    f1, _, _ = worley(N, 6, rng)
+    billows = normalize(fbm(N, 4, rng, 5, 0.55) * 0.65 + (1.0 - normalize(f1)) * 0.35)
+    mid = normalize(fbm(N, 8, rng, 5, 0.5))
+    wisps = normalize(fbm(N, 16, rng, 4, 0.55))
+    e1, _, _ = worley(N, 24, rng)
+    erosion = normalize(1.0 - e1)
+    save_rgba("cloud_noise", np.dstack([billows, mid, wisps, erosion]), lossless=True)
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
-    for build in (asphalt, grass, dirt, concrete, pavers, setts, mosaic, macro):
+    for build in (asphalt, grass, dirt, concrete, pavers, setts, mosaic, macro, clouds):
         build()
         print("ok", build.__name__)
