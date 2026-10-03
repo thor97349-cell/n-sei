@@ -62,3 +62,7 @@ night={
 "type": "float",
 "value": 0.0
 }
+rain={
+"type": "float",
+"value": 0.0
+}

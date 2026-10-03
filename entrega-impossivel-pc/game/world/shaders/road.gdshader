@@ -12,6 +12,7 @@ render_mode diffuse_burley, specular_schlick_ggx;
 #include "res://game/world/shaders/ground_common.gdshaderinc"
 
 global uniform float wetness;
+global uniform float rain;
 
 uniform sampler2D asphalt_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D asphalt_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
@@ -19,6 +20,23 @@ uniform sampler2D macro : filter_linear_mipmap, repeat_enable;
 uniform vec3 tint : source_color = vec3(0.44, 0.44, 0.45);
 
 varying vec3 world_pos;
+
+// Respingos da chuva: anéis que se abrem e somem, em duas camadas de células com tempos
+// sorteados. Devolve a inclinação (x, z) que os anéis dão à superfície.
+vec2 rain_ripples(vec2 p, float time) {
+	vec2 slope = vec2(0.0);
+	for (int layer = 0; layer < 2; layer++) {
+		vec2 q = p * (2.6 + float(layer) * 1.7) + float(layer) * vec2(7.31, 3.17);
+		vec2 cell = floor(q);
+		vec2 d = fract(q) - 0.5 - (hash22(cell) - 0.5) * 0.5;
+		float phase = fract(time * 1.25 + hash12(cell + 11.0));
+		float r = length(d);
+		float ring = r - phase * 0.42;
+		float wave = sin(ring * 70.0) * smoothstep(0.05, 0.0, abs(ring)) * (1.0 - phase);
+		slope += d / max(r, 0.001) * wave;
+	}
+	return slope;
+}
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -106,7 +124,14 @@ void fragment() {
 	roughness = mix(roughness, 0.03, puddle);
 
 	float bump = mix(0.42, 0.18, max(white, yellow)) * (1.0 - puddle) * mix(1.0, 0.5, wetness);
-	NORMAL = ground_normal(tex_n, bump, VIEW_MATRIX);
+	// Chovendo: respingos nas poças (e um pouco na pista molhada), só perto da câmera.
+	vec2 ripple = vec2(0.0);
+	float near = 1.0 - smoothstep(18.0, 40.0, length(world_pos - CAMERA_POSITION_WORLD));
+	if (rain > 0.01 && near > 0.0) {
+		ripple = rain_ripples(p, TIME) * rain * near * (0.08 + 0.3 * puddle);
+	}
+	vec3 world_n = normalize(vec3(tex_n.x * bump + ripple.x, tex_n.z, tex_n.y * bump + ripple.y));
+	NORMAL = normalize((VIEW_MATRIX * vec4(world_n, 0.0)).xyz);
 	ALBEDO = albedo;
 	ROUGHNESS = clamp(roughness, 0.02, 1.0);
 	SPECULAR = 0.5;

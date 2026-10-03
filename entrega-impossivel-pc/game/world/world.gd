@@ -24,6 +24,7 @@ var camera: Camera3D
 var _pool: Array[OmniLight3D] = []
 var _pool_timer := 0.0
 var _rain: GPUParticles3D
+var _rain_material: StandardMaterial3D
 var _rain_audio: AudioStreamPlayer
 var _thunder_delay := -1.0
 
@@ -143,6 +144,22 @@ func _build_rain() -> void:
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
 	material.albedo_color = Color(0.75, 0.8, 0.9, 0.35)
+	# Gota com as bordas e as pontas suaves; as muito perto da câmera somem (senão viram
+	# "palitos" brancos grossos na frente da tela).
+	var soft := GradientTexture2D.new()
+	soft.gradient = Gradient.new()
+	soft.gradient.set_color(0, Color(1, 1, 1, 1))
+	soft.gradient.set_color(1, Color(1, 1, 1, 0))
+	soft.fill = GradientTexture2D.FILL_RADIAL
+	soft.fill_from = Vector2(0.5, 0.5)
+	soft.fill_to = Vector2(1.0, 0.5)
+	soft.width = 16
+	soft.height = 64
+	material.albedo_texture = soft
+	material.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	material.distance_fade_min_distance = 0.8
+	material.distance_fade_max_distance = 5.0
+	_rain_material = material
 	streak.material = material
 	_rain.draw_pass_1 = streak
 	_rain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -160,6 +177,9 @@ func _update_rain(_delta: float) -> void:
 	if camera:
 		_rain.global_position = camera.global_position + Vector3.UP * 14.0 + camera.global_basis.z * -8.0
 	_rain.amount_ratio = clampf(amount, 0.05, 1.0)
+	# À noite a chuva não "brilha" sozinha (só aparece onde tem luz por perto).
+	var dim := lerpf(1.0, 0.4, atmosphere.night_factor)
+	_rain_material.albedo_color = Color(0.75 * dim, 0.8 * dim, 0.9 * dim, 0.42)
 	if amount > 0.01:
 		if not _rain_audio.playing:
 			_rain_audio.play()

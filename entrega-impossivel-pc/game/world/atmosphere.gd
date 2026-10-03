@@ -1,7 +1,8 @@
 class_name Atmosphere
 extends Node3D
 ## Céu, sol, lua, neblina, pós-processamento e ciclo dia/noite + chuva.
-## Atualiza os parâmetros globais dos shaders: "night" (0 dia → 1 noite) e "wetness".
+## Atualiza os parâmetros globais dos shaders: "night" (0 dia → 1 noite), "wetness" (pista
+## molhada, demora a secar) e "rain" (chovendo agora: respingos nas poças).
 
 signal lightning
 
@@ -202,6 +203,7 @@ func _update_sky(_delta: float) -> void:
 	sky_material.set_shader_parameter("star_strength", 0.12 * smoothstep(0.55, 0.9, night_factor) * (1.0 - storm))
 	RenderingServer.global_shader_parameter_set("night", night_factor)
 	RenderingServer.global_shader_parameter_set("wetness", wetness)
+	RenderingServer.global_shader_parameter_set("rain", _rain_amount)
 
 
 ## Céu estrelado (textura equirretangular gerada uma vez).

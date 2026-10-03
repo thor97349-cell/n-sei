@@ -14,6 +14,9 @@ veículos melhores.
 | ![Celular com os pedidos (risco, modificadores, contrato)](docs/celular.jpg) | ![Resumo da entrega com combo, contrato e desafio](docs/resultado.jpg) |
 | ![Carreira: nível, contratos e desafios](docs/carreira.jpg) | ![Multa tira combo e reputação](docs/multa.jpg) |
 | ![Noite com tempestade](docs/noite-chuva.jpg) | ![Garagem](docs/garagem.jpg) |
+| ![Rua do centro com pedestres e lixeiras](docs/rua.jpg) | ![Pista molhada, poças e guarda-chuvas](docs/chuva.jpg) |
+| ![Pedestres: roupas, cabelos, mochila e bolsa](docs/pedestres.jpg) | ![Modelos do trânsito (sedã, SUV, picape, táxi...)](docs/transito.jpg) |
+| ![À noite os faróis iluminam o chão; setas e pisca-alerta](docs/transito-noite.jpg) | |
 
 *(Capturas feitas em renderização por software, sem placa de vídeo; num PC real a imagem
 fica mais nítida e suave.)*
@@ -92,7 +95,8 @@ Há 4 níveis de qualidade gráfica nas Opções.
   Árvores variadas (copa redonda, alta, guarda-chuva, pinheiros, palmeiras e ipês
   floridos), pontos de ônibus, postes de luz que caem quando você bate e lixeiras que
   voam longe. Céu com nuvens que andam com o vento (douradas no fim da tarde, carregadas
-  na tempestade, iluminadas de laranja pela cidade à noite), lua e estrelas.
+  na tempestade, iluminadas de laranja pela cidade à noite), lua e estrelas. Na chuva a
+  pista escurece e brilha, as poças refletem e mostram os respingos.
 - **Pedestres**: centenas de combinações de roupa (camiseta, manga longa, jaqueta,
   bermuda, saia, vestido), cabelo (curto, comprido, coque, volumoso, boné), tom de pele,
   mochila ou bolsa. Andam pelas calçadas (nunca atravessam a rua), alguns em dupla lado a
