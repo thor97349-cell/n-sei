@@ -20,15 +20,6 @@
             sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
           },
-          keyframes: {
-            fadeUp: {
-              '0%': { opacity: '0', transform: 'translateY(12px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            },
-          },
-          animation: {
-            'fade-up': 'fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both',
-          },
         },
       },
     };
@@ -36,47 +27,71 @@
 
   <style>
     body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+
     .grid-bg {
       background-image:
         linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
       background-size: 56px 56px;
-      mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+      mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 40%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, #000 40%, transparent 100%);
     }
-    .bar-fill { transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
-    .swap { transition: opacity 0.25s ease, transform 0.25s ease; }
+
+    /* Revelação ao rolar */
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+    .reveal.is-visible { opacity: 1; transform: none; }
+    .no-js .reveal { opacity: 1; transform: none; }
+
+    /* Gráfico */
+    .bar { transition: height 1s cubic-bezier(.22,1,.36,1); }
+    .swap { transition: opacity .25s ease, transform .25s ease; }
     .swap.is-out { opacity: 0; transform: translateY(4px); }
+
+    /* Traduções do bloco de contexto */
+    .jargao { transition: color .3s ease, border-color .3s ease, background-color .3s ease; }
+
+    @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(400%); } }
+    .scanline { animation: scan 3.2s linear infinite; }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
     }
   </style>
 </head>
 
-<body class="bg-zinc-950 text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-white">
+<body class="no-js bg-zinc-950 text-zinc-100 font-sans selection:bg-cyan-500/30 selection:text-white">
+  <script>document.body.classList.remove('no-js');</script>
 
   <!-- Fundo decorativo -->
   <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
     <div class="grid-bg absolute inset-0"></div>
-    <div class="absolute left-1/2 top-[-12rem] h-[28rem] w-[56rem] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
+    <div class="absolute left-1/2 top-[-14rem] h-[30rem] w-[60rem] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
   </div>
 
-  <!-- 1. HEADER -->
-  <header class="sticky top-0 z-40 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
+  <!-- ============ 1. HEADER ============ -->
+  <header id="topo" class="sticky top-0 z-50 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-      <a href="#" class="group flex items-center gap-2.5" aria-label="Aferir — início">
+      <a href="#" class="flex items-center gap-2.5" aria-label="Aferir — início">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="10.5" stroke="currentColor" class="text-zinc-700" stroke-width="1"/>
-          <path d="M12 12 L18.5 6.5" stroke="currentColor" class="text-cyan-400" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="12" cy="12" r="1.6" fill="currentColor" class="text-cyan-400"/>
+          <circle cx="12" cy="12" r="10.5" stroke="#3f3f46" stroke-width="1"/>
+          <path d="M12 12 L18.5 6.5" stroke="#22d3ee" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="1.6" fill="#22d3ee"/>
         </svg>
         <span class="text-lg font-semibold tracking-[-0.04em] text-white">Aferir</span>
       </a>
 
-      <a href="#lista" class="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-cyan-500/40 hover:text-zinc-200">
-        <span class="relative flex h-1.5 w-1.5">
+      <nav class="hidden items-center gap-8 text-sm text-zinc-500 md:flex" aria-label="Seções">
+        <a href="#contexto" class="transition-colors hover:text-zinc-200">Contexto</a>
+        <a href="#painel" class="transition-colors hover:text-zinc-200">Simulador</a>
+        <a href="#como-funciona" class="transition-colors hover:text-zinc-200">Como funciona</a>
+        <a href="#erros" class="transition-colors hover:text-zinc-200">Erros evitados</a>
+      </nav>
+
+      <a href="#lista" class="flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/[0.04] px-3 py-1.5 text-xs text-cyan-200 transition-colors hover:border-cyan-400/50 hover:bg-cyan-500/[0.08]">
+        <span class="relative flex h-2 w-2" aria-hidden="true">
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60"></span>
-          <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-cyan-400"></span>
         </span>
         Lista de Espera Aberta
       </a>
@@ -84,259 +99,503 @@
   </header>
 
   <main>
-    <!-- 2. HERO -->
-    <section class="mx-auto max-w-6xl px-5 pb-20 pt-20 sm:px-8 sm:pt-28 lg:pb-28">
-      <div class="mx-auto max-w-3xl text-center">
-        <p class="animate-fade-up mb-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-          <span class="h-px w-6 bg-zinc-700"></span>
+    <!-- ============ 2. HERO ============ -->
+    <section class="mx-auto max-w-6xl px-5 pb-24 pt-20 sm:px-8 sm:pb-32 sm:pt-28">
+      <div class="mx-auto max-w-4xl text-center">
+        <p class="reveal mb-7 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500">
+          <span class="h-px w-8 bg-zinc-700"></span>
           Diagnóstico inteligente de hardware
-          <span class="h-px w-6 bg-zinc-700"></span>
+          <span class="h-px w-8 bg-zinc-700"></span>
         </p>
 
-        <h1 class="animate-fade-up text-4xl font-semibold leading-[1.05] tracking-[-0.045em] text-white sm:text-6xl" style="animation-delay:80ms">
+        <h1 class="reveal text-[2.6rem] font-semibold leading-[1.03] tracking-[-0.05em] text-white sm:text-6xl lg:text-7xl">
           A inteligência que calcula o
           <span class="bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent">próximo passo</span>
           do seu PC.
         </h1>
 
-        <p class="animate-fade-up mx-auto mt-7 max-w-2xl text-base font-light leading-relaxed text-zinc-400 sm:text-lg" style="animation-delay:160ms">
-          O Aferir analisa os componentes do seu computador, aponta o que realmente está lento em português simples e encontra os menores preços do Brasil sem erros de compatibilidade.
+        <p class="reveal mx-auto mt-8 max-w-2xl text-base font-light leading-relaxed text-zinc-400 sm:text-lg">
+          O Aferir lê os componentes do seu computador, aponta em português simples qual peça está segurando o resto
+          e monta o upgrade certo — com os menores preços do Brasil e zero erro de compatibilidade.
         </p>
 
-        <div class="animate-fade-up mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row" style="animation-delay:240ms">
+        <div class="reveal mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
           <a href="#lista"
-             class="group inline-flex items-center gap-2 rounded-full bg-cyan-500 px-7 py-3.5 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-8px_rgba(6,182,212,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_12px_40px_-8px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950">
+             class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-500 px-7 py-3.5 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-8px_rgba(6,182,212,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_44px_-8px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:w-auto">
             Garantir Acesso Antecipado
             <svg class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M4 10h12m0 0-5-5m5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </a>
-          <a href="#painel" class="text-sm text-zinc-500 transition-colors hover:text-zinc-200">
-            Ver o painel em ação ↓
+          <a href="#como-funciona"
+             class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-7 py-3.5 text-sm font-medium text-zinc-200 transition-all duration-300 hover:border-cyan-500/50 hover:bg-white/[0.03] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:w-auto">
+            Ver como funciona
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 4v12m0 0-5-5m5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </a>
         </div>
+
+        <dl class="reveal mx-auto mt-20 grid max-w-3xl grid-cols-3 divide-x divide-white/5 border-y border-white/5">
+          <div class="px-3 py-6">
+            <dt class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Leitura</dt>
+            <dd class="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">5 s</dd>
+          </div>
+          <div class="px-3 py-6">
+            <dt class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Jargões</dt>
+            <dd class="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Zero</dd>
+          </div>
+          <div class="px-3 py-6">
+            <dt class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Lojas cruzadas</dt>
+            <dd class="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">As maiores</dd>
+          </div>
+        </dl>
       </div>
     </section>
 
-    <!-- 3. MOCKUP INTERATIVO -->
-    <section id="painel" class="mx-auto max-w-5xl scroll-mt-24 px-5 pb-28 sm:px-8">
-      <div class="rounded-2xl border border-white/10 bg-zinc-900/40 p-px shadow-2xl shadow-black/60">
-        <div class="rounded-[15px] bg-zinc-950/80 backdrop-blur">
+    <!-- ============ 3. INTRODUÇÃO & CONTEXTO ============ -->
+    <section id="contexto" class="scroll-mt-16 border-t border-white/5">
+      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+        <div class="grid gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-20">
+          <div>
+            <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">01 — Contexto</p>
+            <h2 class="reveal mt-5 text-3xl font-semibold leading-[1.1] tracking-[-0.04em] text-white sm:text-5xl">
+              O mercado de hardware mudou. A forma de entender seu PC também precisa mudar.
+            </h2>
 
-          <!-- Barra da janela -->
-          <div class="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
-            <div class="flex items-center gap-1.5" aria-hidden="true">
-              <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
-              <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
-              <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
+            <div class="mt-10 space-y-7 text-lg font-light leading-relaxed text-zinc-400 sm:text-xl">
+              <p class="reveal">
+                Abrir uma loja de informática hoje é encarar uma parede de siglas:
+                <span class="font-mono text-base text-zinc-300">DDR</span>,
+                <span class="font-mono text-base text-zinc-300">TDP</span>,
+                <span class="font-mono text-base text-zinc-300">VRAM</span>,
+                <span class="font-mono text-base text-zinc-300">Clock</span>,
+                <span class="font-mono text-base text-zinc-300">PCIe</span>.
+                Números que dizem tudo para quem é especialista — e nada para quem só quer
+                <span class="text-zinc-100">trabalhar ou jogar em paz</span>.
+              </p>
+              <p class="reveal">
+                O resultado é conhecido: vídeos de horas, fóruns contraditórios, o “amigo que entende”
+                e, no fim, uma compra feita no escuro. Muitas vezes cara. Às vezes errada.
+              </p>
+              <p class="reveal text-zinc-200">
+                O Aferir nasce para traduzir números brutos em respostas diretas, em português.
+                Não “sua GPU tem 4 GB de VRAM”, mas <span class="text-cyan-300">“sua placa de vídeo não dá conta dos jogos atuais — é ela que trava o resto”</span>.
+              </p>
             </div>
-            <span class="font-mono text-[11px] text-zinc-500">aferir · diagnóstico</span>
-            <span class="font-mono text-[11px] text-zinc-600">v0.1</span>
           </div>
 
-          <div class="grid gap-0 lg:grid-cols-[1fr_320px]">
-
-            <!-- Componentes -->
-            <div class="border-b border-white/5 p-5 sm:p-7 lg:border-b-0 lg:border-r">
-              <div class="mb-6 flex items-end justify-between">
-                <div>
-                  <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Varredura concluída</p>
-                  <h2 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu computador</h2>
-                </div>
-                <span class="font-mono text-[11px] text-zinc-600">3 componentes</span>
+          <!-- Tradutor de jargões -->
+          <div class="reveal lg:pt-24">
+            <div class="rounded-2xl border border-white/10 bg-zinc-900/30 p-2">
+              <div class="flex items-center justify-between px-4 pb-3 pt-2">
+                <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Jargão</span>
+                <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-400/80">Aferir traduz</span>
               </div>
-
-              <ul class="space-y-3">
-                <!-- Processador -->
-                <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                      <rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/>
-                      <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-zinc-100">Processador</p>
-                    <p class="truncate font-mono text-xs text-zinc-500">Ryzen 5 5600 · 6 núcleos</p>
-                  </div>
-                  <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-                    Desempenho: Estável
-                  </span>
+              <ul id="tradutor" class="space-y-1.5">
+                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                  <span class="font-mono text-sm text-zinc-500">VRAM</span>
+                  <span class="text-sm text-zinc-300">Memória da placa de vídeo — quanto ela aguenta de texturas e cenas pesadas.</span>
                 </li>
-
-                <!-- Memória RAM -->
-                <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                      <rect x="2.5" y="7" width="19" height="9" rx="1"/>
-                      <path d="M6 10v3M9.5 10v3M13 10v3M16.5 10v3M5 16v2M8 16v2M11 16v2M14 16v2M17 16v2M20 16v2" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-zinc-100">Memória RAM</p>
-                    <p class="truncate font-mono text-xs text-zinc-500">16 GB DDR4 · 3200 MHz</p>
-                  </div>
-                  <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">
-                    Desempenho: Estável
-                  </span>
+                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                  <span class="font-mono text-sm text-zinc-500">TDP</span>
+                  <span class="text-sm text-zinc-300">Quanto a peça esquenta e consome — e se a sua fonte segura.</span>
                 </li>
-
-                <!-- Placa de Vídeo (gargalo) -->
-                <li class="relative flex items-center gap-4 rounded-xl border border-rose-500/50 bg-rose-500/[0.03] px-4 py-4">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-500/30 text-rose-400">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                      <rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/>
-                      <path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-zinc-100">Placa de Vídeo</p>
-                    <p class="truncate font-mono text-xs text-zinc-500">GTX 1650 · 4 GB</p>
-                  </div>
-                  <span class="flex shrink-0 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">
-                    <span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
-                    Gargalo Detectado
-                  </span>
+                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                  <span class="font-mono text-sm text-zinc-500">DDR4/5</span>
+                  <span class="text-sm text-zinc-300">Geração da memória. Não se misturam: comprar a errada é dinheiro perdido.</span>
+                </li>
+                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                  <span class="font-mono text-sm text-zinc-500">Clock</span>
+                  <span class="text-sm text-zinc-300">Velocidade de cada núcleo. Importa — mas quase nunca é o seu problema.</span>
+                </li>
+                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                  <span class="font-mono text-sm text-zinc-500">PCIe</span>
+                  <span class="text-sm text-zinc-300">O encaixe da placa-mãe. Define o que entra e o que fica limitado.</span>
                 </li>
               </ul>
-
-              <p id="diagnostico" class="swap mt-6 border-l border-white/10 pl-4 text-sm leading-relaxed text-zinc-400"></p>
             </div>
-
-            <!-- Simulação de upgrade -->
-            <aside class="flex flex-col p-5 sm:p-7">
-              <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Simular upgrade</p>
-              <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu perfil de uso</h3>
-
-              <div role="radiogroup" aria-label="Perfil de uso" id="perfis" class="mt-5 flex flex-col gap-2">
-                <button type="button" role="radio" data-perfil="jogos" class="perfil-btn"></button>
-                <button type="button" role="radio" data-perfil="trabalho" class="perfil-btn"></button>
-                <button type="button" role="radio" data-perfil="video" class="perfil-btn"></button>
-              </div>
-
-              <div class="mt-7 rounded-xl border border-white/10 p-4">
-                <p class="text-xs text-zinc-500">Impacto estimado do upgrade</p>
-                <p id="impacto" class="swap mt-2 text-[15px] font-medium leading-snug text-white" aria-live="polite"></p>
-
-                <div class="mt-5 space-y-3">
-                  <div>
-                    <div class="mb-1.5 flex justify-between font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      <span>Hoje</span><span id="atualValor">—</span>
-                    </div>
-                    <div class="h-1 overflow-hidden rounded-full bg-white/5">
-                      <div id="atualBarra" class="bar-fill h-full rounded-full bg-zinc-500" style="width:0%"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="mb-1.5 flex justify-between font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-                      <span>Após upgrade</span><span id="novoValor" class="text-cyan-300">—</span>
-                    </div>
-                    <div class="h-1 overflow-hidden rounded-full bg-white/5">
-                      <div id="novoBarra" class="bar-fill h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600" style="width:0%"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-4 flex items-center justify-between rounded-xl border border-white/5 px-4 py-3">
-                <div class="min-w-0">
-                  <p class="text-[11px] text-zinc-500">Sugestão compatível</p>
-                  <p id="sugestao" class="swap truncate text-sm text-zinc-200"></p>
-                </div>
-                <p id="preco" class="swap shrink-0 pl-3 font-mono text-sm text-cyan-300"></p>
-              </div>
-            </aside>
           </div>
         </div>
       </div>
-      <p class="mt-4 text-center font-mono text-[11px] text-zinc-600">Simulação ilustrativa. Valores reais dependem do seu hardware.</p>
     </section>
 
-    <!-- 4. VALORES -->
-    <section class="border-t border-white/5">
-      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-28">
-        <div class="max-w-xl">
-          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500">Por que o Aferir</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">Upgrade sem achismo.</h2>
+    <!-- ============ 4. MOCKUP INTERATIVO ============ -->
+    <section id="painel" class="scroll-mt-16 border-t border-white/5">
+      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+        <div class="mx-auto mb-16 max-w-2xl text-center">
+          <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">02 — O painel</p>
+          <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Veja o que o Aferir enxerga.</h2>
+          <p class="reveal mt-5 text-base font-light leading-relaxed text-zinc-400 sm:text-lg">
+            Um diagnóstico real se parece com isto. Escolha como você usa o computador e veja o impacto do upgrade certo.
+          </p>
         </div>
 
-        <div class="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
-          <article class="group bg-zinc-950 p-8 transition-colors hover:bg-zinc-900/60">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
+        <div class="reveal rounded-2xl border border-white/10 bg-zinc-900/40 p-px shadow-2xl shadow-black/60">
+          <div class="overflow-hidden rounded-[15px] bg-zinc-950/85 backdrop-blur">
+
+            <!-- Barra da janela -->
+            <div class="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
+              <div class="flex items-center gap-1.5" aria-hidden="true">
+                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
+                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
+                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
+              </div>
+              <span class="font-mono text-[11px] text-zinc-500">aferir · diagnóstico</span>
+              <span class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
+                <span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> ao vivo
+              </span>
+            </div>
+
+            <div class="grid lg:grid-cols-[1fr_1.1fr]">
+
+              <!-- Coluna: componentes -->
+              <div class="border-b border-white/5 p-5 sm:p-8 lg:border-b-0 lg:border-r">
+                <div class="mb-6 flex items-end justify-between">
+                  <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Varredura concluída</p>
+                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu computador</h3>
+                  </div>
+                  <span class="font-mono text-[11px] text-zinc-600">3 componentes</span>
+                </div>
+
+                <ul class="space-y-3">
+                  <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                        <rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/>
+                        <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-zinc-100">Processador</p>
+                      <p class="truncate font-mono text-xs text-zinc-500">Ryzen 5 5600 · 6 núcleos</p>
+                    </div>
+                    <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>
+                  </li>
+
+                  <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                        <rect x="2.5" y="7" width="19" height="9" rx="1"/>
+                        <path d="M6 10v3M9.5 10v3M13 10v3M16.5 10v3M5 16v2M8 16v2M11 16v2M14 16v2M17 16v2M20 16v2" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-zinc-100">Memória RAM</p>
+                      <p class="truncate font-mono text-xs text-zinc-500">16 GB DDR4 · 3200 MHz</p>
+                    </div>
+                    <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>
+                  </li>
+
+                  <li class="relative flex items-center gap-4 overflow-hidden rounded-xl border border-rose-500/50 bg-rose-500/[0.03] px-4 py-4">
+                    <span aria-hidden="true" class="scanline pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-rose-500/[0.06] to-transparent"></span>
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-500/30 text-rose-400">
+                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                        <rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/>
+                        <path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-zinc-100">Placa de Vídeo</p>
+                      <p class="truncate font-mono text-xs text-zinc-500">GTX 1650 · 4 GB</p>
+                    </div>
+                    <span class="flex shrink-0 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">
+                      <span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
+                      Gargalo
+                    </span>
+                  </li>
+                </ul>
+
+                <div class="mt-7 rounded-xl border border-white/5 p-4">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Em português simples</p>
+                  <p id="diagnostico" class="swap mt-2 text-sm leading-relaxed text-zinc-300"></p>
+                </div>
+
+                <div class="mt-3 flex items-center justify-between rounded-xl border border-white/5 px-4 py-3">
+                  <div class="min-w-0">
+                    <p class="text-[11px] text-zinc-500">Upgrade compatível sugerido</p>
+                    <p id="sugestao" class="swap truncate text-sm text-zinc-100"></p>
+                  </div>
+                  <div class="shrink-0 pl-3 text-right">
+                    <p class="text-[11px] text-zinc-500">menor preço</p>
+                    <p id="preco" class="swap font-mono text-sm text-cyan-300"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coluna: simulador -->
+              <div class="flex flex-col p-5 sm:p-8">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Simular upgrade</p>
+                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Perfil de uso</h3>
+                  </div>
+                  <div id="perfis" role="radiogroup" aria-label="Perfil de uso"
+                       class="inline-flex rounded-full border border-white/10 p-1">
+                    <button type="button" role="radio" data-perfil="jogos" class="perfil-btn">Jogos</button>
+                    <button type="button" role="radio" data-perfil="edicao" class="perfil-btn">Edição</button>
+                    <button type="button" role="radio" data-perfil="trabalho" class="perfil-btn">Trabalho</button>
+                  </div>
+                </div>
+
+                <!-- Destaque do ganho -->
+                <div class="mt-8 flex items-baseline gap-3">
+                  <span id="ganho" class="swap text-5xl font-semibold tracking-[-0.05em] text-white sm:text-6xl">+0%</span>
+                  <span id="ganhoRotulo" class="swap text-sm text-zinc-400"></span>
+                </div>
+
+                <!-- Gráfico de barras -->
+                <figure class="mt-8" aria-labelledby="graficoLegenda">
+                  <div class="relative h-56 sm:h-64">
+                    <!-- linhas de grade -->
+                    <div aria-hidden="true" class="absolute inset-0 flex flex-col justify-between">
+                      <div class="border-t border-white/[0.06]"></div>
+                      <div class="border-t border-white/[0.06]"></div>
+                      <div class="border-t border-white/[0.06]"></div>
+                      <div class="border-t border-white/[0.06]"></div>
+                      <div class="border-t border-white/10"></div>
+                    </div>
+                    <div id="grafico" class="relative grid h-full grid-cols-3 gap-4 sm:gap-6"></div>
+                  </div>
+                  <div id="graficoRotulos" class="mt-3 grid grid-cols-3 gap-4 sm:gap-6"></div>
+                  <figcaption id="graficoLegenda" class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-zinc-400">
+                    <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-sm bg-rose-500/80"></span>Desempenho atual</span>
+                    <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-sm bg-cyan-400"></span>Desempenho otimizado</span>
+                  </figcaption>
+                </figure>
+
+                <div class="mt-6 border-l border-cyan-500/40 pl-4">
+                  <p id="explicacao" class="swap text-sm leading-relaxed text-zinc-300" aria-live="polite"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-5 text-center font-mono text-[11px] text-zinc-600">Simulação ilustrativa com base em médias de mercado. Valores reais dependem do seu hardware.</p>
+      </div>
+    </section>
+
+    <!-- ============ 5. COMO FUNCIONA ============ -->
+    <section id="como-funciona" class="scroll-mt-16 border-t border-white/5">
+      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+        <div class="max-w-2xl">
+          <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">03 — Como funciona</p>
+          <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Do diagnóstico ao carrinho em três passos.</h2>
+        </div>
+
+        <ol class="relative mt-16 grid gap-6 md:grid-cols-3 md:gap-8">
+          <div aria-hidden="true" class="absolute left-0 right-0 top-[2.15rem] hidden h-px bg-gradient-to-r from-cyan-500/40 via-white/10 to-transparent md:block"></div>
+
+          <li class="reveal relative">
+            <div class="relative z-10 flex h-[4.3rem] w-[4.3rem] items-center justify-center rounded-full border border-cyan-500/40 bg-zinc-950 font-mono text-lg text-cyan-300">01</div>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Diagnóstico Veloz</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">
+              Você roda um arquivo leve de 5 segundos que lê os sensores reais da sua máquina,
+              <span class="text-zinc-200">sem coletar dados pessoais</span>.
+            </p>
+            <p class="mt-5 font-mono text-[11px] text-zinc-600">~2 MB · Windows · sem instalação</p>
+          </li>
+
+          <li class="reveal relative">
+            <div class="relative z-10 flex h-[4.3rem] w-[4.3rem] items-center justify-center rounded-full border border-white/15 bg-zinc-950 font-mono text-lg text-zinc-300">02</div>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Tradução Humana</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">
+              O app gera um relatório visual mostrando qual peça está atrasando o resto do seu sistema —
+              com uma explicação que qualquer pessoa entende.
+            </p>
+            <p class="mt-5 font-mono text-[11px] text-zinc-600">relatório em português · sem siglas</p>
+          </li>
+
+          <li class="reveal relative">
+            <div class="relative z-10 flex h-[4.3rem] w-[4.3rem] items-center justify-center rounded-full border border-white/15 bg-zinc-950 font-mono text-lg text-zinc-300">03</div>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Cotação Inteligente</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">
+              O sistema cruza as peças que você precisa com os estoques das maiores lojas do Brasil,
+              checando compatibilidade de fontes e conexões automaticamente.
+            </p>
+            <p class="mt-5 font-mono text-[11px] text-zinc-600">preço · estoque · encaixe · energia</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ 6. ERROS EVITADOS ============ -->
+    <section id="erros" class="scroll-mt-16 border-t border-white/5">
+      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+        <div class="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
+          <div>
+            <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">04 — A dor</p>
+            <h2 class="reveal mt-5 text-3xl font-semibold leading-[1.1] tracking-[-0.04em] text-white sm:text-5xl">Os erros que você vai evitar.</h2>
+            <p class="reveal mt-6 text-base font-light leading-relaxed text-zinc-400 sm:text-lg">
+              Todo upgrade errado tem a mesma origem: uma decisão tomada sem os dados certos.
+              O Aferir checa tudo isso <span class="text-zinc-200">antes</span> de você gastar um real.
+            </p>
+          </div>
+
+          <div class="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+              <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                  <rect x="3" y="8" width="8" height="8" rx="1"/><rect x="13" y="8" width="8" height="8" rx="1" stroke-dasharray="2 2"/>
+                  <path d="M11 12h2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="text-lg font-medium tracking-tight text-white">Incompatibilidade física</h3>
+                  <span class="font-mono text-[10px] uppercase tracking-wider text-zinc-600">encaixe</span>
+                </div>
+                <p class="mt-2 text-[15px] font-light leading-relaxed text-zinc-400">
+                  Comprar memórias ou placas que não cabem no gabinete ou simplesmente não encaixam na sua placa-mãe.
+                  O Aferir confere slot, geração e medidas.
+                </p>
+              </div>
+            </article>
+
+            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+              <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                  <path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="text-lg font-medium tracking-tight text-white">Sobrecarga de energia</h3>
+                  <span class="font-mono text-[10px] uppercase tracking-wider text-zinc-600">fonte</span>
+                </div>
+                <p class="mt-2 text-[15px] font-light leading-relaxed text-zinc-400">
+                  Instalar uma peça nova e ver o PC desligar sozinho — ou queimar — porque a fonte antiga não aguenta.
+                  O Aferir calcula o consumo total antes da compra.
+                </p>
+              </div>
+            </article>
+
+            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+              <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.5c-.4-.9-1.3-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.6 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.2 0-2.1-.6-2.5-1.5M12 6.5V8m0 8v1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="text-lg font-medium tracking-tight text-white">Desperdício de dinheiro</h3>
+                  <span class="font-mono text-[10px] uppercase tracking-wider text-zinc-600">gargalo</span>
+                </div>
+                <p class="mt-2 text-[15px] font-light leading-relaxed text-zinc-400">
+                  Gastar <span class="font-mono text-zinc-200">R$ 2.000</span> em uma peça achando que vai resolver,
+                  quando o gargalo real era outro componente de <span class="font-mono text-cyan-300">R$ 300</span>.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. PILARES ============ -->
+    <section class="border-t border-white/5">
+      <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+        <div class="mx-auto max-w-2xl text-center">
+          <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">05 — Pilares</p>
+          <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Upgrade sem achismo.</h2>
+        </div>
+
+        <div class="mt-16 grid gap-6 md:grid-cols-3">
+          <article class="reveal group rounded-2xl border border-white/10 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/30 hover:bg-white/[0.015] sm:p-10">
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                 <path d="M4 5.5h16v10H9l-5 3.5v-13.5Z" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/>
               </svg>
             </div>
-            <h3 class="mt-6 text-base font-medium text-white">Clareza</h3>
-            <p class="mt-2 text-sm font-light leading-relaxed text-zinc-400">Diagnóstico em linguagem humana, sem termos técnicos confusos.</p>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Clareza</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">Diagnóstico em linguagem humana, sem termos técnicos confusos.</p>
           </article>
 
-          <article class="group bg-zinc-950 p-8 transition-colors hover:bg-zinc-900/60">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
+          <article class="reveal group rounded-2xl border border-white/10 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/30 hover:bg-white/[0.015] sm:p-10">
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                 <circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5" stroke-linecap="round"/><path d="M11 8v6M9 9.5h3a1 1 0 0 1 0 2h-2a1 1 0 0 0 0 2h3" stroke-linecap="round"/>
               </svg>
             </div>
-            <h3 class="mt-6 text-base font-medium text-white">Economia</h3>
-            <p class="mt-2 text-sm font-light leading-relaxed text-zinc-400">Varredura inteligente de preços em tempo real nas maiores lojas do país.</p>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Economia</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">Varredura inteligente de preços em tempo real nas maiores lojas do país.</p>
           </article>
 
-          <article class="group bg-zinc-950 p-8 transition-colors hover:bg-zinc-900/60">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
+          <article class="reveal group rounded-2xl border border-white/10 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/30 hover:bg-white/[0.015] sm:p-10">
+            <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-cyan-400 transition-colors group-hover:border-cyan-500/40">
               <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                 <path d="M12 3 5 6v5.5c0 4.2 3 7.8 7 9.5 4-1.7 7-5.3 7-9.5V6l-7-3Z" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <h3 class="mt-6 text-base font-medium text-white">Segurança</h3>
-            <p class="mt-2 text-sm font-light leading-relaxed text-zinc-400">Validação automática de fontes e encaixes para evitar compras erradas.</p>
+            <h3 class="mt-8 text-xl font-medium tracking-tight text-white">Segurança</h3>
+            <p class="mt-3 text-[15px] font-light leading-relaxed text-zinc-400">Validação automática de fontes e encaixes para evitar compras erradas.</p>
           </article>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- 5. CAPTURA DE LEAD -->
+  <!-- ============ 8. CAPTURA DE LEAD ============ -->
   <footer id="lista" class="scroll-mt-16 border-t border-white/5">
-    <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-28">
+    <div class="relative mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
+      <div aria-hidden="true" class="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-72 w-[40rem] max-w-full -translate-x-1/2 rounded-full bg-cyan-500/[0.07] blur-3xl"></div>
+
       <div class="mx-auto max-w-xl text-center">
-        <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-500">Acesso antecipado</p>
-        <h2 class="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">Entre para o primeiro lote.</h2>
-        <p class="mt-4 text-sm font-light leading-relaxed text-zinc-400">Convites liberados em ordem de inscrição. Sem spam, só o aviso que importa.</p>
+        <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">Primeiro lote</p>
+        <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Seu próximo upgrade começa com a resposta certa.</h2>
+        <p class="reveal mt-5 text-base font-light leading-relaxed text-zinc-400">
+          Os convites serão liberados em ordem de inscrição. Sem spam — só o aviso que importa.
+        </p>
 
-        <form id="leadForm" class="mt-10 space-y-3 text-left" novalidate>
-          <div class="grid gap-3 sm:grid-cols-2">
-            <label class="block">
-              <span class="sr-only">Nome</span>
-              <input id="nome" name="nome" type="text" autocomplete="name" required placeholder="Seu nome"
-                     class="w-full rounded-xl border border-white/10 bg-transparent px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
-            </label>
-            <label class="block">
-              <span class="sr-only">E-mail</span>
-              <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com"
-                     class="w-full rounded-xl border border-white/10 bg-transparent px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
-            </label>
-          </div>
-          <button type="submit" id="submitBtn"
-                  class="w-full rounded-xl bg-cyan-500 px-6 py-3.5 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_8px_32px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-60">
-            Garantir Acesso Antecipado
-          </button>
-          <p id="formErro" class="hidden text-center text-xs text-zinc-400" role="alert"></p>
-        </form>
+        <div class="reveal mt-12">
+          <form id="leadForm" class="space-y-3 text-left" novalidate>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="block">
+                <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Nome</span>
+                <input id="nome" name="nome" type="text" autocomplete="name" required placeholder="Como podemos te chamar?"
+                       class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
+              </label>
+              <label class="block">
+                <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">E-mail</span>
+                <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com"
+                       class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
+              </label>
+            </div>
+            <button type="submit" id="submitBtn"
+                    class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_10px_36px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-70">
+              <span id="submitTxt">Garantir Acesso Antecipado</span>
+            </button>
+            <p id="formErro" class="hidden pt-1 text-center text-xs text-zinc-300" role="alert"></p>
+            <p class="pt-2 text-center text-[11px] text-zinc-600">Usamos seu e-mail apenas para enviar o convite.</p>
+          </form>
 
-        <div id="sucesso" class="hidden mt-10 rounded-2xl border border-cyan-500/30 bg-cyan-500/[0.05] px-6 py-8" role="status" aria-live="polite">
-          <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-cyan-500/40 text-cyan-300">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-              <path d="m6 12.5 4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <div id="sucesso" class="hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/[0.07] to-transparent px-6 py-10 sm:px-10" role="status" aria-live="polite" tabindex="-1">
+            <div class="relative mx-auto flex h-14 w-14 items-center justify-center">
+              <span class="absolute inset-0 animate-ping rounded-full border border-cyan-400/40"></span>
+              <span class="relative flex h-14 w-14 items-center justify-center rounded-full border border-cyan-400/50 bg-zinc-950 text-cyan-300">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <path d="m6 12.5 4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </div>
+            <h3 class="mt-6 text-xl font-medium tracking-tight text-white">Pronto, <span id="sucessoNome"></span>!</h3>
+            <p class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-zinc-300">
+              Você está na lista do Aferir. Avisaremos assim que o primeiro lote de convites for liberado.
+            </p>
+            <p class="mt-6 font-mono text-[11px] text-zinc-500">Posição estimada na fila · <span id="posicao" class="text-cyan-300"></span></p>
           </div>
-          <p class="mt-4 text-sm leading-relaxed text-zinc-200">
-            Pronto! Você está na lista do Aferir. Avisaremos assim que o primeiro lote de convites for liberado.
-          </p>
         </div>
       </div>
 
-      <div class="mt-24 flex flex-col items-center justify-between gap-3 border-t border-white/5 pt-8 text-xs text-zinc-600 sm:flex-row">
-        <span class="font-semibold tracking-[-0.04em] text-zinc-400">Aferir</span>
+      <div class="mt-28 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-zinc-600 sm:flex-row">
+        <span class="flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10.5" stroke="#3f3f46" stroke-width="1"/>
+            <path d="M12 12 L18.5 6.5" stroke="#22d3ee" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="font-semibold tracking-[-0.04em] text-zinc-400">Aferir</span>
+        </span>
         <span>© <span id="ano"></span> Aferir · Feito no Brasil</span>
       </div>
     </div>
@@ -344,71 +603,122 @@
 
   <script>
     (function () {
-      // ---------- Mockup: perfis de uso ----------
+      var $ = function (id) { return document.getElementById(id); };
+
+      // ---------- Revelação ao rolar ----------
+      var reveals = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var ro = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('is-visible'); ro.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        reveals.forEach(function (el) { ro.observe(el); });
+      } else {
+        reveals.forEach(function (el) { el.classList.add('is-visible'); });
+      }
+
+      // ---------- Simulador ----------
+      // Cada métrica: valor atual, valor otimizado, unidade e se "menor é melhor".
       var perfis = {
         jogos: {
-          rotulo: 'Jogos Ideais',
-          desc: '1080p alto, 60+ FPS',
-          impacto: 'Ganho estimado de +60% em estabilidade gráfica',
-          atual: 38, novo: 92,
-          atualTxt: '38 FPS', novoTxt: '92 FPS',
-          diagnostico: 'Sua placa de vídeo não acompanha o processador. Em jogos, ela trabalha no limite enquanto o resto do PC fica esperando — é isso que causa as travadas.',
-          sugestao: 'RTX 4060 · 8 GB', preco: 'R$ 1.899'
+          ganho: '+62%',
+          ganhoRotulo: 'em estabilidade gráfica',
+          diagnostico: 'Sua placa de vídeo não acompanha o processador. Nos jogos, ela trabalha no limite enquanto o resto do PC fica esperando — é isso que causa as travadas.',
+          explicacao: 'Com a placa certa, os quadros por segundo sobem e, principalmente, deixam de oscilar: o jogo para de dar “engasgos” nas cenas pesadas. Processador e memória finalmente trabalham no ritmo para o qual foram feitos.',
+          sugestao: 'RTX 4060 · 8 GB', preco: 'R$ 1.899',
+          metricas: [
+            { nome: 'FPS médio', atual: 41, novo: 96, un: '' },
+            { nome: 'Estabilidade', atual: 52, novo: 94, un: '%' },
+            { nome: 'Uso da GPU', atual: 99, novo: 71, un: '%', menor: true }
+          ]
+        },
+        edicao: {
+          ganho: '2,3×',
+          ganhoRotulo: 'mais rápido para exportar',
+          diagnostico: 'Sua placa de vídeo não tem aceleração moderna para vídeo. O processador acaba fazendo esse trabalho pesado sozinho — por isso a exportação demora e a timeline engasga.',
+          explicacao: 'A nova placa assume a codificação do vídeo. A prévia na timeline fica fluida, os efeitos rodam em tempo real e um projeto em 4K que levava quase meia hora passa a sair em cerca de 12 minutos.',
+          sugestao: 'RTX 4060 · 8 GB (NVENC)', preco: 'R$ 1.899',
+          metricas: [
+            { nome: 'Exportação 4K', atual: 28, novo: 12, un: ' min', menor: true },
+            { nome: 'Prévia fluida', atual: 38, novo: 91, un: '%' },
+            { nome: 'Efeitos em tempo real', atual: 3, novo: 11, un: '' }
+          ]
         },
         trabalho: {
-          rotulo: 'Trabalho Técnico',
-          desc: 'CAD, 3D e modelagem',
-          impacto: 'Renderização de viewport até +45% mais fluida',
-          atual: 42, novo: 87,
-          atualTxt: '42%', novoTxt: '87%',
-          diagnostico: 'Modelos maiores não cabem na memória da sua placa de vídeo. Ela passa a usar a RAM do sistema, o que deixa a navegação no projeto lenta.',
-          sugestao: 'RTX 4060 Ti · 16 GB', preco: 'R$ 2.749'
-        },
-        video: {
-          rotulo: 'Edição de Vídeo',
-          desc: '4K, timeline e exportação',
-          impacto: 'Exportações em 4K até 2,3× mais rápidas',
-          atual: 30, novo: 78,
-          atualTxt: '23 min', novoTxt: '10 min',
-          diagnostico: 'Sua placa de vídeo não tem aceleração moderna para codificar vídeo. Quem acaba fazendo esse trabalho pesado é o processador, e a exportação demora.',
-          sugestao: 'RTX 4060 · 8 GB (NVENC)', preco: 'R$ 1.899'
+          ganho: '+48%',
+          ganhoRotulo: 'de fluidez no projeto',
+          diagnostico: 'Modelos e projetos grandes não cabem na memória da sua placa de vídeo. Ela passa a usar a memória do sistema, e a navegação pelo projeto fica lenta e travada.',
+          explicacao: 'Com mais memória de vídeo, o projeto inteiro fica carregado na placa. Girar, aproximar e editar modelos complexos volta a ser instantâneo, e o sistema para de “pensar” a cada clique.',
+          sugestao: 'RTX 4060 Ti · 16 GB', preco: 'R$ 2.749',
+          metricas: [
+            { nome: 'Fluidez da cena', atual: 44, novo: 92, un: '%' },
+            { nome: 'Abertura do projeto', atual: 46, novo: 19, un: ' s', menor: true },
+            { nome: 'Memória livre', atual: 8, novo: 61, un: '%' }
+          ]
         }
       };
 
-      var grupo = document.getElementById('perfis');
-      var botoes = grupo.querySelectorAll('.perfil-btn');
-      var el = function (id) { return document.getElementById(id); };
-      var trocaveis = ['impacto', 'diagnostico', 'sugestao', 'preco'].map(el);
+      var grafico = $('grafico');
+      var rotulos = $('graficoRotulos');
+      var swaps = ['ganho', 'ganhoRotulo', 'diagnostico', 'explicacao', 'sugestao', 'preco'].map($);
+      var colunas = [];
 
-      var BASE = 'w-full rounded-xl border px-4 py-3 text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ';
-      var ATIVO = 'border-cyan-500/50 bg-cyan-500/[0.06]';
-      var INATIVO = 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]';
+      // Monta 3 colunas, cada uma com uma barra "atual" (rose) e "otimizado" (cyan)
+      for (var i = 0; i < 3; i++) {
+        var col = document.createElement('div');
+        col.className = 'flex h-full items-end justify-center gap-2 sm:gap-3';
+        col.innerHTML =
+          '<div class="flex h-full w-full max-w-[44px] flex-col justify-end">' +
+            '<span class="v-atual mb-2 text-center font-mono text-[11px] text-rose-300/90"></span>' +
+            '<div class="bar b-atual w-full rounded-t-md border border-rose-500/50 bg-rose-500/25" style="height:0%"></div>' +
+          '</div>' +
+          '<div class="flex h-full w-full max-w-[44px] flex-col justify-end">' +
+            '<span class="v-novo mb-2 text-center font-mono text-[11px] text-cyan-300"></span>' +
+            '<div class="bar b-novo w-full rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-400 shadow-[0_0_24px_-4px_rgba(34,211,238,0.5)]" style="height:0%"></div>' +
+          '</div>';
+        grafico.appendChild(col);
 
-      botoes.forEach(function (b) {
-        var p = perfis[b.dataset.perfil];
-        b.innerHTML =
-          '<span class="flex items-center justify-between gap-3">' +
-            '<span><span class="block text-sm font-medium text-zinc-100">' + p.rotulo + '</span>' +
-            '<span class="block text-xs text-zinc-500">' + p.desc + '</span></span>' +
-            '<span class="dot h-3.5 w-3.5 shrink-0 rounded-full border transition-colors"></span>' +
-          '</span>';
-        b.addEventListener('click', function () { selecionar(b.dataset.perfil, true); });
-      });
+        var rot = document.createElement('p');
+        rot.className = 'text-center text-[11px] leading-tight text-zinc-500';
+        rotulos.appendChild(rot);
 
-      // Navegação por setas no radiogroup
-      grupo.addEventListener('keydown', function (e) {
-        var lista = Array.prototype.slice.call(botoes);
-        var i = lista.indexOf(document.activeElement);
-        if (i < 0) return;
-        var d = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        var prox = lista[(i + d + lista.length) % lista.length];
-        prox.focus();
-        selecionar(prox.dataset.perfil, true);
-      });
+        colunas.push({
+          bAtual: col.querySelector('.b-atual'), bNovo: col.querySelector('.b-novo'),
+          vAtual: col.querySelector('.v-atual'), vNovo: col.querySelector('.v-novo'), rot: rot
+        });
+      }
 
+      // Altura da barra: "otimizado" sempre maior, mesmo quando menor é melhor (barra = desempenho)
+      function alturas(m) {
+        var max = Math.max(m.atual, m.novo);
+        if (m.menor) {
+          return { atual: Math.round((m.novo / m.atual) * 82), novo: 82 };
+        }
+        return { atual: Math.round((m.atual / max) * 82), novo: Math.round((m.novo / max) * 82) };
+      }
+
+      var graficoVisivel = false;
+      function desenharGrafico(p) {
+        p.metricas.forEach(function (m, idx) {
+          var c = colunas[idx];
+          var h = alturas(m);
+          c.rot.textContent = m.nome + (m.menor ? ' ↓' : '');
+          c.rot.title = m.menor ? 'Menor é melhor' : '';
+          c.vAtual.textContent = m.atual + m.un;
+          c.vNovo.textContent = m.novo + m.un;
+          c.bAtual.style.height = graficoVisivel ? h.atual + '%' : '0%';
+          c.bNovo.style.height = graficoVisivel ? h.novo + '%' : '0%';
+          c.bAtual.setAttribute('aria-label', m.nome + ' atual: ' + m.atual + m.un);
+          c.bNovo.setAttribute('aria-label', m.nome + ' otimizado: ' + m.novo + m.un);
+        });
+      }
+
+      var grupo = $('perfis');
+      var botoes = Array.prototype.slice.call(grupo.querySelectorAll('.perfil-btn'));
+      var BTN = 'rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:px-5 ';
       var atual = null;
+
       function selecionar(chave, animar) {
         if (chave === atual) return;
         atual = chave;
@@ -416,59 +726,68 @@
 
         botoes.forEach(function (b) {
           var on = b.dataset.perfil === chave;
-          b.className = 'perfil-btn ' + BASE + (on ? ATIVO : INATIVO);
+          b.className = 'perfil-btn ' + BTN + (on ? 'bg-cyan-500 text-zinc-950 shadow-[0_0_20px_-6px_rgba(34,211,238,0.7)]' : 'text-zinc-400 hover:text-zinc-100');
           b.setAttribute('aria-checked', on ? 'true' : 'false');
           b.tabIndex = on ? 0 : -1;
-          var dot = b.querySelector('.dot');
-          dot.className = 'dot h-3.5 w-3.5 shrink-0 rounded-full border transition-colors ' +
-            (on ? 'border-cyan-400 bg-cyan-400 shadow-[0_0_0_3px_rgba(34,211,238,0.15)]' : 'border-zinc-600');
         });
 
         function aplicar() {
-          el('impacto').textContent = p.impacto;
-          el('diagnostico').textContent = p.diagnostico;
-          el('sugestao').textContent = p.sugestao;
-          el('preco').textContent = p.preco;
-          el('atualValor').textContent = p.atualTxt;
-          el('novoValor').textContent = p.novoTxt;
-          el('atualBarra').style.width = p.atual + '%';
-          el('novoBarra').style.width = p.novo + '%';
-          trocaveis.forEach(function (n) { n.classList.remove('is-out'); });
+          $('ganho').textContent = p.ganho;
+          $('ganhoRotulo').textContent = p.ganhoRotulo;
+          $('diagnostico').textContent = p.diagnostico;
+          $('explicacao').textContent = p.explicacao;
+          $('sugestao').textContent = p.sugestao;
+          $('preco').textContent = p.preco;
+          swaps.forEach(function (n) { n.classList.remove('is-out'); });
         }
 
+        desenharGrafico(p);
         if (animar) {
-          trocaveis.forEach(function (n) { n.classList.add('is-out'); });
+          swaps.forEach(function (n) { n.classList.add('is-out'); });
           setTimeout(aplicar, 200);
         } else {
           aplicar();
         }
       }
 
-      // Estado inicial (barras animam ao entrar na tela)
+      botoes.forEach(function (b) {
+        b.addEventListener('click', function () { selecionar(b.dataset.perfil, true); });
+      });
+
+      grupo.addEventListener('keydown', function (e) {
+        var i = botoes.indexOf(document.activeElement);
+        if (i < 0) return;
+        var d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        var prox = botoes[(i + d + botoes.length) % botoes.length];
+        prox.focus();
+        selecionar(prox.dataset.perfil, true);
+      });
+
       selecionar('jogos', false);
-      el('atualBarra').style.width = '0%';
-      el('novoBarra').style.width = '0%';
-      var painel = document.getElementById('painel');
-      var preencher = function () {
-        var p = perfis[atual];
-        el('atualBarra').style.width = p.atual + '%';
-        el('novoBarra').style.width = p.novo + '%';
-      };
+
+      // Barras crescem quando o gráfico entra na tela
       if ('IntersectionObserver' in window) {
-        var io = new IntersectionObserver(function (entradas) {
-          if (entradas[0].isIntersecting) { preencher(); io.disconnect(); }
-        }, { threshold: 0.3 });
-        io.observe(painel);
+        var go = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) {
+            graficoVisivel = true;
+            desenharGrafico(perfis[atual]);
+            go.disconnect();
+          }
+        }, { threshold: 0.35 });
+        go.observe(grafico);
       } else {
-        preencher();
+        graficoVisivel = true;
+        desenharGrafico(perfis[atual]);
       }
 
       // ---------- Formulário de lead ----------
-      var form = el('leadForm');
-      var erro = el('formErro');
-      var nome = el('nome');
-      var email = el('email');
-      var btn = el('submitBtn');
+      var form = $('leadForm');
+      var nome = $('nome');
+      var email = $('email');
+      var erro = $('formErro');
+      var btn = $('submitBtn');
       var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
       function marcar(input, invalido) {
@@ -477,8 +796,8 @@
         input.setAttribute('aria-invalid', invalido ? 'true' : 'false');
       }
 
-      [nome, email].forEach(function (i) {
-        i.addEventListener('input', function () { marcar(i, false); erro.classList.add('hidden'); });
+      [nome, email].forEach(function (input) {
+        input.addEventListener('input', function () { marcar(input, false); erro.classList.add('hidden'); });
       });
 
       form.addEventListener('submit', function (e) {
@@ -496,16 +815,23 @@
         }
 
         btn.disabled = true;
-        btn.textContent = 'Enviando…';
+        $('submitTxt').innerHTML =
+          '<span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+          '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>' +
+          '<path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Enviando…</span>';
 
-        // Simula envio (substituir por integração real)
+        // Simulação de envio — substituir por integração real (API, planilha, CRM)
         setTimeout(function () {
+          $('sucessoNome').textContent = nome.value.trim().split(/\s+/)[0];
+          $('posicao').textContent = '#' + (1200 + Math.floor(Math.random() * 400)).toLocaleString('pt-BR');
           form.classList.add('hidden');
-          el('sucesso').classList.remove('hidden');
-        }, 700);
+          var ok = $('sucesso');
+          ok.classList.remove('hidden');
+          ok.focus({ preventScroll: true });
+        }, 900);
       });
 
-      el('ano').textContent = new Date().getFullYear();
+      $('ano').textContent = new Date().getFullYear();
     })();
   </script>
 </body>
