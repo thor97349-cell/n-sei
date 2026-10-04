@@ -44,32 +44,84 @@
 
     /* Simulador */
     .bar { transition: width 1.1s cubic-bezier(.22,1,.36,1); }
-    .row { transition: border-color .4s ease, background-color .4s ease; }
     .pop { animation: pop .7s cubic-bezier(.22,1,.36,1) both; }
     @keyframes pop { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 
-    /* Selects nativos estilizados */
-    .sel {
-      appearance: none; -webkit-appearance: none;
-      width: 100%; color-scheme: dark; cursor: pointer;
-      background: rgba(24,24,27,.6);
-      border: 1px solid rgba(255,255,255,.1); border-radius: .75rem;
-      padding: .875rem 2.75rem .875rem 1rem;
-      font: inherit; font-size: .875rem; color: #f4f4f5;
+    /* Campos de texto livre */
+    .field {
+      width: 100%; color-scheme: dark;
+      background: rgba(24,24,27,.5);
+      border: 1px solid #27272a; border-radius: .75rem;
+      padding: .875rem 1rem; font: inherit; font-size: .9375rem; color: #f4f4f5;
       transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
     }
-    .sel:hover { border-color: rgba(255,255,255,.2); background-color: rgba(39,39,42,.6); }
-    .sel:focus { outline: none; border-color: rgba(6,182,212,.6); box-shadow: 0 0 0 3px rgba(6,182,212,.15); }
-    .sel option { background: #18181b; color: #f4f4f5; }
-    .sel-wrap::after {
-      content: ""; position: absolute; right: 1.1rem; top: 50%; width: .5rem; height: .5rem;
-      border-right: 1.5px solid #71717a; border-bottom: 1.5px solid #71717a;
-      transform: translateY(-70%) rotate(45deg); pointer-events: none; transition: border-color .2s ease;
-    }
-    .sel-wrap:focus-within::after { border-color: #22d3ee; }
+    .field::placeholder { color: #52525b; }
+    .field:hover { border-color: #3f3f46; }
+    .field:focus { outline: none; border-color: rgba(6,182,212,.6); box-shadow: 0 0 0 3px rgba(6,182,212,.15); background: rgba(24,24,27,.8); }
+    .field.is-invalid { border-color: rgba(244,63,94,.6); }
 
-    @keyframes scan { 0% { transform: translateY(-120%); } 100% { transform: translateY(520%); } }
-    .scanline { animation: scan 1.1s linear infinite; }
+    /* Lista de sugestões (autocomplete) */
+    .ac-list {
+      position: absolute; left: 0; right: 0; top: calc(100% + .5rem); z-index: 40;
+      margin: 0; padding: .375rem; list-style: none; max-height: 16rem; overflow: auto;
+      background: #18181b; border: 1px solid #27272a; border-radius: .875rem;
+      box-shadow: 0 24px 48px -12px rgba(0,0,0,.8);
+      animation: acIn .16s ease-out;
+    }
+    @keyframes acIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .ac-item {
+      display: flex; align-items: center; gap: .625rem; cursor: pointer;
+      padding: .625rem .75rem; border-radius: .5rem; font-size: .875rem; color: #d4d4d8;
+    }
+    .ac-item:hover, .ac-item.is-active { background: rgba(6,182,212,.08); color: #fff; }
+
+    /* Abas */
+    .tab-btn {
+      position: relative; display: flex; align-items: center; justify-content: center; gap: .75rem;
+      padding: 1.1rem 1rem; color: #71717a; transition: color .2s ease, background-color .2s ease;
+    }
+    .tab-btn:hover { color: #d4d4d8; background: rgba(255,255,255,.015); }
+    .tab-btn + .tab-btn { border-left: 1px solid #27272a; }
+    .tab-btn::after {
+      content: ""; position: absolute; left: 1.5rem; right: 1.5rem; bottom: -1px; height: 2px; border-radius: 2px;
+      background: #22d3ee; transform: scaleX(0); transition: transform .3s cubic-bezier(.22,1,.36,1);
+    }
+    .tab-btn.is-on { color: #fff; }
+    .tab-btn.is-on::after { transform: scaleX(1); }
+    .tab-btn.is-on svg { color: #22d3ee; }
+    .tab-btn:focus-visible { outline: 2px solid rgba(34,211,238,.6); outline-offset: -2px; }
+
+    /* Botão principal do simulador */
+    .btn-aferir {
+      position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      width: 100%; padding: 1rem 1.75rem; border-radius: .75rem;
+      background: #06b6d4; color: #09090b; font-size: .875rem; font-weight: 500;
+      box-shadow: 0 0 0 1px rgba(34,211,238,.4), 0 8px 32px -10px rgba(6,182,212,.6);
+      transition: background-color .3s ease, box-shadow .3s ease, transform .1s ease;
+    }
+    @media (min-width: 640px) { .btn-aferir { width: auto; min-width: 15rem; } }
+    .btn-aferir:hover { background: #22d3ee; box-shadow: 0 0 0 1px rgba(34,211,238,.6), 0 14px 40px -10px rgba(6,182,212,.8); }
+    .btn-aferir:active { transform: scale(.99); }
+    .btn-aferir:focus-visible { outline: 2px solid #67e8f9; outline-offset: 3px; }
+    .btn-aferir[aria-busy="true"] { cursor: wait; }
+
+    /* Cards horizontais de resposta */
+    .card-h {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem;
+      padding: 1.25rem; border: 1px solid #27272a; border-radius: 1rem;
+      background: rgba(24,24,27,.35); transition: border-color .3s ease;
+    }
+    @media (min-width: 640px) { .card-h { flex-wrap: nowrap; padding: 1.5rem; } }
+    .card-h:hover { border-color: #3f3f46; }
+    .card-h.card-critico { border-color: rgba(244,63,94,.55); background: rgba(244,63,94,.035); }
+    .card-h.card-limite  { border-color: rgba(251,113,133,.25); background: rgba(251,113,133,.02); }
+    .card-ico { display: flex; height: 2.75rem; width: 2.75rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: .75rem; border-width: 1px; }
+    .tag { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 9999px; border-width: 1px; padding: .25rem .625rem; font-size: 11px; font-weight: 500; }
+    .tag-ok      { border-color: rgba(6,182,212,.3);  background: rgba(6,182,212,.07);  color: #67e8f9; }
+    .tag-limite  { border-color: rgba(251,113,133,.3); background: rgba(251,113,133,.06); color: #fecdd3; }
+    .tag-critico { border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.1);   color: #fda4af; }
+    .tag-neutro  { border-color: #27272a; color: #a1a1aa; }
+
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -244,195 +296,113 @@
           <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">02 — Simulador</p>
           <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Afira o seu computador agora.</h2>
           <p class="reveal mt-5 text-base font-light leading-relaxed text-zinc-400 sm:text-lg">
-            Monte uma versão do seu PC em quatro escolhas. O motor do Aferir aponta o gargalo, sugere o upgrade compatível e cota os preços.
+            Digite suas peças do jeito que você conhece — ou só o quanto quer gastar. O Aferir entende, aponta o gargalo e monta o plano com preços.
           </p>
         </div>
 
-        <div class="reveal rounded-2xl border border-white/10 bg-zinc-900/40 p-px shadow-2xl shadow-black/60">
-          <div class="overflow-hidden rounded-[15px] bg-zinc-950/85 backdrop-blur">
+        <div id="simPainel" class="reveal rounded-2xl border border-zinc-800 bg-zinc-950/80 shadow-2xl shadow-black/60 backdrop-blur">
 
-            <!-- Barra da janela -->
-            <div class="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
-              <div class="flex items-center gap-1.5" aria-hidden="true">
-                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
-                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
-                <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
-              </div>
-              <span class="font-mono text-[11px] text-zinc-500">aferir · diagnóstico</span>
-              <span id="statusJanela" class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
-                <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span> aguardando
-              </span>
+          <!-- Barra da janela -->
+          <div class="flex items-center justify-between border-b border-zinc-800 px-5 py-3.5">
+            <div class="flex items-center gap-1.5" aria-hidden="true">
+              <span class="h-2.5 w-2.5 rounded-full border border-zinc-700"></span>
+              <span class="h-2.5 w-2.5 rounded-full border border-zinc-700"></span>
+              <span class="h-2.5 w-2.5 rounded-full border border-zinc-700"></span>
             </div>
+            <span class="font-mono text-[11px] text-zinc-500">aferir · diagnóstico</span>
+            <span id="statusJanela" class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
+              <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span> aguardando
+            </span>
+          </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr]">
+          <!-- Abas -->
+          <div role="tablist" aria-label="Objetivo" class="grid grid-cols-2 border-b border-zinc-800">
+            <button type="button" role="tab" id="tab-upgrade" data-modo="upgrade" aria-controls="painel-upgrade" class="tab-btn"></button>
+            <button type="button" role="tab" id="tab-montar" data-modo="montar" aria-controls="painel-montar" class="tab-btn"></button>
+          </div>
 
-              <!-- ENTRADA DE DADOS -->
-              <form id="simForm" class="border-b border-white/5 p-5 sm:p-8 lg:border-b-0 lg:border-r" novalidate>
-                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Escaneamento simulado</p>
-                <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Monte o seu PC</h3>
+          <!-- ABA A: UPGRADE -->
+          <div id="painel-upgrade" role="tabpanel" aria-labelledby="tab-upgrade" class="p-5 sm:p-8">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+              <div class="ac relative" data-campo="cpu">
+                <label for="in-cpu" class="mb-2.5 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                  <span class="font-mono text-[11px] text-cyan-400">01</span> Processador
+                </label>
+                <input id="in-cpu" type="text" class="field" placeholder="Ex.: Ryzen 5 5600" autocomplete="off" spellcheck="false" maxlength="60" />
+                <p class="hint mt-2 min-h-[1rem] text-[11px] text-zinc-500">Do jeito que aparece na caixa ou no sistema.</p>
+              </div>
 
-                <div class="mt-7 space-y-6">
-                  <div>
-                    <label for="sel-cpu" class="mb-2.5 flex items-center justify-between gap-3 text-sm font-medium text-zinc-200">
-                      <span class="flex items-center gap-3"><span class="font-mono text-[11px] text-cyan-400">01</span> Processador</span>
-                      <span data-nivel="cpu" class="font-mono text-[10px] uppercase tracking-wider text-zinc-500"></span>
-                    </label>
-                    <div class="sel-wrap relative">
-                      <select id="sel-cpu" name="cpu" class="sel">
-                        <option value="i3">Intel Core i3 10ª Gen (Entrada)</option>
-                        <option value="r5" selected>AMD Ryzen 5 5600 (Intermediário)</option>
-                        <option value="i7">Intel Core i7 13ª Gen (Alta Performance)</option>
-                      </select>
-                    </div>
-                  </div>
+              <div class="ac relative" data-campo="gpu">
+                <label for="in-gpu" class="mb-2.5 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                  <span class="font-mono text-[11px] text-cyan-400">02</span> Placa de Vídeo
+                </label>
+                <input id="in-gpu" type="text" class="field" placeholder="Ex.: GTX 1650" autocomplete="off" spellcheck="false" maxlength="60" />
+                <p class="hint mt-2 min-h-[1rem] text-[11px] text-zinc-500">Sem placa? Digite “Intel Graphics”.</p>
+              </div>
 
-                  <div>
-                    <label for="sel-ram" class="mb-2.5 flex items-center justify-between gap-3 text-sm font-medium text-zinc-200">
-                      <span class="flex items-center gap-3"><span class="font-mono text-[11px] text-cyan-400">02</span> Memória RAM</span>
-                      <span data-nivel="ram" class="font-mono text-[10px] uppercase tracking-wider text-zinc-500"></span>
-                    </label>
-                    <div class="sel-wrap relative">
-                      <select id="sel-ram" name="ram" class="sel">
-                        <option value="r8">8GB DDR4 (Pouca)</option>
-                        <option value="r16" selected>16GB DDR4 (Ideal)</option>
-                        <option value="r32">32GB DDR5 (Premium)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label for="sel-gpu" class="mb-2.5 flex items-center justify-between gap-3 text-sm font-medium text-zinc-200">
-                      <span class="flex items-center gap-3"><span class="font-mono text-[11px] text-cyan-400">03</span> Placa de Vídeo</span>
-                      <span data-nivel="gpu" class="font-mono text-[10px] uppercase tracking-wider text-zinc-500"></span>
-                    </label>
-                    <div class="sel-wrap relative">
-                      <select id="sel-gpu" name="gpu" class="sel">
-                        <option value="g1050">NVIDIA GTX 1050 Ti (Antiga)</option>
-                        <option value="g1650" selected>NVIDIA GTX 1650 (Entrada)</option>
-                        <option value="g3060">NVIDIA RTX 3060 (Intermediária)</option>
-                        <option value="igpu">Gráficos Integrados (Sem Placa)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label for="sel-perfil" class="mb-2.5 flex items-center justify-between gap-3 text-sm font-medium text-zinc-200">
-                      <span class="flex items-center gap-3"><span class="font-mono text-[11px] text-cyan-400">04</span> Perfil de Uso</span>
-                      <span data-nivel="perfil" class="font-mono text-[10px] uppercase tracking-wider text-zinc-500"></span>
-                    </label>
-                    <div class="sel-wrap relative">
-                      <select id="sel-perfil" name="perfil" class="sel">
-                        <option value="competitivo">Jogos Competitivos (Valorant/CS2)</option>
-                        <option value="pesados" selected>Jogos Pesados (Cyberpunk/GTA 6)</option>
-                        <option value="edicao">Edição de Vídeo/Trabalho</option>
-                        <option value="geral">Uso Geral Diário</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <button type="button" id="btnAferir"
-                        class="group relative mt-9 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-10px_rgba(6,182,212,0.6)] transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_40px_-10px_rgba(6,182,212,0.8)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 aria-busy:cursor-wait">
-                  <svg id="btnAferirIco" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/><path d="M12 12 17 7" stroke-linecap="round"/>
-                  </svg>
-                  <span id="btnAferirTxt">Aferir Meu Computador</span>
-                  <span aria-hidden="true" class="absolute inset-x-0 bottom-0 h-[3px] bg-zinc-950/10">
-                    <span id="btnAferirProg" class="block h-full w-0 bg-zinc-950/40"></span>
-                  </span>
-                </button>
-                <p id="dicaAoVivo" class="mt-3 hidden text-center text-[11px] text-zinc-500">Diagnóstico ao vivo: altere qualquer peça e o resultado se atualiza.</p>
-              </form>
-
-              <!-- MOCKUP: LEITURA DO PC -->
-              <div class="relative flex flex-col p-5 sm:p-8">
-                <div id="scanOverlay" aria-hidden="true" class="pointer-events-none absolute inset-0 hidden overflow-hidden">
-                  <div class="scanline absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-transparent via-cyan-400/[0.08] to-transparent"></div>
-                </div>
-
-                <div class="flex items-end justify-between">
-                  <div>
-                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Leitura do sistema</p>
-                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu computador</h3>
-                  </div>
-                  <span id="perfilAtivo" class="font-mono text-[11px] text-zinc-500"></span>
-                </div>
-
-                <ul class="mt-6 space-y-3" id="linhas">
-                  <li id="row-cpu" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
-                    <div class="flex items-center gap-4">
-                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                          <rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/>
-                          <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-zinc-100">Processador</p>
-                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
-                      </div>
-                      <span class="tag shrink-0"></span>
-                    </div>
-                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
-                  </li>
-
-                  <li id="row-ram" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
-                    <div class="flex items-center gap-4">
-                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                          <rect x="2.5" y="7" width="19" height="9" rx="1"/>
-                          <path d="M6 10v3M9.5 10v3M13 10v3M16.5 10v3M5 16v2M8 16v2M11 16v2M14 16v2M17 16v2M20 16v2" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-zinc-100">Memória RAM</p>
-                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
-                      </div>
-                      <span class="tag shrink-0"></span>
-                    </div>
-                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
-                  </li>
-
-                  <li id="row-gpu" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
-                    <div class="flex items-center gap-4">
-                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                          <rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/>
-                          <path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>
-                        </svg>
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-zinc-100">Placa de Vídeo</p>
-                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
-                      </div>
-                      <span class="tag shrink-0"></span>
-                    </div>
-                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
-                  </li>
-                </ul>
-
-                <div class="mt-6 flex-1 rounded-xl border border-white/5 p-4">
-                  <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Em português simples</p>
-                  <p id="resumo" class="mt-2 text-sm leading-relaxed text-zinc-400">
-                    Escolha as peças ao lado e clique em <span class="text-zinc-200">Aferir Meu Computador</span>. O diagnóstico aparece aqui.
-                  </p>
-                </div>
+              <div class="ac relative" data-campo="app">
+                <label for="in-app" class="mb-2.5 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                  <span class="font-mono text-[11px] text-cyan-400">03</span> O que você quer rodar?
+                </label>
+                <input id="in-app" type="text" class="field" placeholder="Ex.: Cyberpunk 2077" autocomplete="off" spellcheck="false" maxlength="60" />
+                <p class="hint mt-2 min-h-[1rem] text-[11px] text-zinc-500">Um jogo ou programa que você usa.</p>
               </div>
             </div>
 
-            <!-- RESULTADO: SOLUÇÃO PERSONALIZADA -->
-            <div id="resultado" class="hidden scroll-mt-24 border-t border-white/5" aria-live="polite"></div>
+            <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-xs text-zinc-500">Experimente: <button type="button" data-exemplo="upgrade" class="text-cyan-300 underline decoration-cyan-500/30 underline-offset-4 hover:text-cyan-200">GTX 1650 + Cyberpunk 2077</button></p>
+              <button type="button" data-aferir="upgrade" class="btn-aferir">
+                <svg class="ico h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12 17 7" stroke-linecap="round"/></svg>
+                <span class="txt">Aferir Computador</span>
+                <span aria-hidden="true" class="absolute inset-x-0 bottom-0 h-[3px] bg-zinc-950/10"><span class="prog block h-full w-0 bg-zinc-950/40"></span></span>
+              </button>
+            </div>
+            <p class="erro mt-3 hidden text-right text-xs text-rose-300" role="alert"></p>
+          </div>
 
-            <!-- LEAD INTEGRADO -->
-            <div id="leadSimWrap" class="hidden border-t border-white/5 p-5 sm:p-8">
-              <div class="mx-auto max-w-2xl text-center">
-                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Salve seu relatório</p>
-                <p class="mt-3 text-lg font-medium leading-snug tracking-tight text-white sm:text-xl">
-                  Quer salvar esse relatório completo e receber o software real para escanear seu PC fisicamente com um clique?
-                  <span class="text-zinc-400">Entre na lista do primeiro lote.</span>
-                </p>
-                <div class="lead-box mt-7" data-lead></div>
+          <!-- ABA B: MONTAR DO ZERO -->
+          <div id="painel-montar" role="tabpanel" aria-labelledby="tab-montar" class="hidden p-5 sm:p-8">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div class="relative" data-campo="orcamento">
+                <label for="in-orcamento" class="mb-2.5 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                  <span class="font-mono text-[11px] text-cyan-400">01</span> Orçamento
+                </label>
+                <input id="in-orcamento" type="text" inputmode="decimal" class="field" placeholder="Ex.: R$ 3.500" autocomplete="off" maxlength="20" />
+                <p class="hint mt-2 min-h-[1rem] text-[11px] text-zinc-500">Quanto você quer gastar no PC completo.</p>
               </div>
+
+              <div class="ac relative" data-campo="foco">
+                <label for="in-foco" class="mb-2.5 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                  <span class="font-mono text-[11px] text-cyan-400">02</span> Foco do Setup
+                </label>
+                <input id="in-foco" type="text" class="field" placeholder="Ex.: Jogos Pesados" autocomplete="off" spellcheck="false" maxlength="60" />
+                <p class="hint mt-2 min-h-[1rem] text-[11px] text-zinc-500">Para que o PC vai ser usado no dia a dia.</p>
+              </div>
+            </div>
+
+            <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-xs text-zinc-500">Experimente: <button type="button" data-exemplo="montar" class="text-cyan-300 underline decoration-cyan-500/30 underline-offset-4 hover:text-cyan-200">R$ 4.500 para Jogos Pesados</button></p>
+              <button type="button" data-aferir="montar" class="btn-aferir">
+                <svg class="ico h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12 17 7" stroke-linecap="round"/></svg>
+                <span class="txt">Montar Meu PC</span>
+                <span aria-hidden="true" class="absolute inset-x-0 bottom-0 h-[3px] bg-zinc-950/10"><span class="prog block h-full w-0 bg-zinc-950/40"></span></span>
+              </button>
+            </div>
+            <p class="erro mt-3 hidden text-right text-xs text-rose-300" role="alert"></p>
+          </div>
+
+          <!-- RESULTADO -->
+          <div id="resultado" class="hidden scroll-mt-24 border-t border-zinc-800" aria-live="polite"></div>
+
+          <!-- LEAD INTEGRADO -->
+          <div id="leadSimWrap" class="hidden border-t border-zinc-800 p-5 sm:p-8">
+            <div class="mx-auto max-w-2xl text-center">
+              <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Reserve seu relatório</p>
+              <p class="mt-3 text-lg font-medium leading-snug tracking-tight text-white sm:text-xl">
+                Quer salvar esse relatório completo e receber o software real para escanear seu PC com um clique?
+                <span class="text-zinc-400">Entre na lista do primeiro lote.</span>
+              </p>
+              <div class="mt-7" data-lead></div>
             </div>
           </div>
         </div>
@@ -670,6 +640,13 @@
       'use strict';
       var $ = function (id) { return document.getElementById(id); };
       var brl = function (v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }); };
+      var esc = function (s) {
+        return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+      };
+      // Normaliza texto digitado: minúsculas, sem acentos, espaços simples
+      var norm = function (s) {
+        return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9$,. ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      };
 
       // =====================================================================
       // Revelação ao rolar
@@ -686,356 +663,778 @@
         reveals.forEach(function (el) { el.classList.add('is-visible'); });
       }
 
+      // Rolagem por JS (âncoras falham em algumas pré-visualizações/iframes)
+      function rolarPara(el, fracaoTela) {
+        var topo = el.getBoundingClientRect().top + window.pageYOffset - window.innerHeight * (fracaoTela || 0) - 80;
+        window.scrollTo({ top: Math.max(0, topo), behavior: 'smooth' });
+      }
+
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+        if (!a) return;
+        var id = a.getAttribute('href').slice(1);
+        e.preventDefault();
+        if (!id) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        var irAferir = a.hasAttribute('data-ir-aferir');
+        var alvo = irAferir ? $('simPainel') : $(id);
+        if (!alvo) return;
+        rolarPara(alvo, 0);
+        if (irAferir) setTimeout(function () { $(modo === 'upgrade' ? 'in-cpu' : 'in-orcamento').focus({ preventScroll: true }); }, 700);
+      });
+
       // =====================================================================
-      // Base de dados do simulador
+      // RECONHECIMENTO DO TEXTO DIGITADO
       // =====================================================================
-      var CPUS = {
-        i3: { nome: 'Intel Core i3 10ª Gen', detalhe: '4 núcleos · soquete LGA 1200', nivel: 'Entrada' },
-        r5: { nome: 'AMD Ryzen 5 5600', detalhe: '6 núcleos · soquete AM4', nivel: 'Intermediário' },
-        i7: { nome: 'Intel Core i7 13ª Gen', detalhe: '16 núcleos · soquete LGA 1700', nivel: 'Alta Performance' }
+      var NIVEL_CPU = { 1: 'Entrada', 2: 'Intermediário', 3: 'Alta performance' };
+      var NIVEL_GPU = { 0: 'Vídeo integrado', 1: 'Entrada / antiga', 2: 'Intermediária-baixa', 3: 'Intermediária', 4: 'Alta performance' };
+
+      function lerCpu(txt) {
+        var n = norm(txt);
+        if (!n) return null;
+        var r = { tier: 0, plataforma: '', geracao: 0 };
+        if (/ryzen|amd|athlon/.test(n)) r.plataforma = 'amd';
+        else if (/intel|core|\bi[3579]\b|celeron|pentium|\bi[3579] ?\d/.test(n)) r.plataforma = 'intel';
+
+        if (/\bi9\b|\bi7\b|i[79] ?\d{4}|ryzen ?[79]\b|ultra ?[79]/.test(n)) r.tier = 3;
+        else if (/\bi5\b|i5 ?\d{4}|ryzen ?5\b|ultra ?5/.test(n)) r.tier = 2;
+        else if (/\bi3\b|i3 ?\d{4}|ryzen ?3\b|celeron|pentium|athlon/.test(n)) r.tier = 1;
+        else if (/\b(5600|5500|3600|7600|9600|5600x|5600g)\b/.test(n)) { r.tier = 2; r.plataforma = r.plataforma || 'amd'; }
+        else if (/\b(5800x?|5700x|7700x?|7800x3d|7900x?|7950x?|9700x|9800x3d)\b/.test(n)) { r.tier = 3; r.plataforma = r.plataforma || 'amd'; }
+
+        var g = n.match(/i[3579] ?(\d{4,5})/);
+        if (g) r.geracao = g[1].length === 5 ? +g[1].slice(0, 2) : +g[1][0];
+        var gTxt = n.match(/(\d{1,2}) ?(a|o)? ?(gen|geracao)/);
+        if (!r.geracao && gTxt) r.geracao = +gTxt[1];
+
+        return r.tier ? r : { tier: 0, plataforma: r.plataforma, geracao: r.geracao };
+      }
+
+      var GPU_NV = {
+        0: [710, 730, 1030],
+        1: [750, 950, 960, 1050, 1630, 1650],
+        2: [970, 1060, 1070, 1660, 2060, 3050],
+        3: [1080, 2070, 2080, 3060, 4060, 5060],
+        4: [3070, 3080, 3090, 4070, 4080, 4090, 5070, 5080, 5090]
       };
-      var RAMS = {
-        r8:  { nome: '8GB DDR4',  detalhe: '8 GB · DDR4',  nivel: 'Pouca' },
-        r16: { nome: '16GB DDR4', detalhe: '16 GB · DDR4', nivel: 'Ideal' },
-        r32: { nome: '32GB DDR5', detalhe: '32 GB · DDR5', nivel: 'Premium' }
-      };
-      var GPUS = {
-        g1050: { nome: 'NVIDIA GTX 1050 Ti',  detalhe: '4 GB · geração de 2016',  nivel: 'Antiga',        fonte: 300, base: 22 },
-        g1650: { nome: 'NVIDIA GTX 1650',     detalhe: '4 GB · linha de entrada', nivel: 'Entrada',       fonte: 350, base: 30 },
-        g3060: { nome: 'NVIDIA RTX 3060',     detalhe: '12 GB · linha RTX',       nivel: 'Intermediária', fonte: 550, base: 70 },
-        igpu:  { nome: 'Gráficos Integrados', detalhe: 'sem placa dedicada',      nivel: 'Sem Placa',     fonte: 300, base: 12 }
-      };
-      var PERFIS = {
-        competitivo: { nome: 'Jogos Competitivos', curto: 'Competitivo', frase: 'jogos competitivos como Valorant e CS2', jogos: true },
-        pesados:     { nome: 'Jogos Pesados',      curto: 'Jogos pesados', frase: 'jogos pesados como Cyberpunk e GTA 6', jogos: true },
-        edicao:      { nome: 'Edição de Vídeo/Trabalho', curto: 'Edição', frase: 'edição de vídeo e trabalho' },
-        geral:       { nome: 'Uso Geral Diário',   curto: 'Uso geral', frase: 'o uso diário' }
+      var GPU_AMD = {
+        1: [550, 560, 6400, 6500],
+        2: [570, 580, 590, 5500, 5600],
+        3: [5700, 6600, 6650, 7600],
+        4: [6700, 6750, 6800, 6900, 7700, 7800, 7900, 9070]
       };
 
-      // Upgrades sugeridos (preços médios simulados no mercado brasileiro)
-      var UPGRADES = {
-        gpu: {
-          produto: 'NVIDIA RTX 4060 8GB',
-          tipo: 'Placa de Vídeo',
-          acao: 'substitui',
-          fonte: 450,
-          lojas: [
-            { loja: 'Kabum', preco: 1849 },
-            { loja: 'Pichau', preco: 1899 },
-            { loja: 'Terabyte', preco: 1879.9 }
-          ]
-        },
-        cpu: {
-          produto: 'Intel Core i5 10ª Gen (i5-10400F)',
-          tipo: 'Processador',
-          acao: 'substitui',
-          lojas: [
-            { loja: 'Kabum', preco: 629 },
-            { loja: 'Pichau', preco: 649 },
-            { loja: 'Terabyte', preco: 639.9 }
-          ]
-        },
-        ram: {
-          produto: 'Mais 1 módulo de 16GB DDR4',
-          tipo: 'Memória RAM',
-          acao: 'adiciona',
-          lojas: [
-            { loja: 'Kabum', preco: 289.9 },
-            { loja: 'Pichau', preco: 299.9 },
-            { loja: 'Terabyte', preco: 309.9 }
-          ]
+      function lerGpu(txt) {
+        var n = norm(txt);
+        if (!n) return null;
+        if (/integrad|onboard|sem placa|intel (u?hd|iris|graphics)|vega|radeon graphics|\buhd\b/.test(n)) return { score: 0, integrada: true };
+        if (/\barc\b/.test(n)) return { score: 3 };
+        var num = n.match(/\b(\d{3,4})\b/);
+        if (!num) return { score: -1 };
+        var v = +num[1];
+        var tabela = /\brx\b|radeon/.test(n) ? GPU_AMD : GPU_NV;
+        for (var s in tabela) if (tabela[s].indexOf(v) >= 0) return { score: +s, integrada: false };
+        return { score: -1 };
+      }
+
+      // req.gpu / req.cpu: nível mínimo de placa e processador para rodar bem
+      var APPS = [
+        { nome: 'Counter-Strike 2', chaves: ['counter', 'cs2', 'cs 2', 'csgo', 'cs go'], tipo: 'jogo competitivo', req: { gpu: 1, cpu: 1 } },
+        { nome: 'Valorant', chaves: ['valorant', 'valo'], tipo: 'jogo competitivo', req: { gpu: 1, cpu: 1 } },
+        { nome: 'League of Legends', chaves: ['league', 'lol'], tipo: 'jogo leve', req: { gpu: 1, cpu: 1 } },
+        { nome: 'Minecraft', chaves: ['minecraft'], tipo: 'jogo leve', req: { gpu: 1, cpu: 1 } },
+        { nome: 'Fortnite', chaves: ['fortnite'], tipo: 'jogo médio', req: { gpu: 2, cpu: 2 } },
+        { nome: 'GTA V', chaves: ['gta 5', 'gta v', 'gtav', 'gta5'], tipo: 'jogo médio', req: { gpu: 2, cpu: 2 } },
+        { nome: 'GTA 6', chaves: ['gta 6', 'gta vi', 'gta6'], tipo: 'jogo pesado', req: { gpu: 3, cpu: 2 } },
+        { nome: 'Cyberpunk 2077', chaves: ['cyberpunk', 'cyber punk'], tipo: 'jogo pesado', req: { gpu: 3, cpu: 2 } },
+        { nome: 'Call of Duty: Warzone', chaves: ['warzone', 'call of duty', 'cod'], tipo: 'jogo pesado', req: { gpu: 3, cpu: 2 } },
+        { nome: 'Red Dead Redemption 2', chaves: ['red dead', 'rdr2', 'rdr 2'], tipo: 'jogo pesado', req: { gpu: 3, cpu: 2 } },
+        { nome: 'Adobe Premiere', chaves: ['premiere', 'adobe premiere'], tipo: 'edição de vídeo', req: { gpu: 2, cpu: 2 } },
+        { nome: 'DaVinci Resolve', chaves: ['davinci', 'resolve'], tipo: 'edição de vídeo', req: { gpu: 2, cpu: 2 } },
+        { nome: 'Adobe After Effects', chaves: ['after effects', 'after'], tipo: 'edição e efeitos', req: { gpu: 2, cpu: 2 } },
+        { nome: 'Blender', chaves: ['blender'], tipo: 'modelagem 3D', req: { gpu: 3, cpu: 2 } },
+        { nome: 'Photoshop', chaves: ['photoshop'], tipo: 'edição de imagem', req: { gpu: 1, cpu: 2 } },
+        { nome: 'Office e navegador', chaves: ['office', 'excel', 'word', 'chrome', 'navegador', 'estudo', 'internet'], tipo: 'uso básico', req: { gpu: 0, cpu: 1 } }
+      ];
+
+      function lerApp(txt) {
+        var n = norm(txt);
+        if (!n) return null;
+        for (var i = 0; i < APPS.length; i++) {
+          var a = APPS[i];
+          if (a.chaves.some(function (k) { return n.indexOf(k) >= 0; }) || norm(a.nome) === n) return a;
         }
-      };
+        return { nome: txt.trim(), tipo: 'programa não reconhecido', req: { gpu: 2, cpu: 2 }, desconhecido: true };
+      }
 
-      // =====================================================================
-      // Seletores (<select> nativos)
-      // =====================================================================
-      var estado = {
-        cpu: $('sel-cpu').value, ram: $('sel-ram').value,
-        gpu: $('sel-gpu').value, perfil: $('sel-perfil').value
+      var FOCOS = {
+        jogos:  { nome: 'Jogos Pesados',     frase: 'jogos pesados' },
+        edicao: { nome: 'Trabalho/Edição',   frase: 'trabalho e edição' },
+        estudo: { nome: 'Estudo e Uso Geral', frase: 'estudo e uso geral' }
       };
+      function lerFoco(txt) {
+        var n = norm(txt);
+        if (!n) return null;
+        if (/jog|game|gamer|fps|stream/.test(n)) return 'jogos';
+        if (/edi|trab|render|video|design|3d|produt|program/.test(n)) return 'edicao';
+        if (/estud|geral|escrit|office|basic|casa|facul|escola|internet/.test(n)) return 'estudo';
+        return '';
+      }
 
-      function atualizarNiveis() {
-        document.querySelector('[data-nivel="cpu"]').textContent = CPUS[estado.cpu].detalhe.split(' · ')[0];
-        document.querySelector('[data-nivel="ram"]').textContent = RAMS[estado.ram].detalhe.split(' · ')[1];
-        document.querySelector('[data-nivel="gpu"]').textContent = GPUS[estado.gpu].detalhe.split(' · ')[0];
-        document.querySelector('[data-nivel="perfil"]').textContent = PERFIS[estado.perfil].curto;
+      // "R$ 3.500", "3500,00", "3,5 mil", "4k" → número
+      function lerOrcamento(txt) {
+        var n = String(txt).toLowerCase().replace(/r\$|\s/g, '');
+        if (!n) return null;
+        var mult = /mil|k$/.test(n) ? 1000 : 1;
+        n = n.replace(/mil|k/g, '');
+        if (mult === 1) {
+          if (/,\d{1,2}$/.test(n)) n = n.replace(/\./g, '').replace(',', '.');
+          else n = n.replace(/[.,]/g, '');
+        } else {
+          n = n.replace(',', '.');
+        }
+        var v = parseFloat(n) * mult;
+        return isFinite(v) && v > 0 ? Math.round(v) : null;
       }
 
       // =====================================================================
-      // Motor de diagnóstico
+      // AUTOCOMPLETE
       // =====================================================================
-      function diagnosticar(s) {
-        var perfil = PERFIS[s.perfil];
-        var exigente = s.perfil !== 'geral';
-        var r = {
-          status: { cpu: 'ok', ram: 'ok', gpu: 'ok' },
-          motivo: { cpu: '', ram: '', gpu: '' },
-          principal: null,
-          secundario: null
+      var SUGESTOES = {
+        cpu: ['Intel Core i3', 'AMD Ryzen 5 5600', 'Intel Core i7', 'Intel Core i5', 'AMD Ryzen 3', 'AMD Ryzen 7'],
+        gpu: ['NVIDIA GTX 1050 Ti', 'NVIDIA GTX 1650', 'NVIDIA RTX 3060', 'Intel Graphics', 'NVIDIA RTX 4060', 'AMD Radeon RX 6600'],
+        app: ['Counter-Strike 2', 'Cyberpunk 2077', 'GTA 6', 'Valorant', 'Adobe Premiere', 'Fortnite', 'Minecraft', 'DaVinci Resolve'],
+        foco: ['Jogos Pesados', 'Trabalho/Edição', 'Estudo e Uso Geral']
+      };
+      var PRINCIPAIS = { cpu: 3, gpu: 4, app: 5, foco: 3 };   // sugestões mostradas com o campo vazio
+
+      function destacar(texto, termo) {
+        if (!termo) return esc(texto);
+        var i = norm(texto).indexOf(norm(termo));
+        if (i < 0) return esc(texto);
+        return esc(texto.slice(0, i)) + '<span class="text-cyan-300">' + esc(texto.slice(i, i + termo.length)) + '</span>' + esc(texto.slice(i + termo.length));
+      }
+
+      var autocompletes = {};
+      document.querySelectorAll('.ac[data-campo]').forEach(function (box) {
+        var campo = box.dataset.campo;
+        var input = box.querySelector('input');
+        var lista = document.createElement('ul');
+        lista.id = 'lst-' + campo;
+        lista.setAttribute('role', 'listbox');
+        lista.className = 'ac-list hidden';
+        var ancora = document.createElement('div');   // âncora: a lista abre logo abaixo do campo
+        ancora.className = 'relative';
+        input.parentNode.insertBefore(ancora, input);
+        ancora.appendChild(input);
+        ancora.appendChild(lista);
+        input.setAttribute('role', 'combobox');
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-expanded', 'false');
+        input.setAttribute('aria-controls', lista.id);
+
+        var itens = [];
+        var ativo = -1;
+
+        function abrir() {
+          var termo = input.value.trim();
+          var nt = norm(termo);
+          itens = nt
+            ? SUGESTOES[campo].filter(function (s) {
+                var ns = norm(s);
+                return ns.indexOf(nt) >= 0 || nt.split(' ').every(function (p) { return ns.indexOf(p) >= 0; });
+              })
+            : SUGESTOES[campo].slice(0, PRINCIPAIS[campo]);
+          if (nt && itens.length === 1 && norm(itens[0]) === nt) itens = [];
+          ativo = -1;
+          if (!itens.length) return fechar();
+          lista.innerHTML = itens.map(function (s, i) {
+            return '<li role="option" id="' + lista.id + '-' + i + '" data-i="' + i + '" class="ac-item">' +
+                     '<svg class="h-3.5 w-3.5 shrink-0 text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4" stroke-linecap="round"/></svg>' +
+                     '<span>' + destacar(s, termo) + '</span>' +
+                   '</li>';
+          }).join('');
+          lista.classList.remove('hidden');
+          input.setAttribute('aria-expanded', 'true');
+        }
+        function fechar() {
+          lista.classList.add('hidden');
+          input.setAttribute('aria-expanded', 'false');
+          input.removeAttribute('aria-activedescendant');
+          ativo = -1;
+        }
+        function marcarAtivo(i) {
+          var lis = lista.querySelectorAll('.ac-item');
+          lis.forEach(function (li) { li.classList.remove('is-active'); });
+          ativo = i;
+          if (lis[i]) { lis[i].classList.add('is-active'); input.setAttribute('aria-activedescendant', lis[i].id); lis[i].scrollIntoView({ block: 'nearest' }); }
+        }
+        function escolher(i) {
+          input.value = itens[i];
+          fechar();
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          fechar();
+        }
+
+        input.addEventListener('focus', abrir);
+        input.addEventListener('input', abrir);
+        input.addEventListener('blur', function () { setTimeout(fechar, 120); });
+        input.addEventListener('keydown', function (e) {
+          var aberta = !lista.classList.contains('hidden');
+          if (e.key === 'ArrowDown') { e.preventDefault(); if (!aberta) abrir(); marcarAtivo(Math.min(ativo + 1, itens.length - 1)); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); marcarAtivo(Math.max(ativo - 1, 0)); }
+          else if (e.key === 'Escape') { fechar(); }
+          else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (aberta && ativo >= 0) escolher(ativo);
+            else { fechar(); aferir(box.closest('[role="tabpanel"]').id === 'painel-upgrade' ? 'upgrade' : 'montar'); }
+          }
+          else if (e.key === 'Tab' && aberta && ativo >= 0) { escolher(ativo); }
+        });
+        // mousedown evita perder o foco antes do clique
+        lista.addEventListener('mousedown', function (e) {
+          var li = e.target.closest('.ac-item');
+          if (!li) return;
+          e.preventDefault();
+          escolher(+li.dataset.i);
+        });
+
+        autocompletes[campo] = { input: input, fechar: fechar };
+      });
+
+      // Orçamento: Enter também afere
+      $('in-orcamento').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); aferir('montar'); }
+      });
+
+      // Reconhecimento ao vivo embaixo de cada campo
+      function dica(campo, html, tom) {
+        var p = document.querySelector('[data-campo="' + campo + '"] .hint');
+        p.innerHTML = html;
+        p.className = 'hint mt-2 min-h-[1rem] text-[11px] ' + (tom === 'ok' ? 'text-cyan-300/90' : tom === 'aviso' ? 'text-zinc-400' : 'text-zinc-500');
+      }
+      var DICAS_PADRAO = {
+        cpu: 'Do jeito que aparece na caixa ou no sistema.',
+        gpu: 'Sem placa? Digite “Intel Graphics”.',
+        app: 'Um jogo ou programa que você usa.',
+        orcamento: 'Quanto você quer gastar no PC completo.',
+        foco: 'Para que o PC vai ser usado no dia a dia.'
+      };
+      var CHECK = '<svg class="mr-1 inline h-3 w-3 -translate-y-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      function atualizarDica(campo) {
+        var v = $('in-' + campo).value;
+        if (!v.trim()) return dica(campo, DICAS_PADRAO[campo]);
+        if (campo === 'cpu') {
+          var c = lerCpu(v);
+          return c.tier ? dica(campo, CHECK + 'Reconhecido · ' + NIVEL_CPU[c.tier], 'ok') : dica(campo, 'Ainda não reconhecido — tente marca e modelo (ex.: i5, Ryzen 5).', 'aviso');
+        }
+        if (campo === 'gpu') {
+          var g = lerGpu(v);
+          return g.score >= 0 ? dica(campo, CHECK + 'Reconhecida · ' + NIVEL_GPU[g.score], 'ok') : dica(campo, 'Ainda não reconhecida — inclua o número do modelo (ex.: 1650).', 'aviso');
+        }
+        if (campo === 'app') {
+          var a = lerApp(v);
+          return a.desconhecido ? dica(campo, 'Não está na nossa base — vamos considerar um uso médio.', 'aviso') : dica(campo, CHECK + esc(a.nome) + ' · ' + a.tipo, 'ok');
+        }
+        if (campo === 'orcamento') {
+          var o = lerOrcamento(v);
+          return o ? dica(campo, CHECK + 'Entendido · ' + brl(o), 'ok') : dica(campo, 'Digite um valor, como R$ 3.500.', 'aviso');
+        }
+        if (campo === 'foco') {
+          var f = lerFoco(v);
+          return f ? dica(campo, CHECK + 'Foco · ' + FOCOS[f].nome, 'ok') : dica(campo, 'Não entendemos — escolha uma das sugestões.', 'aviso');
+        }
+      }
+      ['cpu', 'gpu', 'app', 'orcamento', 'foco'].forEach(function (c) {
+        $('in-' + c).addEventListener('input', function () { atualizarDica(c); limparErro(); });
+      });
+
+      // =====================================================================
+      // ABAS
+      // =====================================================================
+      var modo = 'upgrade';
+      var resultados = { upgrade: null, montar: null };
+      var TABS = {
+        upgrade: { titulo: 'Tenho um PC', sub: 'Análise de Upgrade', ico: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4" stroke-linecap="round"/>' },
+        montar:  { titulo: 'Não tenho PC', sub: 'Montar do Zero', ico: '<path d="M12 5v14M5 12h14" stroke-linecap="round"/>' }
+      };
+
+      function pintarAbas() {
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          var on = b.dataset.modo === modo;
+          var t = TABS[b.dataset.modo];
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+          b.tabIndex = on ? 0 : -1;
+          b.className = 'tab-btn' + (on ? ' is-on' : '');
+          b.innerHTML =
+            '<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' + t.ico + '</svg>' +
+            '<span class="text-left leading-tight"><span class="block text-sm font-medium">' + t.titulo + '</span>' +
+            '<span class="block text-[11px] text-zinc-500">' + t.sub + '</span></span>';
+        });
+        $('painel-upgrade').classList.toggle('hidden', modo !== 'upgrade');
+        $('painel-montar').classList.toggle('hidden', modo !== 'montar');
+      }
+
+      function trocarModo(m) {
+        if (m === modo || ocupado) return;
+        modo = m;
+        pintarAbas();
+        limparErro();
+        var res = resultados[modo];
+        if (res) {
+          $('resultado').innerHTML = res.html;
+          $('resultado').classList.remove('hidden');
+          $('leadSimWrap').classList.remove('hidden');
+          animarBarras($('resultado'));
+          status(res.status);
+          ultimoSetup = res.setup;
+        } else {
+          $('resultado').classList.add('hidden');
+          $('leadSimWrap').classList.add('hidden');
+          status('<span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span> aguardando');
+        }
+      }
+
+      document.querySelectorAll('.tab-btn').forEach(function (b) {
+        b.addEventListener('click', function () { trocarModo(b.dataset.modo); });
+        b.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            var outro = b.dataset.modo === 'upgrade' ? 'montar' : 'upgrade';
+            trocarModo(outro);
+            $('tab-' + outro).focus();
+          }
+        });
+      });
+      pintarAbas();
+
+      // Exemplos rápidos
+      document.querySelectorAll('[data-exemplo]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var ex = b.dataset.exemplo === 'upgrade'
+            ? { cpu: 'AMD Ryzen 5 5600', gpu: 'NVIDIA GTX 1650', app: 'Cyberpunk 2077' }
+            : { orcamento: 'R$ 4.500', foco: 'Jogos Pesados' };
+          Object.keys(ex).forEach(function (k) { $('in-' + k).value = ex[k]; atualizarDica(k); });
+          aferir(b.dataset.exemplo);
+        });
+      });
+
+      // =====================================================================
+      // MOTOR — MODO UPGRADE
+      // =====================================================================
+      var UP_GPU = {
+        produto: 'NVIDIA RTX 4060 8GB', tipo: 'Placa de Vídeo', fonte: 450,
+        lojas: [{ loja: 'Kabum', preco: 1849 }, { loja: 'Pichau', preco: 1899 }, { loja: 'Terabyte', preco: 1879.9 }]
+      };
+      var UP_CPU = {
+        intelAntigo: {
+          produto: 'Intel Core i5-10400F', tipo: 'Processador',
+          compat: 'Compatível com placas-mãe de 10ª e 11ª geração (soquete LGA 1200) — sem trocar a placa-mãe. Atualize a BIOS antes da troca.',
+          lojas: [{ loja: 'Kabum', preco: 629 }, { loja: 'Pichau', preco: 649 }, { loja: 'Terabyte', preco: 639.9 }]
+        },
+        intelNovo: {
+          produto: 'Intel Core i5-12400F', tipo: 'Processador',
+          compat: 'Compatível com placas-mãe de 12ª a 14ª geração (soquete LGA 1700) — sem trocar a placa-mãe.',
+          lojas: [{ loja: 'Kabum', preco: 699 }, { loja: 'Pichau', preco: 729 }, { loja: 'Terabyte', preco: 719.9 }]
+        },
+        amd: {
+          produto: 'AMD Ryzen 5 5600', tipo: 'Processador',
+          compat: 'Compatível com placas-mãe AM4 (A520, B450, B550) — pode exigir atualização de BIOS.',
+          lojas: [{ loja: 'Kabum', preco: 699 }, { loja: 'Pichau', preco: 729 }, { loja: 'Terabyte', preco: 709.9 }]
+        }
+      };
+
+      function diagnosticarUpgrade(cpuTxt, gpuTxt, appTxt) {
+        var cpu = lerCpu(cpuTxt), gpu = lerGpu(gpuTxt), app = lerApp(appTxt);
+        var cpuTier = cpu.tier || 2;             // não reconhecido → assume intermediário
+        var gpuScore = gpu.score >= 0 ? gpu.score : 2;
+        var d = {
+          cpu: cpu, gpu: gpu, app: app, cpuTier: cpuTier, gpuScore: gpuScore,
+          status: { cpu: 'ok', gpu: 'ok' }, motivo: { cpu: '', gpu: '' }, principal: null
         };
 
-        // Regra 1 — Placa antiga/de entrada em jogos pesados
-        if ((s.gpu === 'g1050' || s.gpu === 'g1650') && s.perfil === 'pesados') {
-          r.status.gpu = 'critico';
-          r.motivo.gpu = 'Jogos pesados exigem muito mais do que esta placa entrega. Ela trabalha no limite o tempo todo e faz processador e memória ficarem esperando.';
-        }
-        // Regra 1b — Sem placa dedicada para qualquer uso exigente
-        if (s.gpu === 'igpu' && exigente) {
-          r.status.gpu = 'critico';
-          r.motivo.gpu = 'Os gráficos integrados dividem memória e energia com o processador. Para ' + perfil.frase + ', eles não dão conta.';
-        }
-
-        // Regra 2 — Processador de entrada segurando uma placa forte
-        if (s.cpu === 'i3' && s.gpu === 'g3060') {
-          r.status.cpu = 'critico';
-          r.motivo.cpu = 'Gargalo de CPU: o processador não entrega dados rápido o bastante para a RTX 3060, que fica ociosa.';
-        }
-
-        // Regra 3 — 8 GB em jogos ou edição
-        if (s.ram === 'r8' && (perfil.jogos || s.perfil === 'edicao')) {
-          r.status.ram = 'limite';
-          r.motivo.ram = perfil.jogos
-            ? 'Jogos atuais pedem 16 GB. Com 8 GB, o sistema recorre ao disco e surgem pequenos travamentos.'
-            : 'Programas de edição ocupam quase toda a memória. Com 8 GB, prévias e exportações ficam lentas.';
-        }
-
-        if (r.status.gpu === 'critico') r.principal = 'gpu';
-        else if (r.status.cpu === 'critico') r.principal = 'cpu';
-        else if (r.status.ram === 'limite') r.principal = 'ram';
-
-        if (r.principal && r.principal !== 'ram' && r.status.ram === 'limite') r.secundario = 'ram';
-
-        return r;
-      }
-
-      // Desempenho atual vs. otimizado (0–100) e fonte recomendada
-      function projetar(s, d) {
-        var extraCpu = s.cpu === 'i7' ? 100 : 0;
-        var p = { atual: 0, novo: 0, fonte: GPUS[s.gpu].fonte + extraCpu, proximoLimite: '' };
-
-        if (d.principal === 'gpu') {
-          p.atual = GPUS[s.gpu].base;
-          p.novo = 85;
-          if (s.cpu === 'i3') {
-            p.novo = 72;
-            p.proximoLimite = 'Depois desta troca, o processador i3 passa a ser o próximo limite do sistema.';
-          }
-          p.fonte = UPGRADES.gpu.fonte + extraCpu;
-        } else if (d.principal === 'cpu') {
-          p.atual = 45;
-          p.novo = s.ram === 'r8' ? 76 : 82;
-        } else if (d.principal === 'ram') {
-          p.atual = { competitivo: 60, pesados: 52, edicao: 50 }[s.perfil];
-          p.novo = { competitivo: 86, pesados: 80, edicao: 85 }[s.perfil];
+        // Placa de vídeo × exigência do programa
+        var gap = app.req.gpu - gpuScore;
+        if (gap >= 2) {
+          d.status.gpu = 'critico';
+          d.motivo.gpu = gpu.integrada
+            ? 'O vídeo integrado divide memória e energia com o processador. Para ' + app.nome + ', ele não chega nem perto do necessário.'
+            : 'Para ' + app.nome + ', esta placa trabalha no limite o tempo todo. É ela que derruba os quadros e faz o resto do PC esperar.';
+        } else if (gap === 1) {
+          d.status.gpu = 'limite';
+          d.motivo.gpu = 'Roda ' + app.nome + ', mas sem folga: espere configurações baixas e quedas em cenas cheias.';
         } else {
-          p.atual = p.novo = 90;
+          d.motivo.gpu = 'Dá conta de ' + app.nome + ' sem segurar o resto do sistema.';
         }
-        return p;
-      }
 
-      function textoResumo(s, d) {
-        var frase = PERFIS[s.perfil].frase;
+        // Processador
+        if (cpuTier === 1 && gpuScore >= 3) {
+          d.status.cpu = 'critico';
+          d.motivo.cpu = 'Gargalo de CPU: o processador não entrega dados rápido o bastante para a sua placa de vídeo, que fica ociosa.';
+        } else if (app.req.cpu - cpuTier >= 1) {
+          d.status.cpu = 'limite';
+          d.motivo.cpu = 'Aguenta o básico, mas ' + app.nome + ' pede mais núcleos. Em momentos pesados, ele chega a 100% de uso.';
+        } else {
+          d.motivo.cpu = 'Tem fôlego de sobra para ' + app.nome + '.';
+        }
+
+        if (d.status.gpu === 'critico') d.principal = 'gpu';
+        else if (d.status.cpu === 'critico') d.principal = 'cpu';
+        else if (d.status.gpu === 'limite') d.principal = 'gpu';
+        else if (d.status.cpu === 'limite') d.principal = 'cpu';
+
+        // Projeção de desempenho (0–100)
+        d.extraFonte = cpuTier === 3 ? 100 : 0;
         if (d.principal === 'gpu') {
-          return s.gpu === 'igpu'
-            ? 'Seu computador não tem uma placa de vídeo dedicada — e é exatamente ela que falta para ' + frase + '. O resto do sistema está pronto para render mais.'
-            : 'Sua ' + GPUS[s.gpu].nome + ' é o que está segurando o PC. Em ' + frase + ', ela trabalha no limite enquanto o resto fica esperando — é isso que causa travadas e quedas de quadros.';
+          d.upgrade = UP_GPU;
+          d.atual = { 0: 12, 1: 30, 2: 55, 3: 70, 4: 80 }[gpuScore];
+          d.novo = 85;
+          if (cpuTier === 1) { d.novo = 72; d.proximo = 'Depois desta troca, o processador passa a ser o próximo limite do sistema.'; }
+        } else if (d.principal === 'cpu') {
+          d.upgrade = cpu.plataforma === 'amd' ? UP_CPU.amd : (cpu.geracao >= 12 ? UP_CPU.intelNovo : UP_CPU.intelAntigo);
+          d.atual = 45;
+          d.novo = 82;
         }
-        if (d.principal === 'cpu') {
-          return 'Você tem uma ótima placa de vídeo, mas o processador não acompanha. É como um carro potente preso atrás de um caminhão: a RTX 3060 fica parada esperando o i3.';
-        }
-        if (d.principal === 'ram') {
-          return 'Processador e placa de vídeo dão conta. O que aperta é a memória: com 8 GB, o sistema fica sem espaço e começa a usar o disco, que é muito mais lento.';
-        }
-        return 'Boa notícia: nenhuma peça está segurando as outras para ' + frase + '. Seu PC está equilibrado — e o melhor upgrade agora é não gastar nada.';
+        return d;
       }
 
       // =====================================================================
-      // Renderização do mockup
+      // MOTOR — MODO MONTAR DO ZERO
       // =====================================================================
+      // Catálogo com soquete, padrão de memória e consumo para validar compatibilidade
+      var P = {
+        cpu: {
+          r5_5600g:  { nome: 'AMD Ryzen 5 5600G (vídeo integrado)', preco: 799,  soquete: 'AM4', w: 65 },
+          r7_5700g:  { nome: 'AMD Ryzen 7 5700G (vídeo integrado)', preco: 1099, soquete: 'AM4', w: 65 },
+          r5_5600:   { nome: 'AMD Ryzen 5 5600',     preco: 699,  soquete: 'AM4', w: 65 },
+          r5_7600:   { nome: 'AMD Ryzen 5 7600',     preco: 1299, soquete: 'AM5', w: 65 },
+          r7_7700:   { nome: 'AMD Ryzen 7 7700',     preco: 1899, soquete: 'AM5', w: 65 },
+          r7_7800x3d:{ nome: 'AMD Ryzen 7 7800X3D',  preco: 2599, soquete: 'AM5', w: 120 },
+          r9_7900:   { nome: 'AMD Ryzen 9 7900',     preco: 2399, soquete: 'AM5', w: 65 }
+        },
+        ram: {
+          d4_16: { nome: '16GB DDR4 3200MHz (2×8GB)',  preco: 249,  tipo: 'DDR4' },
+          d4_32: { nome: '32GB DDR4 3200MHz (2×16GB)', preco: 499,  tipo: 'DDR4' },
+          d5_32: { nome: '32GB DDR5 6000MHz (2×16GB)', preco: 649,  tipo: 'DDR5' },
+          d5_64: { nome: '64GB DDR5 6000MHz (2×32GB)', preco: 1199, tipo: 'DDR5' }
+        },
+        gpu: {
+          igpu:    { nome: 'Vídeo integrado do processador', preco: 0, w: 0, rec: 400, nota: 'Sem placa dedicada: suficiente para estudo, navegação e programas leves.' },
+          rx6600:  { nome: 'AMD Radeon RX 6600 8GB',   preco: 1299, w: 132, rec: 450 },
+          rtx4060: { nome: 'NVIDIA RTX 4060 8GB',      preco: 1849, w: 115, rec: 450 },
+          rtx4060ti: { nome: 'NVIDIA RTX 4060 Ti 16GB', preco: 2799, w: 165, rec: 550 },
+          rtx4070s:  { nome: 'NVIDIA RTX 4070 Super 12GB', preco: 4299, w: 220, rec: 650 }
+        },
+        mobo: {
+          a520m: { nome: 'Placa-mãe A520M (AM4, DDR4)',  preco: 499,  soquete: 'AM4', ram: 'DDR4' },
+          b550m: { nome: 'Placa-mãe B550M (AM4, DDR4)',  preco: 699,  soquete: 'AM4', ram: 'DDR4' },
+          b650m: { nome: 'Placa-mãe B650M (AM5, DDR5)',  preco: 1099, soquete: 'AM5', ram: 'DDR5' }
+        },
+        psu: {
+          w450: { nome: 'Fonte 450W 80 Plus Bronze', preco: 279, w: 450 },
+          w550: { nome: 'Fonte 550W 80 Plus Bronze', preco: 349, w: 550 },
+          w650: { nome: 'Fonte 650W 80 Plus Gold',   preco: 549, w: 650 },
+          w750: { nome: 'Fonte 750W 80 Plus Gold',   preco: 699, w: 750 }
+        },
+        ssd: {
+          s500: { nome: 'SSD NVMe 500GB', preco: 229 },
+          s1t:  { nome: 'SSD NVMe 1TB',   preco: 379 },
+          s2t:  { nome: 'SSD NVMe 2TB',   preco: 699 }
+        },
+        gab: {
+          g1: { nome: 'Gabinete com 2 fans', preco: 199 },
+          g2: { nome: 'Gabinete airflow com 3 fans', preco: 249 },
+          g3: { nome: 'Gabinete airflow premium', preco: 399 }
+        }
+      };
+
+      // Configurações por foco, da mais barata para a mais cara
+      var BUILDS = {
+        estudo: [
+          { cpu: 'r5_5600g', ram: 'd4_16', gpu: 'igpu', mobo: 'a520m', psu: 'w450', ssd: 's500', gab: 'g1' },
+          { cpu: 'r5_5600g', ram: 'd4_16', gpu: 'igpu', mobo: 'b550m', psu: 'w450', ssd: 's1t',  gab: 'g2' },
+          { cpu: 'r7_5700g', ram: 'd4_32', gpu: 'igpu', mobo: 'b550m', psu: 'w450', ssd: 's1t',  gab: 'g2' }
+        ],
+        jogos: [
+          { cpu: 'r5_5600',    ram: 'd4_16', gpu: 'rx6600',    mobo: 'a520m', psu: 'w450', ssd: 's500', gab: 'g1' },
+          { cpu: 'r5_5600',    ram: 'd4_16', gpu: 'rx6600',    mobo: 'a520m', psu: 'w550', ssd: 's1t', gab: 'g2' },
+          { cpu: 'r5_5600',    ram: 'd4_16', gpu: 'rtx4060',   mobo: 'b550m', psu: 'w550', ssd: 's1t', gab: 'g2' },
+          { cpu: 'r5_7600',    ram: 'd5_32', gpu: 'rtx4060ti', mobo: 'b650m', psu: 'w650', ssd: 's1t', gab: 'g2' },
+          { cpu: 'r7_7800x3d', ram: 'd5_32', gpu: 'rtx4070s',  mobo: 'b650m', psu: 'w750', ssd: 's2t', gab: 'g3' }
+        ],
+        edicao: [
+          { cpu: 'r7_5700g', ram: 'd4_32', gpu: 'igpu',      mobo: 'b550m', psu: 'w450', ssd: 's1t', gab: 'g2' },
+          { cpu: 'r5_5600',  ram: 'd4_32', gpu: 'rtx4060',   mobo: 'b550m', psu: 'w550', ssd: 's1t', gab: 'g2' },
+          { cpu: 'r7_7700',  ram: 'd5_32', gpu: 'rtx4060ti', mobo: 'b650m', psu: 'w650', ssd: 's2t', gab: 'g2' },
+          { cpu: 'r9_7900',  ram: 'd5_64', gpu: 'rtx4070s',  mobo: 'b650m', psu: 'w750', ssd: 's2t', gab: 'g3' }
+        ]
+      };
+
+      function expandir(b) {
+        var x = {};
+        Object.keys(b).forEach(function (k) { x[k] = P[k][b[k]]; });
+        x.total = Object.keys(b).reduce(function (s, k) { return s + P[k][b[k]].preco; }, 0);
+        x.consumo = x.cpu.w + x.gpu.w + 100;
+        return x;
+      }
+
+      function validar(x) {
+        return [
+          { ok: x.cpu.soquete === x.mobo.soquete, txt: 'Processador ' + x.cpu.soquete + ' encaixa na placa-mãe ' + x.mobo.soquete },
+          { ok: x.ram.tipo === x.mobo.ram, txt: 'Memória ' + x.ram.tipo + ' compatível com a placa-mãe' },
+          { ok: x.psu.w >= Math.max(x.gpu.rec, x.consumo), txt: 'Fonte de ' + x.psu.w + 'W cobre o consumo estimado de ~' + x.consumo + 'W' },
+          { ok: true, txt: x.gpu.preco ? 'Placa de vídeo cabe no gabinete e usa encaixe PCIe x16' : 'Vídeo integrado já incluso no processador' }
+        ];
+      }
+
+      function montar(orcamento, foco) {
+        var lista = BUILDS[foco].map(expandir);
+        var cabe = lista.filter(function (x) { return x.total <= orcamento; });
+        var escolhido = cabe.length ? cabe[cabe.length - 1] : lista[0];
+        return {
+          build: escolhido,
+          cabe: !!cabe.length,
+          topo: cabe.length === lista.length,
+          checks: validar(escolhido),
+          falta: Math.max(0, escolhido.total - orcamento),
+          sobra: Math.max(0, orcamento - escolhido.total)
+        };
+      }
+
+      // =====================================================================
+      // RENDERIZAÇÃO
+      // =====================================================================
+      var ICONES = {
+        cpu: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/><path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>',
+        gpu: '<rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/><path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>',
+        app: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 9 4 2.5-4 2.5V9Z" stroke-linejoin="round"/>',
+        base: '<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h8M8 11h8M8 15h3" stroke-linecap="round"/><circle cx="15.5" cy="15.5" r="1.5"/>',
+        ok: '<path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/>',
+        escudo: '<path d="M12 3 5 6v5.5c0 4.2 3 7.8 7 9.5 4-1.7 7-5.3 7-9.5V6l-7-3Z" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>'
+      };
+      function svg(nome, cls) {
+        return '<svg class="' + (cls || 'h-5 w-5') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">' + ICONES[nome] + '</svg>';
+      }
+
       var TAGS = {
-        aguardando: '<span class="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-zinc-500">Aguardando</span>',
-        ok:         '<span class="rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>',
-        limite:     '<span class="rounded-full border border-rose-400/30 bg-rose-400/[0.06] px-2.5 py-1 text-[11px] font-medium text-rose-200">⚠️ Alerta: Limite Próximo</span>',
-        critico:    '<span class="rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">🔴 Gargalo Crítico</span>',
-        criticoCpu: '<span class="rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">🔴 Gargalo de CPU</span>'
-      };
-      var ROW_BASE = 'row rounded-xl border px-4 py-4 ';
-      var ROW_ESTILO = {
-        aguardando: 'border-white/10 bg-white/[0.015]',
-        ok:         'border-white/10 bg-white/[0.015]',
-        limite:     'border-rose-400/25 bg-rose-400/[0.02]',
-        critico:    'border-rose-500/50 bg-rose-500/[0.04]'
-      };
-      var ICO_ESTILO = {
-        aguardando: 'border-white/10 text-zinc-400',
-        ok:         'border-white/10 text-zinc-400',
-        limite:     'border-rose-400/25 text-rose-300',
-        critico:    'border-rose-500/30 text-rose-400'
+        ok:       '<span class="tag tag-ok">Estável</span>',
+        limite:   '<span class="tag tag-limite">⚠️ Limite Próximo</span>',
+        critico:  '<span class="tag tag-critico">🔴 Gargalo Crítico</span>',
+        cpuCrit:  '<span class="tag tag-critico">🔴 Gargalo de CPU</span>',
+        neutro:   '<span class="tag tag-neutro">Seu objetivo</span>',
+        incerto:  '<span class="tag tag-neutro">Não reconhecido</span>'
       };
 
-      function atualizarModelos() {
-        $('row-cpu').querySelector('.modelo').textContent = CPUS[estado.cpu].nome + ' · ' + CPUS[estado.cpu].detalhe.split(' · ')[0];
-        $('row-ram').querySelector('.modelo').textContent = RAMS[estado.ram].detalhe;
-        $('row-gpu').querySelector('.modelo').textContent = GPUS[estado.gpu].nome + ' · ' + GPUS[estado.gpu].detalhe;
-        $('perfilAtivo').textContent = PERFIS[estado.perfil].curto;
+      // Card horizontal de diagnóstico
+      function cardLinha(o) {
+        var estilo = o.status === 'critico' ? 'card-critico' : o.status === 'limite' ? 'card-limite' : '';
+        return '<article class="card-h ' + estilo + '">' +
+                 '<div class="card-ico ' + (o.status === 'critico' ? 'text-rose-400 border-rose-500/40' : o.status === 'limite' ? 'text-rose-300 border-rose-400/25' : 'text-zinc-400 border-zinc-800') + '">' + svg(o.icone) + '</div>' +
+                 '<div class="min-w-0 flex-1">' +
+                   '<div class="flex flex-wrap items-center gap-x-3 gap-y-1">' +
+                     '<p class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">' + o.rotulo + '</p>' +
+                     '<p class="text-[11px] text-zinc-600">' + o.nivel + '</p>' +
+                   '</div>' +
+                   '<p class="mt-1 truncate text-base font-medium text-white">' + esc(o.modelo) + '</p>' +
+                   '<p class="mt-1.5 text-sm leading-relaxed text-zinc-400">' + o.texto + '</p>' +
+                 '</div>' +
+                 '<div class="shrink-0 self-start sm:self-center">' + o.tag + '</div>' +
+               '</article>';
       }
 
-      function pintarLinha(chave, status, motivo) {
-        var row = $('row-' + chave);
-        row.className = ROW_BASE + ROW_ESTILO[status];
-        row.querySelector('.ico').className = 'ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ' + ICO_ESTILO[status];
-        var tag = status === 'critico' && chave === 'cpu' ? 'criticoCpu' : status;
-        row.querySelector('.tag').innerHTML = TAGS[tag];
-        var m = row.querySelector('.motivo');
-        m.textContent = motivo || '';
-        m.classList.toggle('hidden', !motivo);
-      }
-
-      function resetarLinhas() {
-        ['cpu', 'ram', 'gpu'].forEach(function (k) { pintarLinha(k, 'aguardando', ''); });
-      }
-
-      // =====================================================================
-      // Card de solução
-      // =====================================================================
-      // Mini-cards de cotação
-      function htmlLojas(lojas) {
+      function cardsLojas(lojas) {
         var menor = Math.min.apply(null, lojas.map(function (l) { return l.preco; }));
         return lojas.map(function (l) {
           var melhor = l.preco === menor;
-          return '<li class="relative rounded-xl border ' + (melhor ? 'border-cyan-500/40 bg-cyan-500/[0.05]' : 'border-white/10 bg-white/[0.015]') + ' px-4 py-3.5">' +
+          return '<li class="rounded-xl border ' + (melhor ? 'border-cyan-500/40 bg-cyan-500/[0.05]' : 'border-zinc-800 bg-zinc-900/30') + ' px-4 py-3.5">' +
                    '<div class="flex items-center justify-between gap-2">' +
                      '<span class="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">Loja ' + l.loja + '</span>' +
                      (melhor ? '<span class="rounded-full bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-300">menor preço</span>' : '') +
                    '</div>' +
                    '<p class="mt-1.5 text-lg font-semibold tracking-tight ' + (melhor ? 'text-white' : 'text-zinc-300') + '">' + brl(l.preco) + '</p>' +
-                   '<p class="text-[11px] text-zinc-500">à vista · preço médio simulado</p>' +
                  '</li>';
         }).join('');
       }
 
-      function notaSeguranca(s, d, p) {
-        var linhas = [];
-        if (d.principal === 'gpu') {
-          linhas.push('Sua placa-mãe é compatível com este componente (encaixe PCIe x16).');
-          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis e um conector PCIe de 8 pinos.');
-        } else if (d.principal === 'cpu') {
-          linhas.push('Sua placa-mãe é compatível com este componente (mesmo soquete LGA 1200 — não precisa trocar a placa-mãe). Atualize a BIOS antes da troca.');
-          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis para manter a RTX 3060 alimentada.');
-        } else if (d.principal === 'ram') {
-          linhas.push('Sua placa-mãe é compatível com este componente (padrão DDR4). Prefira a mesma frequência do módulo atual para ativar o dual channel.');
-          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis — memória quase não altera o consumo.');
-        }
-        return linhas;
+      function grafico(atual, novo, rotulo) {
+        return '<div class="rounded-xl border border-zinc-800 p-5 sm:p-6">' +
+                 '<div class="flex items-baseline justify-between gap-3">' +
+                   '<p class="text-xs text-zinc-500">' + rotulo + '</p>' +
+                   '<p class="font-mono text-xs text-cyan-300">+' + (novo - atual) + ' pontos</p>' +
+                 '</div>' +
+                 '<p class="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white"><span class="text-rose-300/90">' + atual + '%</span> <span class="text-zinc-600">→</span> ' + novo + '%</p>' +
+                 '<div class="mt-6 space-y-5" role="img" aria-label="Desempenho atual ' + atual + '%, após o upgrade ' + novo + '%">' +
+                   '<div><div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Desempenho atual</span><span class="font-mono text-rose-300/90">' + atual + '%</span></div>' +
+                   '<div class="h-3 overflow-hidden rounded-full bg-zinc-900"><div class="bar h-full rounded-full border border-rose-500/50 bg-rose-500/30" data-w="' + atual + '" style="width:0%"></div></div></div>' +
+                   '<div><div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Após o upgrade</span><span class="font-mono text-cyan-300">' + novo + '%</span></div>' +
+                   '<div class="h-3 overflow-hidden rounded-full bg-zinc-900"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-[0_0_20px_-4px_rgba(34,211,238,0.6)]" data-w="' + novo + '" style="width:0%"></div></div></div>' +
+                   '<div class="flex justify-between font-mono text-[10px] text-zinc-600"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>' +
+                 '</div>' +
+               '</div>';
       }
 
-      var GANHOS = {
-        gpu: 'Os quadros por segundo sobem e param de oscilar: acabam os engasgos nas cenas pesadas, e processador e memória finalmente trabalham no ritmo para o qual foram feitos.',
-        cpu: 'A placa de vídeo deixa de ficar ociosa. O jogo responde mais rápido, as quedas de quadros em cenas cheias somem e o sistema inteiro fica mais estável.',
-        ram: 'O sistema para de usar o disco como memória de emergência. Somem as travadinhas ao trocar de janela, carregar mapas ou rodar o navegador junto.'
-      };
+      function notaSeguranca(linhas) {
+        return '<div class="flex items-start gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] px-5 py-4">' +
+                 svg('escudo', 'mt-0.5 h-5 w-5 shrink-0 text-cyan-400') +
+                 '<div><p class="text-sm font-medium text-zinc-100">Nota de segurança</p>' +
+                 linhas.map(function (n) { return '<p class="mt-1 text-sm leading-relaxed text-zinc-400">' + n + '</p>'; }).join('') +
+                 '</div></div>';
+      }
 
-      function renderResultado(s, d, p) {
-        var box = $('resultado');
+      function renderUpgrade(d, txt) {
+        var cpuNivel = d.cpu.tier ? NIVEL_CPU[d.cpu.tier] : 'não reconhecido — consideramos intermediário';
+        var gpuNivel = d.gpu.score >= 0 ? NIVEL_GPU[d.gpu.score] : 'não reconhecida — consideramos intermediária';
+
+        var resumo;
+        if (d.principal === 'gpu' && d.status.gpu === 'critico') resumo = 'Sua placa de vídeo é o que impede ' + esc(d.app.nome) + ' de rodar bem. Processador e o resto do PC estão esperando por ela.';
+        else if (d.principal === 'cpu' && d.status.cpu === 'critico') resumo = 'Você tem uma boa placa de vídeo, mas o processador não acompanha — é como um carro potente preso atrás de um caminhão.';
+        else if (d.principal === 'gpu') resumo = 'Seu PC roda ' + esc(d.app.nome) + ', mas a placa de vídeo está no limite. Um upgrade dela traz a maior diferença.';
+        else if (d.principal === 'cpu') resumo = 'A placa de vídeo dá conta. Quem fica sem fôlego em ' + esc(d.app.nome) + ' é o processador.';
+        else resumo = 'Boa notícia: seu PC roda ' + esc(d.app.nome) + ' com folga. O melhor upgrade agora é não gastar nada.';
+
+        var html =
+          '<div class="pop p-5 sm:p-8">' +
+            '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Diagnóstico · ' + esc(d.app.nome) + '</p>' +
+            '<p class="mt-3 max-w-3xl text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">' + resumo + '</p>' +
+
+            '<div class="mt-8 space-y-3">' +
+              cardLinha({ icone: 'cpu', rotulo: 'Processador', nivel: cpuNivel, modelo: txt.cpu, texto: d.motivo.cpu, status: d.status.cpu,
+                          tag: d.status.cpu === 'critico' ? TAGS.cpuCrit : TAGS[d.status.cpu] }) +
+              cardLinha({ icone: 'gpu', rotulo: 'Placa de Vídeo', nivel: gpuNivel, modelo: txt.gpu, texto: d.motivo.gpu, status: d.status.gpu,
+                          tag: TAGS[d.status.gpu] }) +
+              cardLinha({ icone: 'app', rotulo: 'O que você quer rodar', nivel: d.app.tipo, modelo: d.app.nome,
+                          texto: d.app.desconhecido ? 'Ainda não temos esse programa na base, então consideramos uma exigência média. O app real mede o seu uso de verdade.' : 'Exige uma placa de vídeo ' + NIVEL_GPU[Math.max(1, d.app.req.gpu)].toLowerCase() + ' ou melhor para rodar com fluidez.',
+                          status: 'ok', tag: d.app.desconhecido ? TAGS.incerto : TAGS.neutro }) +
+            '</div>';
 
         if (!d.principal) {
-          box.innerHTML =
-            '<div class="pop grid grid-cols-1 gap-8 p-5 sm:p-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">' +
-              '<div>' +
-                '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Resultado · ' + PERFIS[s.perfil].nome + '</p>' +
-                '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Nenhum gargalo encontrado.</h3>' +
-                '<p class="mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">Seu computador está equilibrado para esse uso. Comprar peças agora seria gastar sem ganho real — o Aferir também existe para te dizer quando <span class="text-zinc-200">não</span> comprar.</p>' +
-              '</div>' +
-              '<div class="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] p-6">' +
-                '<p class="text-xs text-zinc-500">Adequação ao seu uso</p>' +
-                '<p class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-white">' + p.atual + '%</p>' +
-                '<div class="mt-4 h-2 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" data-w="' + p.atual + '" style="width:0%"></div></div>' +
-                '<p class="mt-4 font-mono text-[11px] text-zinc-500">Investimento recomendado agora · <span class="text-cyan-300">R$ 0</span></p>' +
-              '</div>' +
-            '</div>';
-          return animarBarras(box);
+          html +=
+            '<div class="mt-6 flex flex-col gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] p-6 sm:flex-row sm:items-center sm:justify-between">' +
+              '<div><p class="text-sm font-medium text-white">Nenhum upgrade necessário para ' + esc(d.app.nome) + '</p>' +
+              '<p class="mt-1 text-sm text-zinc-400">Comprar peças agora seria gastar sem ganho real.</p></div>' +
+              '<p class="font-mono text-sm text-zinc-500">Investimento recomendado · <span class="text-cyan-300">R$ 0,00</span></p>' +
+            '</div></div>';
+          return { html: html, setup: 'PC atual aprovado para ' + d.app.nome };
         }
 
-        var up = UPGRADES[d.principal];
+        var up = d.upgrade;
         var menor = Math.min.apply(null, up.lojas.map(function (l) { return l.preco; }));
-        var total = menor + (d.secundario ? UPGRADES.ram.lojas[0].preco : 0);
-        var ganhoPts = p.novo - p.atual;
-        var notas = notaSeguranca(s, d, p);
+        var notas = d.principal === 'gpu'
+          ? [(d.gpu.integrada ? 'Confirme que sua placa-mãe tem um encaixe PCIe x16 livre (quase todas têm).' : 'Sua placa-mãe é compatível com este componente (encaixe PCIe x16).'),
+             'Verifique se sua fonte possui pelo menos ' + (up.fonte + d.extraFonte) + 'W estáveis e um conector PCIe de 8 pinos.']
+          : [up.compat, 'A troca não aumenta o consumo de energia de forma relevante.'];
 
-        var extra = '';
-        if (d.secundario) {
-          extra += '<div class="flex items-start gap-3 rounded-lg border border-rose-400/20 bg-rose-400/[0.03] px-4 py-3 text-xs leading-relaxed text-zinc-300">' +
-                     '<span aria-hidden="true">⚠️</span><span><span class="text-zinc-100">Também recomendado:</span> ' + UPGRADES.ram.produto + ' (a partir de ' + brl(UPGRADES.ram.lojas[0].preco) + '). Já incluído no orçamento.</span>' +
-                   '</div>';
-        }
-        if (p.proximoLimite) {
-          extra += '<div class="flex items-start gap-3 rounded-lg border border-white/10 px-4 py-3 text-xs leading-relaxed text-zinc-400">' +
-                     '<span class="font-mono text-cyan-400" aria-hidden="true">→</span><span>' + p.proximoLimite + '</span>' +
-                   '</div>';
-        }
-
-        box.innerHTML =
-          '<div class="pop p-5 sm:p-8">' +
-            '<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">' +
-              '<div>' +
-                '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Solução personalizada · ' + PERFIS[s.perfil].nome + '</p>' +
-                '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Upgrade ideal: <span class="text-cyan-300">' + up.produto + '</span></h3>' +
+        html +=
+            '<div class="mt-10 border-t border-zinc-800 pt-8">' +
+              '<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">' +
+                '<div><p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Plano de ação</p>' +
+                '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Troca ideal: <span class="text-cyan-300">' + up.produto + '</span></h3></div>' +
+                '<p class="font-mono text-[11px] text-zinc-500">substitui · ' + up.tipo + '</p>' +
               '</div>' +
-              '<p class="font-mono text-[11px] text-zinc-500">' + up.acao + ' · ' + up.tipo + '</p>' +
-            '</div>' +
-
-            '<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_1fr]">' +
-
-              // Gráfico
-              '<div class="flex flex-col rounded-xl border border-white/10 p-5 sm:p-6">' +
-                '<div class="flex items-baseline justify-between gap-3">' +
-                  '<p class="text-xs text-zinc-500">Desempenho para ' + PERFIS[s.perfil].curto.toLowerCase() + '</p>' +
-                  '<p class="font-mono text-xs text-cyan-300">+' + ganhoPts + ' pontos</p>' +
-                '</div>' +
-                '<p class="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white"><span class="text-rose-300/90">' + p.atual + '%</span> <span class="text-zinc-600">→</span> ' + p.novo + '%</p>' +
-                '<div class="mt-7 space-y-5" role="img" aria-label="Desempenho atual ' + p.atual + '%, desempenho otimizado ' + p.novo + '%">' +
-                  '<div>' +
-                    '<div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Desempenho atual</span><span class="font-mono text-rose-300/90">' + p.atual + '%</span></div>' +
-                    '<div class="h-3 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full border border-rose-500/50 bg-rose-500/30" data-w="' + p.atual + '" style="width:0%"></div></div>' +
+              '<div class="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">' +
+                grafico(d.atual, d.novo, 'Desempenho em ' + esc(d.app.nome)) +
+                '<div class="flex flex-col rounded-xl border border-zinc-800 p-5 sm:p-6">' +
+                  '<p class="text-xs text-zinc-500">Cotação nas maiores lojas do Brasil</p>' +
+                  '<ul class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">' + cardsLojas(up.lojas) + '</ul>' +
+                  '<div class="flex items-end justify-between border-t border-zinc-800" style="margin-top:auto;padding-top:1rem">' +
+                    '<span class="text-xs text-zinc-500">Orçamento estimado</span>' +
+                    '<span class="text-2xl font-semibold tracking-tight text-white">' + brl(menor) + '</span>' +
                   '</div>' +
-                  '<div>' +
-                    '<div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Desempenho otimizado</span><span class="font-mono text-cyan-300">' + p.novo + '%</span></div>' +
-                    '<div class="h-3 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-[0_0_20px_-4px_rgba(34,211,238,0.6)]" data-w="' + p.novo + '" style="width:0%"></div></div>' +
-                  '</div>' +
-                  '<div class="flex justify-between font-mono text-[10px] text-zinc-600"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>' +
-                '</div>' +
-                '<div class="mt-7 border-l border-cyan-500/40 pl-4">' +
-                  '<p class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">O que muda na prática</p>' +
-                  '<p class="mt-1.5 text-sm leading-relaxed text-zinc-300">' + GANHOS[d.principal] + '</p>' +
                 '</div>' +
               '</div>' +
-
-              // Preços
-              '<div class="flex flex-col rounded-xl border border-white/10 p-5 sm:p-6">' +
-                '<p class="text-xs text-zinc-500">Cotação nas maiores lojas do Brasil</p>' +
-                '<ul class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">' + htmlLojas(up.lojas) + '</ul>' +
-                '<div class="mt-auto flex items-end justify-between border-t border-white/5 pt-4" style="margin-top:auto;padding-top:1rem">' +
-                  '<span class="text-xs text-zinc-500">Orçamento estimado</span>' +
-                  '<span class="text-2xl font-semibold tracking-tight text-white">' + brl(total) + '</span>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-
-            (extra ? '<div class="mt-4 space-y-2">' + extra + '</div>' : '') +
-
-            // Nota de segurança
-            '<div class="mt-4 flex items-start gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] px-5 py-4">' +
-              '<svg class="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">' +
-                '<path d="M12 3 5 6v5.5c0 4.2 3 7.8 7 9.5 4-1.7 7-5.3 7-9.5V6l-7-3Z" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
-              '</svg>' +
-              '<div><p class="text-sm font-medium text-zinc-100">Nota de segurança</p>' +
-              notas.map(function (n) { return '<p class="mt-1 text-sm leading-relaxed text-zinc-400">' + n + '</p>'; }).join('') +
-              '</div>' +
+              (d.proximo ? '<p class="mt-4 rounded-lg border border-zinc-800 px-4 py-3 text-xs text-zinc-400"><span class="mr-2 font-mono text-cyan-400">→</span>' + d.proximo + '</p>' : '') +
+              '<div class="mt-4">' + notaSeguranca(notas) + '</div>' +
             '</div>' +
           '</div>';
+        return { html: html, setup: up.produto + ' para ' + d.app.nome };
+      }
 
-        animarBarras(box);
+      function renderMontar(r, orcamento, foco) {
+        var x = r.build;
+        var f = FOCOS[foco];
+
+        function pecas(lista) {
+          return lista.map(function (p) {
+            return '<li class="flex items-baseline justify-between gap-4 border-b border-zinc-800/70 py-2.5 last:border-0">' +
+                     '<span class="text-sm text-zinc-200">' + p.nome + '</span>' +
+                     '<span class="shrink-0 font-mono text-sm ' + (p.preco ? 'text-zinc-400' : 'text-zinc-600') + '">' + (p.preco ? brl(p.preco) : 'incluso') + '</span>' +
+                   '</li>';
+          }).join('');
+        }
+        function trilha(n, icone, titulo, texto, lista) {
+          var sub = lista.reduce(function (s, p) { return s + p.preco; }, 0);
+          return '<article class="card-h" style="align-items:flex-start">' +
+                   '<div class="flex shrink-0 flex-col items-center gap-3">' +
+                     '<span class="flex h-11 w-11 items-center justify-center rounded-full border border-cyan-500/40 font-mono text-sm text-cyan-300">' + n + '</span>' +
+                   '</div>' +
+                   '<div class="min-w-0 flex-1">' +
+                     '<div class="flex flex-wrap items-center justify-between gap-2">' +
+                       '<h4 class="flex items-center gap-2 text-base font-medium text-white">' + svg(icone, 'h-4 w-4 text-zinc-500') + titulo + '</h4>' +
+                       '<span class="font-mono text-sm text-cyan-300">' + brl(sub) + '</span>' +
+                     '</div>' +
+                     '<p class="mt-1.5 text-sm leading-relaxed text-zinc-400">' + texto + '</p>' +
+                     '<ul class="mt-3">' + pecas(lista) + '</ul>' +
+                   '</div>' +
+                 '</article>';
+        }
+
+        var textosCpu = {
+          estudo: 'Processador com vídeo integrado: dispensa placa de vídeo e mantém o PC rápido para aulas, documentos e navegação.',
+          jogos: 'Processador que acompanha a placa de vídeo sem segurá-la — e memória suficiente para jogos atuais.',
+          edicao: 'Mais núcleos e mais memória: é isso que acelera prévias, renderizações e exportações.'
+        };
+        var textoGpu = x.gpu.preco
+          ? (foco === 'edicao' ? 'Acelera a exportação de vídeo e os efeitos em tempo real.' : 'É a peça que mais define a qualidade e a fluidez dos jogos.')
+          : x.gpu.nota;
+
+        var faltaHtml = !r.cabe
+          ? '<div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 text-sm leading-relaxed text-zinc-300">' +
+              'Com <span class="font-mono text-white">' + brl(orcamento) + '</span> ainda não fecha um PC novo e seguro para ' + f.frase + '. ' +
+              'Abaixo está a configuração mínima que recomendamos — faltam <span class="font-mono text-cyan-300">' + brl(r.falta) + '</span>.' +
+            '</div>'
+          : '';
+
+        var uso = Math.min(100, Math.round(x.total / orcamento * 100));
+        var html =
+          '<div class="pop p-5 sm:p-8">' +
+            '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Montar do zero · ' + f.nome + '</p>' +
+            '<p class="mt-3 max-w-3xl text-xl font-medium leading-snug tracking-tight text-white sm:text-2xl">' +
+              (r.cabe ? 'Seu PC para ' + f.frase + ' com até ' + brl(orcamento) + ', em três partes.' : 'Seu orçamento está um pouco abaixo do mínimo seguro.') +
+            '</p>' +
+            faltaHtml +
+            '<div class="mt-8 space-y-3">' +
+              trilha('01', 'cpu', 'Processador + Memória RAM', textosCpu[foco], [x.cpu, x.ram]) +
+              trilha('02', 'gpu', 'Placa de Vídeo', textoGpu, [x.gpu]) +
+              trilha('03', 'base', 'Fonte e Placa-Mãe seguras', 'A base que mantém tudo estável: placa-mãe do mesmo padrão do processador e fonte com folga. Inclui armazenamento e gabinete para o PC sair completo.', [x.mobo, x.psu, x.ssd, x.gab]) +
+            '</div>' +
+
+            // Checagens de compatibilidade calculadas
+            '<ul class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">' +
+              r.checks.map(function (c) {
+                return '<li class="flex items-start gap-2.5 rounded-lg border border-zinc-800 px-4 py-3 text-xs text-zinc-300">' +
+                         svg('ok', 'mt-px h-3.5 w-3.5 shrink-0 text-cyan-400') + '<span>' + c.txt + '</span></li>';
+              }).join('') +
+            '</ul>' +
+
+            // Total consolidado
+            '<div class="mt-6 rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-6 sm:p-8">' +
+              '<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">' +
+                '<div>' +
+                  '<p class="text-xs text-zinc-500">Valor total consolidado</p>' +
+                  '<p class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">' + brl(x.total) + '</p>' +
+                '</div>' +
+                '<p class="flex items-center gap-2 text-sm text-cyan-200">' + svg('escudo', 'h-4 w-4 shrink-0 text-cyan-400') +
+                  (r.cabe ? 'Configuração 100% compatível calculada para o seu bolso.' : 'Configuração mínima 100% compatível.') + '</p>' +
+              '</div>' +
+              (r.cabe
+                ? '<div class="mt-6"><div class="mb-2 flex justify-between text-xs text-zinc-400"><span>Uso do orçamento</span><span class="font-mono">' + uso + '% · sobra ' + brl(r.sobra) + '</span></div>' +
+                  '<div class="h-2 overflow-hidden rounded-full bg-zinc-900"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" data-w="' + uso + '" style="width:0%"></div></div>' +
+                  (r.topo && r.sobra > 1500 ? '<p class="mt-3 text-xs text-zinc-500">Esta já é a configuração mais forte que recomendamos para ' + f.frase + ' — o restante não traria ganho proporcional.</p>' : '') +
+                  '</div>'
+                : '') +
+            '</div>' +
+          '</div>';
+        return { html: html, setup: 'PC para ' + f.nome + ' por ' + brl(x.total) };
       }
 
       function animarBarras(box) {
@@ -1046,162 +1445,123 @@
         });
       }
 
+      // Esqueleto exibido durante o carregamento
+      function esqueleto(n) {
+        var linha = '<div class="flex animate-pulse items-center gap-4 rounded-2xl border border-zinc-800 p-5">' +
+                      '<div class="h-11 w-11 rounded-xl bg-zinc-900"></div>' +
+                      '<div class="flex-1 space-y-2"><div class="h-2.5 w-24 rounded bg-zinc-900"></div><div class="h-3.5 w-1/2 rounded bg-zinc-800/80"></div></div>' +
+                      '<div class="h-6 w-20 rounded-full bg-zinc-900"></div></div>';
+        return '<div class="space-y-3 p-5 sm:p-8"><p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Analisando componentes…</p>' +
+               new Array(n + 1).join(linha) + '</div>';
+      }
+
       // =====================================================================
-      // Fluxo do simulador
+      // FLUXO PRINCIPAL
       // =====================================================================
-      var ultimoDiagnostico = null;
-      var jaAferiu = false;
-      var escaneando = false;
+      var ocupado = false;
+      var ultimoSetup = null;
 
-      function aplicarDiagnostico() {
-        var s = { cpu: estado.cpu, ram: estado.ram, gpu: estado.gpu, perfil: estado.perfil };
-        var d = diagnosticar(s);
-        var p = projetar(s, d);
-
-        ['cpu', 'ram', 'gpu'].forEach(function (k) { pintarLinha(k, d.status[k], d.motivo[k]); });
-        $('resumo').textContent = textoResumo(s, d);
-        $('resumo').className = 'mt-2 text-sm leading-relaxed text-zinc-200';
-        renderResultado(s, d, p);
-        $('resultado').classList.remove('hidden');
-        $('leadSimWrap').classList.remove('hidden');
-
-        var nCrit = ['cpu', 'gpu'].filter(function (k) { return d.status[k] === 'critico'; }).length;
-        var nLim = d.status.ram === 'limite' ? 1 : 0;
-        $('statusJanela').innerHTML = nCrit
-          ? '<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span> ' + nCrit + ' gargalo' + (nLim ? ' · 1 alerta' : '')
-          : nLim
-            ? '<span class="h-1.5 w-1.5 rounded-full bg-rose-300"></span> 1 alerta'
-            : '<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> equilibrado';
-
-        ultimoDiagnostico = {
-          resumo: d.principal ? 'Gargalo em ' + UPGRADES[d.principal].tipo + ' → ' + UPGRADES[d.principal].produto : 'Sistema equilibrado, sem upgrade necessário',
-          perfil: PERFIS[s.perfil].nome
-        };
+      function status(html) { $('statusJanela').innerHTML = html; }
+      function painelAtivo() { return $(modo === 'upgrade' ? 'painel-upgrade' : 'painel-montar'); }
+      function erro(msg, campo) {
+        var p = painelAtivo().querySelector('.erro');
+        p.textContent = msg;
+        p.classList.remove('hidden');
+        if (campo) { $('in-' + campo).classList.add('is-invalid'); $('in-' + campo).focus(); }
+      }
+      function limparErro() {
+        document.querySelectorAll('.erro').forEach(function (p) { p.classList.add('hidden'); });
+        document.querySelectorAll('.field.is-invalid').forEach(function (i) { i.classList.remove('is-invalid'); });
       }
 
-      // Rolagem suave via JS (não depende de navegação por âncora, que falha em pré-visualizações/iframes)
-      function rolarPara(el, fracaoTela) {
-        var topo = el.getBoundingClientRect().top + window.pageYOffset - window.innerHeight * (fracaoTela || 0) - 80;
-        window.scrollTo({ top: Math.max(0, topo), behavior: 'smooth' });
-      }
-      function foraDaTela(el) {
-        var r = el.getBoundingClientRect();
-        return r.top > window.innerHeight * 0.8 || r.bottom < 80;
-      }
+      function aferir(m) {
+        if (ocupado) return;
+        if (m !== modo) trocarModo(m);
+        limparErro();
+        Object.keys(autocompletes).forEach(function (k) { autocompletes[k].fechar(); });
 
-      // Carregamento de 1 s: o botão mostra "Analisando componentes…" e as peças são lidas em sequência
-      var ETAPAS = [
-        { linha: 'cpu', resumo: 'Lendo o processador…' },
-        { linha: 'ram', resumo: 'Medindo a memória…' },
-        { linha: 'gpu', resumo: 'Testando a placa de vídeo…' },
-        { linha: null,  resumo: 'Cruzando preços e compatibilidade…' }
-      ];
-      var PASSO_MS = 250;   // 4 etapas × 250 ms = 1 s
-      var TAG_LENDO = '<span class="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 px-2.5 py-1 text-[11px] text-cyan-300">' +
-                      '<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span>Lendo…</span>';
+        var calcular;
+        if (m === 'upgrade') {
+          var txt = { cpu: $('in-cpu').value.trim(), gpu: $('in-gpu').value.trim(), app: $('in-app').value.trim() };
+          if (!txt.cpu) return erro('Digite o seu processador para continuar.', 'cpu');
+          if (!txt.gpu) return erro('Digite a sua placa de vídeo (ou “Intel Graphics” se não tiver).', 'gpu');
+          if (!txt.app) return erro('Conte o que você quer rodar — um jogo ou programa.', 'app');
+          calcular = function () {
+            var d = diagnosticarUpgrade(txt.cpu, txt.gpu, txt.app);
+            var nCrit = ['cpu', 'gpu'].filter(function (k) { return d.status[k] === 'critico'; }).length;
+            var nLim = ['cpu', 'gpu'].filter(function (k) { return d.status[k] === 'limite'; }).length;
+            var r = renderUpgrade(d, txt);
+            r.status = nCrit ? '<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span> gargalo crítico'
+                     : nLim ? '<span class="h-1.5 w-1.5 rounded-full bg-rose-300"></span> limite próximo'
+                     : '<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> equilibrado';
+            return r;
+          };
+        } else {
+          var orc = lerOrcamento($('in-orcamento').value);
+          var foco = lerFoco($('in-foco').value);
+          if (!orc) return erro('Digite quanto você quer gastar, por exemplo R$ 3.500.', 'orcamento');
+          if (!$('in-foco').value.trim()) return erro('Escolha o foco do setup.', 'foco');
+          if (!foco) return erro('Não entendemos o foco — escolha Jogos Pesados, Trabalho/Edição ou Estudo e Uso Geral.', 'foco');
+          calcular = function () {
+            var r = montar(orc, foco);
+            var out = renderMontar(r, orc, foco);
+            out.status = '<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> ' + (r.cabe ? 'setup calculado' : 'orçamento curto');
+            return out;
+          };
+        }
 
-      function escanear() {
-        if (escaneando) return;
-        escaneando = true;
-
-        var btn = $('btnAferir');
-        var prog = $('btnAferirProg');
+        // Carregamento visual de ~1 s
+        ocupado = true;
+        var btn = painelAtivo().querySelector('.btn-aferir');
+        var prog = btn.querySelector('.prog');
         btn.setAttribute('aria-busy', 'true');
-        $('btnAferirIco').classList.add('animate-spin');
-        $('scanOverlay').classList.remove('hidden');
-        $('statusJanela').innerHTML = '<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span> lendo';
-        $('resumo').className = 'mt-2 text-sm leading-relaxed text-zinc-400';
-        $('btnAferirTxt').textContent = 'Analisando componentes…';
-        resetarLinhas();
+        btn.querySelector('.ico').classList.add('animate-spin');
+        btn.querySelector('.txt').textContent = 'Analisando componentes…';
+        prog.style.transition = 'none'; prog.style.width = '0%'; void prog.offsetWidth;
+        prog.style.transition = 'width 1000ms linear'; prog.style.width = '100%';
+        status('<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span> analisando');
 
-        // Barra de progresso dentro do botão
-        prog.style.transition = 'none';
-        prog.style.width = '0%';
-        void prog.offsetWidth;
-        prog.style.transition = 'width ' + (PASSO_MS * ETAPAS.length) + 'ms linear';
-        prog.style.width = '100%';
+        var res = $('resultado');
+        res.innerHTML = esqueleto(3);
+        res.classList.remove('hidden');
+        if (res.getBoundingClientRect().top > window.innerHeight * 0.8) rolarPara(res, 0.15);
 
-        // No celular a leitura fica abaixo do formulário: leva a pessoa até ela
-        var leitura = $('linhas');
-        if (foraDaTela(leitura)) rolarPara(leitura, 0.05);
+        setTimeout(function () {
+          var r = calcular();
+          r.modo = m;
+          resultados[m] = r;
+          ultimoSetup = r.setup;
 
-        var i = 0;
-        function passo() {
-          var etapa = ETAPAS[i];
-          $('resumo').textContent = etapa.resumo;
-          if (etapa.linha) $('row-' + etapa.linha).querySelector('.tag').innerHTML = TAG_LENDO;
-        }
-        passo();
+          res.innerHTML = r.html;
+          animarBarras(res);
+          status(r.status);
+          $('leadSimWrap').classList.remove('hidden');
 
-        var timer = setInterval(function () {
-          i++;
-          if (i < ETAPAS.length) { passo(); return; }
-          clearInterval(timer);
-
-          $('scanOverlay').classList.add('hidden');
-          $('btnAferirIco').classList.remove('animate-spin');
+          ocupado = false;
           btn.removeAttribute('aria-busy');
-          $('btnAferirTxt').textContent = 'Aferir novamente';
-          $('dicaAoVivo').classList.remove('hidden');
-          escaneando = false;
-          jaAferiu = true;
-
-          aplicarDiagnostico();
-
-          // Mostra o resultado sem esconder totalmente a leitura das peças
-          var res = $('resultado');
-          if (res.getBoundingClientRect().top > window.innerHeight * 0.75) rolarPara(res, 0.3);
-        }, PASSO_MS);
+          btn.querySelector('.ico').classList.remove('animate-spin');
+          btn.querySelector('.txt').textContent = m === 'upgrade' ? 'Aferir novamente' : 'Recalcular';
+          prog.style.transition = 'none'; prog.style.width = '0%';
+        }, 1000);
       }
 
-      // Seletores: atualiza a leitura e, após a 1ª aferição, o diagnóstico ao vivo
-      $('simForm').addEventListener('change', function (e) {
-        if (!e.target.name || !(e.target.name in estado)) return;
-        estado[e.target.name] = e.target.value;
-        atualizarModelos();
-        atualizarNiveis();
-        if (jaAferiu && !escaneando) aplicarDiagnostico();
+      document.querySelectorAll('[data-aferir]').forEach(function (b) {
+        b.addEventListener('click', function () { aferir(b.dataset.aferir); });
       });
-
-      // Clique direto no botão (type="button"): funciona mesmo onde envio de formulário é bloqueado
-      $('btnAferir').addEventListener('click', escanear);
-      $('simForm').addEventListener('submit', function (e) { e.preventDefault(); escanear(); });
-
-      // Links internos (#secao) com rolagem por JS
-      document.addEventListener('click', function (e) {
-        var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
-        if (!a) return;
-        var id = a.getAttribute('href').slice(1);
-        e.preventDefault();
-        if (!id) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-        var alvo = a.hasAttribute('data-ir-aferir') ? $('simForm') : $(id);
-        if (!alvo) return;
-        rolarPara(alvo, 0);
-
-        // CTA do hero: destaca o botão do simulador ao chegar
-        if (a.hasAttribute('data-ir-aferir')) {
-          var btn = $('btnAferir');
-          setTimeout(function () {
-            btn.classList.add('ring-2', 'ring-cyan-300/70', 'ring-offset-4', 'ring-offset-zinc-950');
-            btn.focus({ preventScroll: true });
-            setTimeout(function () {
-              btn.classList.remove('ring-2', 'ring-cyan-300/70', 'ring-offset-4', 'ring-offset-zinc-950');
-            }, 1800);
-          }, 700);
-        }
-      });
-
-      atualizarModelos();
-      atualizarNiveis();
-      resetarLinhas();
 
       // =====================================================================
-      // Captura de lead (simulador + rodapé compartilham o mesmo fluxo)
+      // CAPTURA DE LEAD (simulador + rodapé)
       // =====================================================================
       var tpl = $('tplLead');
       var leads = [];
-      var posicao = 100 + Math.floor(Math.random() * 1101);   // 100–1200
+      var vaga = 100 + Math.floor(Math.random() * 1401);   // 100–1500
       var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+      function marcar(input, invalido) {
+        input.classList.toggle('border-rose-500/60', invalido);
+        input.classList.toggle('border-white/10', !invalido);
+        input.setAttribute('aria-invalid', invalido ? 'true' : 'false');
+      }
 
       document.querySelectorAll('[data-lead]').forEach(function (slot) {
         slot.appendChild(tpl.content.cloneNode(true));
@@ -1214,23 +1574,21 @@
           nome: form.querySelector('[name="nome"]'),
           email: form.querySelector('[name="email"]'),
           erro: form.querySelector('.lead-erro'),
-          btn: form.querySelector('button'),
+          btn: form.querySelector('.lead-btn'),
           btnTxt: form.querySelector('.lead-btn-txt')
         };
         leads.push(ref);
 
         [ref.nome, ref.email].forEach(function (input) {
           input.addEventListener('input', function () { marcar(input, false); ref.erro.classList.add('hidden'); });
+          input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); enviar(); } });
         });
-
-        // Clique no botão e Enter nos campos (sem depender do envio nativo de formulário)
         ref.btn.addEventListener('click', enviar);
-        [ref.nome, ref.email].forEach(function (input) {
-          input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); enviar(); }
-          });
-        });
         form.addEventListener('submit', function (e) { e.preventDefault(); enviar(); });
+        ref.ok.querySelector('.lead-outro').addEventListener('click', function () {
+          leads.forEach(function (r) { r.ok.classList.add('hidden'); r.form.classList.remove('hidden'); });
+          ref.nome.focus();
+        });
 
         function enviar() {
           if (ref.enviando) return;
@@ -1246,7 +1604,6 @@
             (nomeInv ? ref.nome : ref.email).focus();
             return;
           }
-
           ref.enviando = true;
           ref.btn.disabled = true;
           ref.btnTxt.innerHTML =
@@ -1259,19 +1616,12 @@
         }
       });
 
-      function marcar(input, invalido) {
-        input.classList.toggle('border-rose-500/60', invalido);
-        input.classList.toggle('border-white/10', !invalido);
-        input.setAttribute('aria-invalid', invalido ? 'true' : 'false');
-      }
-
       function concluir(primeiroNome, origem) {
         var msg = 'Pronto, ' + primeiroNome + '! ' +
-          (ultimoDiagnostico ? 'Seu plano de upgrade foi gerado com sucesso. ' : '') +
-          'Você está na lista oficial do Aferir ocupando a posição #' + posicao + '.';
+          (ultimoSetup ? 'O relatório para o seu setup personalizado foi reservado. ' : '') +
+          'Você garantiu a vaga #' + vaga + ' na lista de espera.';
 
         leads.forEach(function (ref) {
-          // Limpa o formulário e restaura o botão
           ref.form.reset();
           ref.enviando = false;
           ref.btn.disabled = false;
@@ -1281,27 +1631,19 @@
 
           ref.form.classList.add('hidden');
           ref.msg.textContent = msg;
-          ref.diag.classList.toggle('hidden', !ultimoDiagnostico);
-          if (ultimoDiagnostico) ref.diag.textContent = 'Plano salvo · ' + ultimoDiagnostico.resumo + ' · ' + ultimoDiagnostico.perfil;
-          ref.ok.classList.remove('hidden');
-          ref.ok.classList.remove('pop');
+          ref.diag.classList.toggle('hidden', !ultimoSetup);
+          if (ultimoSetup) ref.diag.textContent = 'Setup reservado · ' + ultimoSetup;
+          ref.ok.classList.remove('hidden', 'pop');
           void ref.ok.offsetWidth;
           ref.ok.classList.add('pop');
         });
         origem.ok.focus({ preventScroll: true });
-        posicao += 1 + Math.floor(Math.random() * 3);   // a próxima inscrição entra logo atrás
+        vaga += 1 + Math.floor(Math.random() * 3);
       }
-
-      // "Inscrever outra pessoa": volta a mostrar o formulário limpo
-      leads.forEach(function (ref) {
-        ref.ok.querySelector('.lead-outro').addEventListener('click', function () {
-          leads.forEach(function (r) { r.ok.classList.add('hidden'); r.form.classList.remove('hidden'); });
-          ref.nome.focus();
-        });
-      });
 
       $('ano').textContent = new Date().getFullYear();
     })();
   </script>
+
 </body>
 </html>
