@@ -62,7 +62,7 @@
   <script>document.body.classList.remove('no-js');</script>
 
   <!-- Fundo decorativo -->
-  <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+  <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
     <div class="grid-bg absolute inset-0"></div>
     <div class="absolute left-1/2 top-[-14rem] h-[30rem] w-[60rem] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
   </div>
@@ -118,7 +118,7 @@
         </p>
 
         <div class="reveal mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <a href="#simulador"
+          <a href="#simulador" data-ir-aferir
              class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-500 px-7 py-3.5 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-8px_rgba(6,182,212,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_44px_-8px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:w-auto">
             Aferir Meu Computador
             <svg class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -154,7 +154,7 @@
     <!-- ============ 01. CONTEXTO ============ -->
     <section id="contexto" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
-        <div class="grid gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-20">
+        <div class="grid grid-cols-1 gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-20">
           <div>
             <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">01 — Contexto</p>
             <h2 class="reveal mt-5 text-3xl font-semibold leading-[1.1] tracking-[-0.04em] text-white sm:text-5xl">
@@ -244,7 +244,7 @@
               </span>
             </div>
 
-            <div class="grid lg:grid-cols-[1fr_1.05fr]">
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr]">
 
               <!-- ENTRADA DE DADOS -->
               <form id="simForm" class="border-b border-white/5 p-5 sm:p-8 lg:border-b-0 lg:border-r" novalidate>
@@ -256,37 +256,40 @@
                     <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
                       <span class="font-mono text-[11px] text-cyan-400">01</span> Processador
                     </legend>
-                    <div id="opt-cpu" class="grid gap-2"></div>
+                    <div id="opt-cpu" class="grid grid-cols-1 gap-2"></div>
                   </fieldset>
 
                   <fieldset>
                     <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
                       <span class="font-mono text-[11px] text-cyan-400">02</span> Memória RAM
                     </legend>
-                    <div id="opt-ram" class="grid gap-2 sm:grid-cols-3"></div>
+                    <div id="opt-ram" class="grid grid-cols-1 gap-2 sm:grid-cols-3"></div>
                   </fieldset>
 
                   <fieldset>
                     <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
                       <span class="font-mono text-[11px] text-cyan-400">03</span> Placa de Vídeo
                     </legend>
-                    <div id="opt-gpu" class="grid gap-2 sm:grid-cols-2"></div>
+                    <div id="opt-gpu" class="grid grid-cols-1 gap-2 sm:grid-cols-2"></div>
                   </fieldset>
 
                   <fieldset>
                     <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
                       <span class="font-mono text-[11px] text-cyan-400">04</span> Perfil de Uso
                     </legend>
-                    <div id="opt-perfil" class="grid gap-2 sm:grid-cols-3"></div>
+                    <div id="opt-perfil" class="grid grid-cols-1 gap-2 sm:grid-cols-3"></div>
                   </fieldset>
                 </div>
 
-                <button type="submit" id="btnAferir"
-                        class="group mt-9 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-10px_rgba(6,182,212,0.6)] transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_40px_-10px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-80">
-                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <button type="button" id="btnAferir"
+                        class="group relative mt-9 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-10px_rgba(6,182,212,0.6)] transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_40px_-10px_rgba(6,182,212,0.8)] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 aria-busy:cursor-wait">
+                  <svg id="btnAferirIco" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <circle cx="12" cy="12" r="9"/><path d="M12 12 17 7" stroke-linecap="round"/>
                   </svg>
                   <span id="btnAferirTxt">Aferir Meu Computador</span>
+                  <span aria-hidden="true" class="absolute inset-x-0 bottom-0 h-[3px] bg-zinc-950/10">
+                    <span id="btnAferirProg" class="block h-full w-0 bg-zinc-950/40"></span>
+                  </span>
                 </button>
                 <p id="dicaAoVivo" class="mt-3 hidden text-center text-[11px] text-zinc-500">Diagnóstico ao vivo: altere qualquer peça e o resultado se atualiza.</p>
               </form>
@@ -395,7 +398,7 @@
           <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Do diagnóstico ao carrinho em três passos.</h2>
         </div>
 
-        <ol class="relative mt-16 grid gap-10 md:grid-cols-3 md:gap-8">
+        <ol class="relative mt-16 grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
           <li aria-hidden="true" class="pointer-events-none absolute left-0 right-0 top-[2.15rem] hidden h-px list-none bg-gradient-to-r from-cyan-500/40 via-white/10 to-transparent md:block"></li>
 
           <li class="reveal relative">
@@ -434,7 +437,7 @@
     <!-- ============ 04. ERROS EVITADOS ============ -->
     <section id="erros" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
-        <div class="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
+        <div class="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
           <div>
             <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">04 — A dor</p>
             <h2 class="reveal mt-5 text-3xl font-semibold leading-[1.1] tracking-[-0.04em] text-white sm:text-5xl">Os erros que você vai evitar.</h2>
@@ -444,8 +447,8 @@
             </p>
           </div>
 
-          <div class="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
-            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+          <div class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+            <article class="reveal grid grid-cols-1 gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
               <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                   <rect x="3" y="8" width="8" height="8" rx="1"/><rect x="13" y="8" width="8" height="8" rx="1" stroke-dasharray="2 2"/>
@@ -464,7 +467,7 @@
               </div>
             </article>
 
-            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+            <article class="reveal grid grid-cols-1 gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
               <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                   <path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z" stroke-linejoin="round"/>
@@ -482,7 +485,7 @@
               </div>
             </article>
 
-            <article class="reveal grid gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
+            <article class="reveal grid grid-cols-1 gap-5 bg-zinc-950 p-7 sm:grid-cols-[auto_1fr] sm:p-8">
               <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 text-zinc-300">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
                   <circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.5c-.4-.9-1.3-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.6 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.2 0-2.1-.6-2.5-1.5M12 6.5V8m0 8v1.5" stroke-linecap="round"/>
@@ -577,7 +580,7 @@
   <!-- Modelo do formulário de lead (reutilizado no simulador e no rodapé) -->
   <template id="tplLead">
     <form class="lead-form space-y-3 text-left" novalidate>
-      <div class="grid gap-3 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label class="block">
           <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Nome</span>
           <input name="nome" type="text" autocomplete="name" required maxlength="60" placeholder="Como podemos te chamar?"
@@ -589,8 +592,8 @@
                  class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
         </label>
       </div>
-      <button type="submit"
-              class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_10px_36px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-70">
+      <button type="button"
+              class="lead-btn mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_10px_36px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-70">
         <span class="lead-btn-txt">Garantir Acesso Antecipado</span>
       </button>
       <p class="lead-erro hidden pt-1 text-center text-xs text-zinc-300" role="alert"></p>
@@ -883,7 +886,7 @@
 
         if (!d.principal) {
           box.innerHTML =
-            '<div class="pop grid gap-8 p-5 sm:p-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">' +
+            '<div class="pop grid grid-cols-1 gap-8 p-5 sm:p-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">' +
               '<div>' +
                 '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Resultado · ' + PERFIS[s.perfil].nome + '</p>' +
                 '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Nenhum gargalo encontrado.</h3>' +
@@ -927,7 +930,7 @@
               '<p class="font-mono text-[11px] text-zinc-500">substitui · ' + up.tipo + '</p>' +
             '</div>' +
 
-            '<div class="mt-8 grid gap-6 lg:grid-cols-[1.25fr_1fr]">' +
+            '<div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_1fr]">' +
 
               // Gráfico
               '<div class="rounded-xl border border-white/10 p-5 sm:p-6">' +
@@ -1017,51 +1020,114 @@
         };
       }
 
-      var ETAPAS = ['Lendo processador…', 'Lendo memória…', 'Lendo placa de vídeo…', 'Cruzando preços e compatibilidade…'];
+      // Rolagem suave via JS (não depende de navegação por âncora, que falha em pré-visualizações/iframes)
+      function rolarPara(el, fracaoTela) {
+        var topo = el.getBoundingClientRect().top + window.pageYOffset - window.innerHeight * (fracaoTela || 0) - 80;
+        window.scrollTo({ top: Math.max(0, topo), behavior: 'smooth' });
+      }
+      function foraDaTela(el) {
+        var r = el.getBoundingClientRect();
+        return r.top > window.innerHeight * 0.8 || r.bottom < 80;
+      }
+
+      var ETAPAS = [
+        { txt: 'Lendo processador…',   linha: 'cpu' },
+        { txt: 'Lendo memória…',       linha: 'ram' },
+        { txt: 'Lendo placa de vídeo…', linha: 'gpu' },
+        { txt: 'Cruzando preços e compatibilidade…', linha: null }
+      ];
+      var PASSO_MS = 280;
+      var TAG_LENDO = '<span class="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 px-2.5 py-1 text-[11px] text-cyan-300">' +
+                      '<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span>Lendo…</span>';
 
       function escanear() {
         if (escaneando) return;
         escaneando = true;
+
         var btn = $('btnAferir');
-        btn.disabled = true;
+        var prog = $('btnAferirProg');
+        btn.setAttribute('aria-busy', 'true');
+        $('btnAferirIco').classList.add('animate-spin');
         $('scanOverlay').classList.remove('hidden');
         $('statusJanela').innerHTML = '<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span> lendo';
+        $('resumo').className = 'mt-2 text-sm leading-relaxed text-zinc-400';
+        $('resumo').textContent = 'Analisando como as peças trabalham juntas…';
         resetarLinhas();
 
+        // Barra de progresso dentro do botão
+        prog.style.transition = 'none';
+        prog.style.width = '0%';
+        void prog.offsetWidth;
+        prog.style.transition = 'width ' + (PASSO_MS * ETAPAS.length) + 'ms linear';
+        prog.style.width = '100%';
+
+        // No celular a leitura fica abaixo do formulário: leva a pessoa até ela
+        var leitura = $('linhas');
+        if (foraDaTela(leitura)) rolarPara(leitura, 0.05);
+
         var i = 0;
-        $('btnAferirTxt').textContent = ETAPAS[0];
+        function passo() {
+          var etapa = ETAPAS[i];
+          $('btnAferirTxt').textContent = etapa.txt;
+          if (etapa.linha) $('row-' + etapa.linha).querySelector('.tag').innerHTML = TAG_LENDO;
+        }
+        passo();
+
         var timer = setInterval(function () {
           i++;
-          if (i < ETAPAS.length) { $('btnAferirTxt').textContent = ETAPAS[i]; return; }
+          if (i < ETAPAS.length) { passo(); return; }
           clearInterval(timer);
+
           $('scanOverlay').classList.add('hidden');
-          btn.disabled = false;
-          escaneando = false;
+          $('btnAferirIco').classList.remove('animate-spin');
+          btn.removeAttribute('aria-busy');
           $('btnAferirTxt').textContent = 'Aferir novamente';
           $('dicaAoVivo').classList.remove('hidden');
+          escaneando = false;
+          jaAferiu = true;
 
           aplicarDiagnostico();
 
-          if (!jaAferiu) {
-            jaAferiu = true;
-            var res = $('resultado');
-            if (res.getBoundingClientRect().top > window.innerHeight * 0.85) {
-              res.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-        }, 260);
+          // Mostra o resultado sem esconder totalmente a leitura das peças
+          var res = $('resultado');
+          if (res.getBoundingClientRect().top > window.innerHeight * 0.75) rolarPara(res, 0.3);
+        }, PASSO_MS);
       }
 
+      // Seletores: atualiza a leitura e, após a 1ª aferição, o diagnóstico ao vivo
       $('simForm').addEventListener('change', function (e) {
         if (!e.target.name || !(e.target.name in estado)) return;
         estado[e.target.name] = e.target.value;
         atualizarModelos();
-        if (jaAferiu && !escaneando) aplicarDiagnostico();   // diagnóstico ao vivo após a 1ª leitura
+        if (jaAferiu && !escaneando) aplicarDiagnostico();
       });
 
-      $('simForm').addEventListener('submit', function (e) {
+      // Clique direto no botão (type="button"): funciona mesmo onde envio de formulário é bloqueado
+      $('btnAferir').addEventListener('click', escanear);
+      $('simForm').addEventListener('submit', function (e) { e.preventDefault(); escanear(); });
+
+      // Links internos (#secao) com rolagem por JS
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+        if (!a) return;
+        var id = a.getAttribute('href').slice(1);
         e.preventDefault();
-        escanear();
+        if (!id) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        var alvo = a.hasAttribute('data-ir-aferir') ? $('simForm') : $(id);
+        if (!alvo) return;
+        rolarPara(alvo, 0);
+
+        // CTA do hero: destaca o botão do simulador ao chegar
+        if (a.hasAttribute('data-ir-aferir')) {
+          var btn = $('btnAferir');
+          setTimeout(function () {
+            btn.classList.add('ring-2', 'ring-cyan-300/70', 'ring-offset-4', 'ring-offset-zinc-950');
+            btn.focus({ preventScroll: true });
+            setTimeout(function () {
+              btn.classList.remove('ring-2', 'ring-cyan-300/70', 'ring-offset-4', 'ring-offset-zinc-950');
+            }, 1800);
+          }, 700);
+        }
       });
 
       atualizarModelos();
@@ -1095,8 +1161,17 @@
           input.addEventListener('input', function () { marcar(input, false); ref.erro.classList.add('hidden'); });
         });
 
-        form.addEventListener('submit', function (e) {
-          e.preventDefault();
+        // Clique no botão e Enter nos campos (sem depender do envio nativo de formulário)
+        ref.btn.addEventListener('click', enviar);
+        [ref.nome, ref.email].forEach(function (input) {
+          input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); enviar(); }
+          });
+        });
+        form.addEventListener('submit', function (e) { e.preventDefault(); enviar(); });
+
+        function enviar() {
+          if (ref.enviando) return;
           var nome = ref.nome.value.trim();
           var email = ref.email.value.trim();
           var nomeInv = nome.length < 2;
@@ -1110,6 +1185,7 @@
             return;
           }
 
+          ref.enviando = true;
           ref.btn.disabled = true;
           ref.btnTxt.innerHTML =
             '<span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
@@ -1118,7 +1194,7 @@
 
           // Envio simulado — substituir por integração real (API, planilha, CRM)
           setTimeout(function () { concluir(nome.split(/\s+/)[0], ref); }, 900);
-        });
+        }
       });
 
       function marcar(input, invalido) {
