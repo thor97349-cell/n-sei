@@ -42,16 +42,14 @@
     .reveal.is-visible { opacity: 1; transform: none; }
     .no-js .reveal { opacity: 1; transform: none; }
 
-    /* Gráfico */
-    .bar { transition: height 1s cubic-bezier(.22,1,.36,1); }
-    .swap { transition: opacity .25s ease, transform .25s ease; }
-    .swap.is-out { opacity: 0; transform: translateY(4px); }
+    /* Simulador */
+    .bar { transition: width 1.1s cubic-bezier(.22,1,.36,1); }
+    .row { transition: border-color .4s ease, background-color .4s ease; }
+    .pop { animation: pop .5s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-    /* Traduções do bloco de contexto */
-    .jargao { transition: color .3s ease, border-color .3s ease, background-color .3s ease; }
-
-    @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(400%); } }
-    .scanline { animation: scan 3.2s linear infinite; }
+    @keyframes scan { 0% { transform: translateY(-120%); } 100% { transform: translateY(520%); } }
+    .scanline { animation: scan 1.1s linear infinite; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -69,8 +67,8 @@
     <div class="absolute left-1/2 top-[-14rem] h-[30rem] w-[60rem] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl"></div>
   </div>
 
-  <!-- ============ 1. HEADER ============ -->
-  <header id="topo" class="sticky top-0 z-50 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-50 border-b border-white/5 bg-zinc-950/70 backdrop-blur-xl">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
       <a href="#" class="flex items-center gap-2.5" aria-label="Aferir — início">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -83,7 +81,7 @@
 
       <nav class="hidden items-center gap-8 text-sm text-zinc-500 md:flex" aria-label="Seções">
         <a href="#contexto" class="transition-colors hover:text-zinc-200">Contexto</a>
-        <a href="#painel" class="transition-colors hover:text-zinc-200">Simulador</a>
+        <a href="#simulador" class="transition-colors hover:text-zinc-200">Simulador</a>
         <a href="#como-funciona" class="transition-colors hover:text-zinc-200">Como funciona</a>
         <a href="#erros" class="transition-colors hover:text-zinc-200">Erros evitados</a>
       </nav>
@@ -99,7 +97,7 @@
   </header>
 
   <main>
-    <!-- ============ 2. HERO ============ -->
+    <!-- ============ HERO ============ -->
     <section class="mx-auto max-w-6xl px-5 pb-24 pt-20 sm:px-8 sm:pb-32 sm:pt-28">
       <div class="mx-auto max-w-4xl text-center">
         <p class="reveal mb-7 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-500">
@@ -120,9 +118,9 @@
         </p>
 
         <div class="reveal mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-          <a href="#lista"
+          <a href="#simulador"
              class="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-cyan-500 px-7 py-3.5 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-8px_rgba(6,182,212,0.6)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_44px_-8px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:w-auto">
-            Garantir Acesso Antecipado
+            Aferir Meu Computador
             <svg class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M4 10h12m0 0-5-5m5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -153,7 +151,7 @@
       </div>
     </section>
 
-    <!-- ============ 3. INTRODUÇÃO & CONTEXTO ============ -->
+    <!-- ============ 01. CONTEXTO ============ -->
     <section id="contexto" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
         <div class="grid gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-20">
@@ -185,31 +183,30 @@
             </div>
           </div>
 
-          <!-- Tradutor de jargões -->
           <div class="reveal lg:pt-24">
             <div class="rounded-2xl border border-white/10 bg-zinc-900/30 p-2">
               <div class="flex items-center justify-between px-4 pb-3 pt-2">
                 <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Jargão</span>
                 <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-400/80">Aferir traduz</span>
               </div>
-              <ul id="tradutor" class="space-y-1.5">
-                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+              <ul class="space-y-1.5">
+                <li class="grid grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors hover:border-white/10 hover:bg-white/[0.02]">
                   <span class="font-mono text-sm text-zinc-500">VRAM</span>
                   <span class="text-sm text-zinc-300">Memória da placa de vídeo — quanto ela aguenta de texturas e cenas pesadas.</span>
                 </li>
-                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                <li class="grid grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors hover:border-white/10 hover:bg-white/[0.02]">
                   <span class="font-mono text-sm text-zinc-500">TDP</span>
                   <span class="text-sm text-zinc-300">Quanto a peça esquenta e consome — e se a sua fonte segura.</span>
                 </li>
-                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                <li class="grid grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors hover:border-white/10 hover:bg-white/[0.02]">
                   <span class="font-mono text-sm text-zinc-500">DDR4/5</span>
                   <span class="text-sm text-zinc-300">Geração da memória. Não se misturam: comprar a errada é dinheiro perdido.</span>
                 </li>
-                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                <li class="grid grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors hover:border-white/10 hover:bg-white/[0.02]">
                   <span class="font-mono text-sm text-zinc-500">Clock</span>
                   <span class="text-sm text-zinc-300">Velocidade de cada núcleo. Importa — mas quase nunca é o seu problema.</span>
                 </li>
-                <li class="jargao grid cursor-default grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 hover:border-white/10 hover:bg-white/[0.02]">
+                <li class="grid grid-cols-[88px_1fr] items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors hover:border-white/10 hover:bg-white/[0.02]">
                   <span class="font-mono text-sm text-zinc-500">PCIe</span>
                   <span class="text-sm text-zinc-300">O encaixe da placa-mãe. Define o que entra e o que fica limitado.</span>
                 </li>
@@ -220,14 +217,14 @@
       </div>
     </section>
 
-    <!-- ============ 4. MOCKUP INTERATIVO ============ -->
-    <section id="painel" class="scroll-mt-16 border-t border-white/5">
+    <!-- ============ 02. SIMULADOR ============ -->
+    <section id="simulador" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
         <div class="mx-auto mb-16 max-w-2xl text-center">
-          <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">02 — O painel</p>
-          <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Veja o que o Aferir enxerga.</h2>
+          <p class="reveal font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">02 — Simulador</p>
+          <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Afira o seu computador agora.</h2>
           <p class="reveal mt-5 text-base font-light leading-relaxed text-zinc-400 sm:text-lg">
-            Um diagnóstico real se parece com isto. Escolha como você usa o computador e veja o impacto do upgrade certo.
+            Monte uma versão do seu PC em quatro escolhas. O motor do Aferir aponta o gargalo, sugere o upgrade compatível e cota os preços.
           </p>
         </div>
 
@@ -242,141 +239,155 @@
                 <span class="h-2.5 w-2.5 rounded-full border border-white/15"></span>
               </div>
               <span class="font-mono text-[11px] text-zinc-500">aferir · diagnóstico</span>
-              <span class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
-                <span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> ao vivo
+              <span id="statusJanela" class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
+                <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span> aguardando
               </span>
             </div>
 
-            <div class="grid lg:grid-cols-[1fr_1.1fr]">
+            <div class="grid lg:grid-cols-[1fr_1.05fr]">
 
-              <!-- Coluna: componentes -->
-              <div class="border-b border-white/5 p-5 sm:p-8 lg:border-b-0 lg:border-r">
-                <div class="mb-6 flex items-end justify-between">
-                  <div>
-                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Varredura concluída</p>
-                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu computador</h3>
-                  </div>
-                  <span class="font-mono text-[11px] text-zinc-600">3 componentes</span>
+              <!-- ENTRADA DE DADOS -->
+              <form id="simForm" class="border-b border-white/5 p-5 sm:p-8 lg:border-b-0 lg:border-r" novalidate>
+                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Escaneamento simulado</p>
+                <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Monte o seu PC</h3>
+
+                <div class="mt-7 space-y-7">
+                  <fieldset>
+                    <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                      <span class="font-mono text-[11px] text-cyan-400">01</span> Processador
+                    </legend>
+                    <div id="opt-cpu" class="grid gap-2"></div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                      <span class="font-mono text-[11px] text-cyan-400">02</span> Memória RAM
+                    </legend>
+                    <div id="opt-ram" class="grid gap-2 sm:grid-cols-3"></div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                      <span class="font-mono text-[11px] text-cyan-400">03</span> Placa de Vídeo
+                    </legend>
+                    <div id="opt-gpu" class="grid gap-2 sm:grid-cols-2"></div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend class="mb-3 flex items-center gap-3 text-sm font-medium text-zinc-200">
+                      <span class="font-mono text-[11px] text-cyan-400">04</span> Perfil de Uso
+                    </legend>
+                    <div id="opt-perfil" class="grid gap-2 sm:grid-cols-3"></div>
+                  </fieldset>
                 </div>
 
-                <ul class="space-y-3">
-                  <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                        <rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/>
-                        <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>
-                      </svg>
+                <button type="submit" id="btnAferir"
+                        class="group mt-9 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_8px_32px_-10px_rgba(6,182,212,0.6)] transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.6),0_14px_40px_-10px_rgba(6,182,212,0.8)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-80">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 12 17 7" stroke-linecap="round"/>
+                  </svg>
+                  <span id="btnAferirTxt">Aferir Meu Computador</span>
+                </button>
+                <p id="dicaAoVivo" class="mt-3 hidden text-center text-[11px] text-zinc-500">Diagnóstico ao vivo: altere qualquer peça e o resultado se atualiza.</p>
+              </form>
+
+              <!-- MOCKUP: LEITURA DO PC -->
+              <div class="relative flex flex-col p-5 sm:p-8">
+                <div id="scanOverlay" aria-hidden="true" class="pointer-events-none absolute inset-0 hidden overflow-hidden">
+                  <div class="scanline absolute inset-x-0 top-0 h-1/5 bg-gradient-to-b from-transparent via-cyan-400/[0.08] to-transparent"></div>
+                </div>
+
+                <div class="flex items-end justify-between">
+                  <div>
+                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Leitura do sistema</p>
+                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Seu computador</h3>
+                  </div>
+                  <span id="perfilAtivo" class="font-mono text-[11px] text-zinc-500"></span>
+                </div>
+
+                <ul class="mt-6 space-y-3" id="linhas">
+                  <li id="row-cpu" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
+                    <div class="flex items-center gap-4">
+                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                          <rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/>
+                          <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-zinc-100">Processador</p>
+                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
+                      </div>
+                      <span class="tag shrink-0"></span>
                     </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-medium text-zinc-100">Processador</p>
-                      <p class="truncate font-mono text-xs text-zinc-500">Ryzen 5 5600 · 6 núcleos</p>
-                    </div>
-                    <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>
+                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
                   </li>
 
-                  <li class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4 transition-colors hover:border-white/20">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
-                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                        <rect x="2.5" y="7" width="19" height="9" rx="1"/>
-                        <path d="M6 10v3M9.5 10v3M13 10v3M16.5 10v3M5 16v2M8 16v2M11 16v2M14 16v2M17 16v2M20 16v2" stroke-linecap="round"/>
-                      </svg>
+                  <li id="row-ram" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
+                    <div class="flex items-center gap-4">
+                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                          <rect x="2.5" y="7" width="19" height="9" rx="1"/>
+                          <path d="M6 10v3M9.5 10v3M13 10v3M16.5 10v3M5 16v2M8 16v2M11 16v2M14 16v2M17 16v2M20 16v2" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-zinc-100">Memória RAM</p>
+                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
+                      </div>
+                      <span class="tag shrink-0"></span>
                     </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-medium text-zinc-100">Memória RAM</p>
-                      <p class="truncate font-mono text-xs text-zinc-500">16 GB DDR4 · 3200 MHz</p>
-                    </div>
-                    <span class="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>
+                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
                   </li>
 
-                  <li class="relative flex items-center gap-4 overflow-hidden rounded-xl border border-rose-500/50 bg-rose-500/[0.03] px-4 py-4">
-                    <span aria-hidden="true" class="scanline pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-rose-500/[0.06] to-transparent"></span>
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-500/30 text-rose-400">
-                      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-                        <rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/>
-                        <path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>
-                      </svg>
+                  <li id="row-gpu" class="row rounded-xl border border-white/10 bg-white/[0.015] px-4 py-4">
+                    <div class="flex items-center gap-4">
+                      <div class="ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 text-zinc-400">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+                          <rect x="2.5" y="6" width="19" height="11" rx="1.5"/><circle cx="9" cy="11.5" r="3"/><circle cx="16.5" cy="11.5" r="1.5"/>
+                          <path d="M5 17v2.5M8 17v2.5" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-zinc-100">Placa de Vídeo</p>
+                        <p class="modelo truncate font-mono text-xs text-zinc-500"></p>
+                      </div>
+                      <span class="tag shrink-0"></span>
                     </div>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-medium text-zinc-100">Placa de Vídeo</p>
-                      <p class="truncate font-mono text-xs text-zinc-500">GTX 1650 · 4 GB</p>
-                    </div>
-                    <span class="flex shrink-0 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">
-                      <span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
-                      Gargalo
-                    </span>
+                    <p class="motivo mt-3 hidden border-t border-white/5 pt-3 text-xs leading-relaxed text-zinc-400"></p>
                   </li>
                 </ul>
 
-                <div class="mt-7 rounded-xl border border-white/5 p-4">
+                <div class="mt-6 flex-1 rounded-xl border border-white/5 p-4">
                   <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Em português simples</p>
-                  <p id="diagnostico" class="swap mt-2 text-sm leading-relaxed text-zinc-300"></p>
-                </div>
-
-                <div class="mt-3 flex items-center justify-between rounded-xl border border-white/5 px-4 py-3">
-                  <div class="min-w-0">
-                    <p class="text-[11px] text-zinc-500">Upgrade compatível sugerido</p>
-                    <p id="sugestao" class="swap truncate text-sm text-zinc-100"></p>
-                  </div>
-                  <div class="shrink-0 pl-3 text-right">
-                    <p class="text-[11px] text-zinc-500">menor preço</p>
-                    <p id="preco" class="swap font-mono text-sm text-cyan-300"></p>
-                  </div>
+                  <p id="resumo" class="mt-2 text-sm leading-relaxed text-zinc-400">
+                    Escolha as peças ao lado e clique em <span class="text-zinc-200">Aferir Meu Computador</span>. O diagnóstico aparece aqui.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <!-- Coluna: simulador -->
-              <div class="flex flex-col p-5 sm:p-8">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Simular upgrade</p>
-                    <h3 class="mt-1.5 text-lg font-medium tracking-tight text-white">Perfil de uso</h3>
-                  </div>
-                  <div id="perfis" role="radiogroup" aria-label="Perfil de uso"
-                       class="inline-flex rounded-full border border-white/10 p-1">
-                    <button type="button" role="radio" data-perfil="jogos" class="perfil-btn">Jogos</button>
-                    <button type="button" role="radio" data-perfil="edicao" class="perfil-btn">Edição</button>
-                    <button type="button" role="radio" data-perfil="trabalho" class="perfil-btn">Trabalho</button>
-                  </div>
-                </div>
+            <!-- RESULTADO: SOLUÇÃO PERSONALIZADA -->
+            <div id="resultado" class="hidden scroll-mt-24 border-t border-white/5" aria-live="polite"></div>
 
-                <!-- Destaque do ganho -->
-                <div class="mt-8 flex items-baseline gap-3">
-                  <span id="ganho" class="swap text-5xl font-semibold tracking-[-0.05em] text-white sm:text-6xl">+0%</span>
-                  <span id="ganhoRotulo" class="swap text-sm text-zinc-400"></span>
-                </div>
-
-                <!-- Gráfico de barras -->
-                <figure class="mt-8" aria-labelledby="graficoLegenda">
-                  <div class="relative h-56 sm:h-64">
-                    <!-- linhas de grade -->
-                    <div aria-hidden="true" class="absolute inset-0 flex flex-col justify-between">
-                      <div class="border-t border-white/[0.06]"></div>
-                      <div class="border-t border-white/[0.06]"></div>
-                      <div class="border-t border-white/[0.06]"></div>
-                      <div class="border-t border-white/[0.06]"></div>
-                      <div class="border-t border-white/10"></div>
-                    </div>
-                    <div id="grafico" class="relative grid h-full grid-cols-3 gap-4 sm:gap-6"></div>
-                  </div>
-                  <div id="graficoRotulos" class="mt-3 grid grid-cols-3 gap-4 sm:gap-6"></div>
-                  <figcaption id="graficoLegenda" class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-zinc-400">
-                    <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-sm bg-rose-500/80"></span>Desempenho atual</span>
-                    <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-sm bg-cyan-400"></span>Desempenho otimizado</span>
-                  </figcaption>
-                </figure>
-
-                <div class="mt-6 border-l border-cyan-500/40 pl-4">
-                  <p id="explicacao" class="swap text-sm leading-relaxed text-zinc-300" aria-live="polite"></p>
-                </div>
+            <!-- LEAD INTEGRADO -->
+            <div id="leadSimWrap" class="hidden border-t border-white/5 p-5 sm:p-8">
+              <div class="mx-auto max-w-2xl text-center">
+                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Salve seu relatório</p>
+                <p class="mt-3 text-lg font-medium leading-snug tracking-tight text-white sm:text-xl">
+                  Quer salvar esse relatório completo e receber o software real para escanear seu PC fisicamente com um clique?
+                  <span class="text-zinc-400">Entre na lista do primeiro lote.</span>
+                </p>
+                <div class="lead-box mt-7" data-lead></div>
               </div>
             </div>
           </div>
         </div>
-        <p class="mt-5 text-center font-mono text-[11px] text-zinc-600">Simulação ilustrativa com base em médias de mercado. Valores reais dependem do seu hardware.</p>
+        <p class="mt-5 text-center font-mono text-[11px] text-zinc-600">Simulação com base em médias de mercado. Preços médios simulados; valores reais variam por loja e data.</p>
       </div>
     </section>
 
-    <!-- ============ 5. COMO FUNCIONA ============ -->
+    <!-- ============ 03. COMO FUNCIONA ============ -->
     <section id="como-funciona" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
         <div class="max-w-2xl">
@@ -384,8 +395,8 @@
           <h2 class="reveal mt-5 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Do diagnóstico ao carrinho em três passos.</h2>
         </div>
 
-        <ol class="relative mt-16 grid gap-6 md:grid-cols-3 md:gap-8">
-          <div aria-hidden="true" class="absolute left-0 right-0 top-[2.15rem] hidden h-px bg-gradient-to-r from-cyan-500/40 via-white/10 to-transparent md:block"></div>
+        <ol class="relative mt-16 grid gap-10 md:grid-cols-3 md:gap-8">
+          <li aria-hidden="true" class="pointer-events-none absolute left-0 right-0 top-[2.15rem] hidden h-px list-none bg-gradient-to-r from-cyan-500/40 via-white/10 to-transparent md:block"></li>
 
           <li class="reveal relative">
             <div class="relative z-10 flex h-[4.3rem] w-[4.3rem] items-center justify-center rounded-full border border-cyan-500/40 bg-zinc-950 font-mono text-lg text-cyan-300">01</div>
@@ -394,7 +405,7 @@
               Você roda um arquivo leve de 5 segundos que lê os sensores reais da sua máquina,
               <span class="text-zinc-200">sem coletar dados pessoais</span>.
             </p>
-            <p class="mt-5 font-mono text-[11px] text-zinc-600">~2 MB · Windows · sem instalação</p>
+            <p class="mt-5 font-mono text-[11px] text-zinc-600">arquivo leve · sem instalação</p>
           </li>
 
           <li class="reveal relative">
@@ -420,7 +431,7 @@
       </div>
     </section>
 
-    <!-- ============ 6. ERROS EVITADOS ============ -->
+    <!-- ============ 04. ERROS EVITADOS ============ -->
     <section id="erros" class="scroll-mt-16 border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
         <div class="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-20">
@@ -493,7 +504,7 @@
       </div>
     </section>
 
-    <!-- ============ 7. PILARES ============ -->
+    <!-- ============ 05. PILARES ============ -->
     <section class="border-t border-white/5">
       <div class="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
         <div class="mx-auto max-w-2xl text-center">
@@ -536,7 +547,7 @@
     </section>
   </main>
 
-  <!-- ============ 8. CAPTURA DE LEAD ============ -->
+  <!-- ============ FECHAMENTO / LEAD ============ -->
   <footer id="lista" class="scroll-mt-16 border-t border-white/5">
     <div class="relative mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
       <div aria-hidden="true" class="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-72 w-[40rem] max-w-full -translate-x-1/2 rounded-full bg-cyan-500/[0.07] blur-3xl"></div>
@@ -547,45 +558,7 @@
         <p class="reveal mt-5 text-base font-light leading-relaxed text-zinc-400">
           Os convites serão liberados em ordem de inscrição. Sem spam — só o aviso que importa.
         </p>
-
-        <div class="reveal mt-12">
-          <form id="leadForm" class="space-y-3 text-left" novalidate>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label class="block">
-                <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Nome</span>
-                <input id="nome" name="nome" type="text" autocomplete="name" required placeholder="Como podemos te chamar?"
-                       class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
-              </label>
-              <label class="block">
-                <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">E-mail</span>
-                <input id="email" name="email" type="email" autocomplete="email" required placeholder="seu@email.com"
-                       class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
-              </label>
-            </div>
-            <button type="submit" id="submitBtn"
-                    class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_10px_36px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-70">
-              <span id="submitTxt">Garantir Acesso Antecipado</span>
-            </button>
-            <p id="formErro" class="hidden pt-1 text-center text-xs text-zinc-300" role="alert"></p>
-            <p class="pt-2 text-center text-[11px] text-zinc-600">Usamos seu e-mail apenas para enviar o convite.</p>
-          </form>
-
-          <div id="sucesso" class="hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/[0.07] to-transparent px-6 py-10 sm:px-10" role="status" aria-live="polite" tabindex="-1">
-            <div class="relative mx-auto flex h-14 w-14 items-center justify-center">
-              <span class="absolute inset-0 animate-ping rounded-full border border-cyan-400/40"></span>
-              <span class="relative flex h-14 w-14 items-center justify-center rounded-full border border-cyan-400/50 bg-zinc-950 text-cyan-300">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-                  <path d="m6 12.5 4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
-            </div>
-            <h3 class="mt-6 text-xl font-medium tracking-tight text-white">Pronto, <span id="sucessoNome"></span>!</h3>
-            <p class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-zinc-300">
-              Você está na lista do Aferir. Avisaremos assim que o primeiro lote de convites for liberado.
-            </p>
-            <p class="mt-6 font-mono text-[11px] text-zinc-500">Posição estimada na fila · <span id="posicao" class="text-cyan-300"></span></p>
-          </div>
-        </div>
+        <div class="reveal mt-12" data-lead></div>
       </div>
 
       <div class="mt-28 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-zinc-600 sm:flex-row">
@@ -601,194 +574,552 @@
     </div>
   </footer>
 
+  <!-- Modelo do formulário de lead (reutilizado no simulador e no rodapé) -->
+  <template id="tplLead">
+    <form class="lead-form space-y-3 text-left" novalidate>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <label class="block">
+          <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Nome</span>
+          <input name="nome" type="text" autocomplete="name" required maxlength="60" placeholder="Como podemos te chamar?"
+                 class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">E-mail</span>
+          <input name="email" type="email" autocomplete="email" required maxlength="120" placeholder="seu@email.com"
+                 class="w-full rounded-xl border border-white/10 bg-white/[0.01] px-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30" />
+        </label>
+      </div>
+      <button type="submit"
+              class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-6 py-4 text-sm font-medium text-zinc-950 transition-all duration-300 hover:bg-cyan-400 hover:shadow-[0_10px_36px_-8px_rgba(6,182,212,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-70">
+        <span class="lead-btn-txt">Garantir Acesso Antecipado</span>
+      </button>
+      <p class="lead-erro hidden pt-1 text-center text-xs text-zinc-300" role="alert"></p>
+      <p class="pt-2 text-center text-[11px] text-zinc-600">Usamos seu e-mail apenas para enviar o convite e o relatório.</p>
+    </form>
+
+    <div class="lead-ok hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/[0.07] to-transparent px-6 py-10 text-center sm:px-10" role="status" tabindex="-1">
+      <div class="relative mx-auto flex h-14 w-14 items-center justify-center">
+        <span class="absolute inset-0 animate-ping rounded-full border border-cyan-400/40"></span>
+        <span class="relative flex h-14 w-14 items-center justify-center rounded-full border border-cyan-400/50 bg-zinc-950 text-cyan-300">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="m6 12.5 4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+      <p class="lead-ok-msg mx-auto mt-6 max-w-md text-[15px] leading-relaxed text-zinc-200"></p>
+      <p class="lead-ok-diag mt-5 hidden font-mono text-[11px] text-zinc-500"></p>
+    </div>
+  </template>
+
   <script>
     (function () {
+      'use strict';
       var $ = function (id) { return document.getElementById(id); };
+      var brl = function (v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); };
 
-      // ---------- Revelação ao rolar ----------
+      // =====================================================================
+      // Revelação ao rolar
+      // =====================================================================
       var reveals = document.querySelectorAll('.reveal');
       if ('IntersectionObserver' in window) {
         var ro = new IntersectionObserver(function (entries) {
           entries.forEach(function (e) {
             if (e.isIntersecting) { e.target.classList.add('is-visible'); ro.unobserve(e.target); }
           });
-        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
         reveals.forEach(function (el) { ro.observe(el); });
       } else {
         reveals.forEach(function (el) { el.classList.add('is-visible'); });
       }
 
-      // ---------- Simulador ----------
-      // Cada métrica: valor atual, valor otimizado, unidade e se "menor é melhor".
-      var perfis = {
-        jogos: {
-          ganho: '+62%',
-          ganhoRotulo: 'em estabilidade gráfica',
-          diagnostico: 'Sua placa de vídeo não acompanha o processador. Nos jogos, ela trabalha no limite enquanto o resto do PC fica esperando — é isso que causa as travadas.',
-          explicacao: 'Com a placa certa, os quadros por segundo sobem e, principalmente, deixam de oscilar: o jogo para de dar “engasgos” nas cenas pesadas. Processador e memória finalmente trabalham no ritmo para o qual foram feitos.',
-          sugestao: 'RTX 4060 · 8 GB', preco: 'R$ 1.899',
-          metricas: [
-            { nome: 'FPS médio', atual: 41, novo: 96, un: '' },
-            { nome: 'Estabilidade', atual: 52, novo: 94, un: '%' },
-            { nome: 'Uso da GPU', atual: 99, novo: 71, un: '%', menor: true }
+      // =====================================================================
+      // Base de dados do simulador
+      // =====================================================================
+      var CPUS = {
+        i3: { nome: 'Intel Core i3 10ª Gen', detalhe: '4 núcleos · soquete LGA 1200', nivel: 'Fraco' },
+        r5: { nome: 'AMD Ryzen 5 5600', detalhe: '6 núcleos · soquete AM4', nivel: 'Intermediário' },
+        i7: { nome: 'Intel Core i7 13ª Gen', detalhe: '16 núcleos · soquete LGA 1700', nivel: 'Forte' }
+      };
+      var RAMS = {
+        r8:  { nome: '8GB DDR4',  detalhe: '8 GB · DDR4',  nivel: 'Pouca' },
+        r16: { nome: '16GB DDR4', detalhe: '16 GB · DDR4', nivel: 'Ideal' },
+        r32: { nome: '32GB DDR5', detalhe: '32 GB · DDR5', nivel: 'Excelente' }
+      };
+      var GPUS = {
+        g1050: { nome: 'NVIDIA GTX 1050 Ti', detalhe: '4 GB · geração de 2016', nivel: 'Antiga',        fonte: 300, base: 22 },
+        g1650: { nome: 'NVIDIA GTX 1650',    detalhe: '4 GB · linha de entrada', nivel: 'Entrada',      fonte: 350, base: 30 },
+        g3060: { nome: 'NVIDIA RTX 3060',    detalhe: '12 GB · linha RTX',       nivel: 'Intermediária', fonte: 550, base: 70 },
+        igpu:  { nome: 'Sem Placa de Vídeo', detalhe: 'apenas vídeo integrado',  nivel: 'Integrada',    fonte: 300, base: 12 }
+      };
+      var PERFIS = {
+        jogos:  { nome: 'Jogos Competitivos',       curto: 'Jogos' },
+        edicao: { nome: 'Edição de Vídeo/Trabalho', curto: 'Edição' },
+        geral:  { nome: 'Uso Geral Diário',         curto: 'Uso geral' }
+      };
+
+      // Upgrades sugeridos (preços médios simulados no mercado brasileiro)
+      var UPGRADES = {
+        gpu: {
+          produto: 'NVIDIA RTX 4060 8GB',
+          tipo: 'Placa de Vídeo',
+          fonte: 450,
+          lojas: [
+            { loja: 'Kabum', preco: 1849 },
+            { loja: 'Terabyte', preco: 1879 },
+            { loja: 'Pichau', preco: 1899 }
           ]
         },
-        edicao: {
-          ganho: '2,3×',
-          ganhoRotulo: 'mais rápido para exportar',
-          diagnostico: 'Sua placa de vídeo não tem aceleração moderna para vídeo. O processador acaba fazendo esse trabalho pesado sozinho — por isso a exportação demora e a timeline engasga.',
-          explicacao: 'A nova placa assume a codificação do vídeo. A prévia na timeline fica fluida, os efeitos rodam em tempo real e um projeto em 4K que levava quase meia hora passa a sair em cerca de 12 minutos.',
-          sugestao: 'RTX 4060 · 8 GB (NVENC)', preco: 'R$ 1.899',
-          metricas: [
-            { nome: 'Exportação 4K', atual: 28, novo: 12, un: ' min', menor: true },
-            { nome: 'Prévia fluida', atual: 38, novo: 91, un: '%' },
-            { nome: 'Efeitos em tempo real', atual: 3, novo: 11, un: '' }
+        cpu: {
+          produto: 'Intel Core i5 10ª Gen (i5-10400F)',
+          tipo: 'Processador',
+          lojas: [
+            { loja: 'Kabum', preco: 629 },
+            { loja: 'Terabyte', preco: 639 },
+            { loja: 'Pichau', preco: 649 }
           ]
         },
-        trabalho: {
-          ganho: '+48%',
-          ganhoRotulo: 'de fluidez no projeto',
-          diagnostico: 'Modelos e projetos grandes não cabem na memória da sua placa de vídeo. Ela passa a usar a memória do sistema, e a navegação pelo projeto fica lenta e travada.',
-          explicacao: 'Com mais memória de vídeo, o projeto inteiro fica carregado na placa. Girar, aproximar e editar modelos complexos volta a ser instantâneo, e o sistema para de “pensar” a cada clique.',
-          sugestao: 'RTX 4060 Ti · 16 GB', preco: 'R$ 2.749',
-          metricas: [
-            { nome: 'Fluidez da cena', atual: 44, novo: 92, un: '%' },
-            { nome: 'Abertura do projeto', atual: 46, novo: 19, un: ' s', menor: true },
-            { nome: 'Memória livre', atual: 8, novo: 61, un: '%' }
+        ram: {
+          produto: 'Mais 1 Kit de 8GB ou 16GB DDR4',
+          tipo: 'Memória RAM',
+          lojas: [
+            { loja: 'Pichau', preco: 249, ate: 389 },
+            { loja: 'Kabum', preco: 259, ate: 399 },
+            { loja: 'Terabyte', preco: 265, ate: 395 }
           ]
         }
       };
 
-      var grafico = $('grafico');
-      var rotulos = $('graficoRotulos');
-      var swaps = ['ganho', 'ganhoRotulo', 'diagnostico', 'explicacao', 'sugestao', 'preco'].map($);
-      var colunas = [];
+      // =====================================================================
+      // Seletores (rádios estilizados)
+      // =====================================================================
+      var estado = { cpu: 'r5', ram: 'r16', gpu: 'g1650', perfil: 'jogos' };
 
-      // Monta 3 colunas, cada uma com uma barra "atual" (rose) e "otimizado" (cyan)
-      for (var i = 0; i < 3; i++) {
-        var col = document.createElement('div');
-        col.className = 'flex h-full items-end justify-center gap-2 sm:gap-3';
-        col.innerHTML =
-          '<div class="flex h-full w-full max-w-[44px] flex-col justify-end">' +
-            '<span class="v-atual mb-2 text-center font-mono text-[11px] text-rose-300/90"></span>' +
-            '<div class="bar b-atual w-full rounded-t-md border border-rose-500/50 bg-rose-500/25" style="height:0%"></div>' +
-          '</div>' +
-          '<div class="flex h-full w-full max-w-[44px] flex-col justify-end">' +
-            '<span class="v-novo mb-2 text-center font-mono text-[11px] text-cyan-300"></span>' +
-            '<div class="bar b-novo w-full rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-400 shadow-[0_0_24px_-4px_rgba(34,211,238,0.5)]" style="height:0%"></div>' +
-          '</div>';
-        grafico.appendChild(col);
-
-        var rot = document.createElement('p');
-        rot.className = 'text-center text-[11px] leading-tight text-zinc-500';
-        rotulos.appendChild(rot);
-
-        colunas.push({
-          bAtual: col.querySelector('.b-atual'), bNovo: col.querySelector('.b-novo'),
-          vAtual: col.querySelector('.v-atual'), vNovo: col.querySelector('.v-novo'), rot: rot
+      function montarOpcoes(grupo, dados, legendaFn) {
+        var box = $('opt-' + grupo);
+        Object.keys(dados).forEach(function (k) {
+          var d = dados[k];
+          var label = document.createElement('label');
+          label.className = 'block cursor-pointer';
+          label.innerHTML =
+            '<input type="radio" class="peer sr-only" name="' + grupo + '" value="' + k + '"' + (estado[grupo] === k ? ' checked' : '') + '>' +
+            '<span class="flex h-full items-center justify-between gap-3 rounded-xl border border-white/10 px-4 py-3 text-sm text-zinc-300 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.02] peer-checked:border-cyan-500/60 peer-checked:bg-cyan-500/[0.06] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-cyan-400/60">' +
+              '<span class="leading-tight">' + d.nome + '</span>' +
+              (legendaFn ? '<span class="shrink-0 font-mono text-[10px] uppercase tracking-wider text-zinc-500">' + legendaFn(d) + '</span>' : '') +
+            '</span>';
+          box.appendChild(label);
         });
       }
+      montarOpcoes('cpu', CPUS, function (d) { return d.nivel; });
+      montarOpcoes('ram', RAMS, function (d) { return d.nivel; });
+      montarOpcoes('gpu', GPUS, function (d) { return d.nivel; });
+      montarOpcoes('perfil', PERFIS, null);
 
-      // Altura da barra: "otimizado" sempre maior, mesmo quando menor é melhor (barra = desempenho)
-      function alturas(m) {
-        var max = Math.max(m.atual, m.novo);
-        if (m.menor) {
-          return { atual: Math.round((m.novo / m.atual) * 82), novo: 82 };
-        }
-        return { atual: Math.round((m.atual / max) * 82), novo: Math.round((m.novo / max) * 82) };
-      }
+      // =====================================================================
+      // Motor de diagnóstico
+      // =====================================================================
+      function diagnosticar(s) {
+        var pesado = s.perfil !== 'geral';
+        var r = {
+          status: { cpu: 'ok', ram: 'ok', gpu: 'ok' },
+          motivo: { cpu: '', ram: '', gpu: '' },
+          principal: null,
+          secundario: null
+        };
 
-      var graficoVisivel = false;
-      function desenharGrafico(p) {
-        p.metricas.forEach(function (m, idx) {
-          var c = colunas[idx];
-          var h = alturas(m);
-          c.rot.textContent = m.nome + (m.menor ? ' ↓' : '');
-          c.rot.title = m.menor ? 'Menor é melhor' : '';
-          c.vAtual.textContent = m.atual + m.un;
-          c.vNovo.textContent = m.novo + m.un;
-          c.bAtual.style.height = graficoVisivel ? h.atual + '%' : '0%';
-          c.bNovo.style.height = graficoVisivel ? h.novo + '%' : '0%';
-          c.bAtual.setAttribute('aria-label', m.nome + ' atual: ' + m.atual + m.un);
-          c.bNovo.setAttribute('aria-label', m.nome + ' otimizado: ' + m.novo + m.un);
-        });
-      }
-
-      var grupo = $('perfis');
-      var botoes = Array.prototype.slice.call(grupo.querySelectorAll('.perfil-btn'));
-      var BTN = 'rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:px-5 ';
-      var atual = null;
-
-      function selecionar(chave, animar) {
-        if (chave === atual) return;
-        atual = chave;
-        var p = perfis[chave];
-
-        botoes.forEach(function (b) {
-          var on = b.dataset.perfil === chave;
-          b.className = 'perfil-btn ' + BTN + (on ? 'bg-cyan-500 text-zinc-950 shadow-[0_0_20px_-6px_rgba(34,211,238,0.7)]' : 'text-zinc-400 hover:text-zinc-100');
-          b.setAttribute('aria-checked', on ? 'true' : 'false');
-          b.tabIndex = on ? 0 : -1;
-        });
-
-        function aplicar() {
-          $('ganho').textContent = p.ganho;
-          $('ganhoRotulo').textContent = p.ganhoRotulo;
-          $('diagnostico').textContent = p.diagnostico;
-          $('explicacao').textContent = p.explicacao;
-          $('sugestao').textContent = p.sugestao;
-          $('preco').textContent = p.preco;
-          swaps.forEach(function (n) { n.classList.remove('is-out'); });
+        // Regra 1 — Placa de vídeo fraca para jogos/edição
+        var gpuFraca = s.gpu === 'g1050' || s.gpu === 'g1650' || s.gpu === 'igpu';
+        if (gpuFraca && pesado) {
+          r.status.gpu = 'critico';
+          r.motivo.gpu = s.gpu === 'igpu'
+            ? 'O vídeo integrado divide memória e energia com o processador. Para ' + PERFIS[s.perfil].curto.toLowerCase() + ', ele não dá conta.'
+            : 'Esta placa trabalha no limite o tempo todo e faz processador e memória ficarem esperando por ela.';
         }
 
-        desenharGrafico(p);
-        if (animar) {
-          swaps.forEach(function (n) { n.classList.add('is-out'); });
-          setTimeout(aplicar, 200);
-        } else {
-          aplicar();
+        // Regra 2 — Processador fraco segurando uma placa forte
+        if (s.cpu === 'i3' && s.gpu === 'g3060') {
+          r.status.cpu = 'critico';
+          r.motivo.cpu = 'Gargalo de CPU: o processador não entrega dados rápido o bastante para a RTX 3060, que fica ociosa.';
         }
+
+        // Regra 3 — Pouca memória para uso pesado
+        if (s.ram === 'r8' && pesado) {
+          r.status.ram = 'limite';
+          r.motivo.ram = s.perfil === 'jogos'
+            ? 'Jogos atuais pedem 16 GB. Com 8 GB, o sistema recorre ao disco e surgem pequenos travamentos.'
+            : 'Programas de edição ocupam quase toda a memória. Com 8 GB, prévias e exportações ficam lentas.';
+        }
+
+        if (r.status.gpu === 'critico') r.principal = 'gpu';
+        else if (r.status.cpu === 'critico') r.principal = 'cpu';
+        else if (r.status.ram === 'limite') r.principal = 'ram';
+
+        if (r.principal && r.principal !== 'ram' && r.status.ram === 'limite') r.secundario = 'ram';
+
+        return r;
       }
 
-      botoes.forEach(function (b) {
-        b.addEventListener('click', function () { selecionar(b.dataset.perfil, true); });
-      });
+      // Desempenho atual vs. otimizado (0–100) e fonte recomendada
+      function projetar(s, d) {
+        var extraCpu = s.cpu === 'i7' ? 100 : 0;
+        var p = { atual: 0, novo: 0, fonte: GPUS[s.gpu].fonte + extraCpu, proximoLimite: '' };
 
-      grupo.addEventListener('keydown', function (e) {
-        var i = botoes.indexOf(document.activeElement);
-        if (i < 0) return;
-        var d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        var prox = botoes[(i + d + botoes.length) % botoes.length];
-        prox.focus();
-        selecionar(prox.dataset.perfil, true);
-      });
-
-      selecionar('jogos', false);
-
-      // Barras crescem quando o gráfico entra na tela
-      if ('IntersectionObserver' in window) {
-        var go = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) {
-            graficoVisivel = true;
-            desenharGrafico(perfis[atual]);
-            go.disconnect();
+        if (d.principal === 'gpu') {
+          p.atual = GPUS[s.gpu].base;
+          p.novo = 85;
+          if (s.cpu === 'i3') {
+            p.novo = 72;
+            p.proximoLimite = 'Depois desta troca, o processador i3 passa a ser o próximo limite do sistema.';
           }
-        }, { threshold: 0.35 });
-        go.observe(grafico);
-      } else {
-        graficoVisivel = true;
-        desenharGrafico(perfis[atual]);
+          if (s.ram === 'r8') p.atual = Math.max(8, p.atual - 4);
+          p.fonte = UPGRADES.gpu.fonte + extraCpu;
+        } else if (d.principal === 'cpu') {
+          p.atual = 45;
+          p.novo = s.ram === 'r8' ? 76 : 82;
+        } else if (d.principal === 'ram') {
+          p.atual = s.perfil === 'jogos' ? 58 : 52;
+          p.novo = s.perfil === 'jogos' ? 84 : 86;
+        } else {
+          p.atual = p.novo = 90;
+        }
+        return p;
       }
 
-      // ---------- Formulário de lead ----------
-      var form = $('leadForm');
-      var nome = $('nome');
-      var email = $('email');
-      var erro = $('formErro');
-      var btn = $('submitBtn');
+      function textoResumo(s, d) {
+        var perfil = PERFIS[s.perfil].nome;
+        if (d.principal === 'gpu') {
+          return s.gpu === 'igpu'
+            ? 'Seu computador não tem uma placa de vídeo dedicada — e é exatamente ela que falta para ' + perfil.toLowerCase() + '. O resto do sistema está pronto para render mais.'
+            : 'Sua ' + GPUS[s.gpu].nome + ' é o que está segurando o PC. Para ' + perfil.toLowerCase() + ', ela trabalha no limite enquanto o resto fica esperando — é isso que causa travadas e lentidão.';
+        }
+        if (d.principal === 'cpu') {
+          return 'Você tem uma ótima placa de vídeo, mas o processador não acompanha. É como um carro potente preso atrás de um caminhão: a RTX 3060 fica parada esperando o i3.';
+        }
+        if (d.principal === 'ram') {
+          return 'Processador e placa de vídeo estão bem. O que aperta é a memória: com 8 GB, o sistema fica sem espaço e começa a usar o disco, que é muito mais lento.';
+        }
+        return 'Boa notícia: nenhuma peça está segurando as outras para ' + perfil.toLowerCase() + '. Seu PC está equilibrado — e o melhor upgrade agora é não gastar nada.';
+      }
+
+      // =====================================================================
+      // Renderização do mockup
+      // =====================================================================
+      var TAGS = {
+        aguardando: '<span class="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-zinc-500">Aguardando</span>',
+        ok:         '<span class="rounded-full border border-cyan-500/30 bg-cyan-500/[0.07] px-2.5 py-1 text-[11px] font-medium text-cyan-300">Estável</span>',
+        limite:     '<span class="rounded-full border border-amber-400/30 bg-amber-400/[0.07] px-2.5 py-1 text-[11px] font-medium text-amber-200">🟡 Limite Próximo</span>',
+        critico:    '<span class="rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">🔴 Gargalo Crítico</span>',
+        criticoCpu: '<span class="rounded-full border border-rose-500/40 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300">🔴 Gargalo de CPU</span>'
+      };
+      var ROW_BASE = 'row rounded-xl border px-4 py-4 ';
+      var ROW_ESTILO = {
+        aguardando: 'border-white/10 bg-white/[0.015]',
+        ok:         'border-white/10 bg-white/[0.015]',
+        limite:     'border-amber-400/30 bg-amber-400/[0.02]',
+        critico:    'border-rose-500/50 bg-rose-500/[0.04]'
+      };
+      var ICO_ESTILO = {
+        aguardando: 'border-white/10 text-zinc-400',
+        ok:         'border-white/10 text-zinc-400',
+        limite:     'border-amber-400/30 text-amber-300',
+        critico:    'border-rose-500/30 text-rose-400'
+      };
+
+      function atualizarModelos() {
+        $('row-cpu').querySelector('.modelo').textContent = CPUS[estado.cpu].nome + ' · ' + CPUS[estado.cpu].detalhe.split(' · ')[0];
+        $('row-ram').querySelector('.modelo').textContent = RAMS[estado.ram].detalhe;
+        $('row-gpu').querySelector('.modelo').textContent = GPUS[estado.gpu].nome + ' · ' + GPUS[estado.gpu].detalhe;
+        $('perfilAtivo').textContent = PERFIS[estado.perfil].curto;
+      }
+
+      function pintarLinha(chave, status, motivo) {
+        var row = $('row-' + chave);
+        row.className = ROW_BASE + ROW_ESTILO[status];
+        row.querySelector('.ico').className = 'ico flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ' + ICO_ESTILO[status];
+        var tag = status === 'critico' && chave === 'cpu' ? 'criticoCpu' : status;
+        row.querySelector('.tag').innerHTML = TAGS[tag];
+        var m = row.querySelector('.motivo');
+        m.textContent = motivo || '';
+        m.classList.toggle('hidden', !motivo);
+      }
+
+      function resetarLinhas() {
+        ['cpu', 'ram', 'gpu'].forEach(function (k) { pintarLinha(k, 'aguardando', ''); });
+      }
+
+      // =====================================================================
+      // Card de solução
+      // =====================================================================
+      function htmlLojas(lojas) {
+        var menor = Math.min.apply(null, lojas.map(function (l) { return l.preco; }));
+        return lojas.map(function (l) {
+          var melhor = l.preco === menor;
+          var preco = l.ate ? brl(l.preco) + ' – ' + brl(l.ate) : brl(l.preco);
+          return '<li class="flex items-center justify-between gap-3 rounded-lg border ' + (melhor ? 'border-cyan-500/30 bg-cyan-500/[0.04]' : 'border-white/5') + ' px-4 py-3">' +
+                   '<span class="flex items-center gap-2 text-sm text-zinc-200">' + l.loja +
+                     (melhor ? '<span class="rounded-full bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-300">menor preço</span>' : '') +
+                   '</span>' +
+                   '<span class="font-mono text-sm ' + (melhor ? 'text-cyan-300' : 'text-zinc-400') + '">' + preco + '</span>' +
+                 '</li>';
+        }).join('');
+      }
+
+      function notaSeguranca(s, d, p) {
+        var linhas = [];
+        if (d.principal === 'gpu') {
+          linhas.push('Sua placa-mãe é compatível com este componente (encaixe PCIe x16).');
+          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis e um conector PCIe de 8 pinos.');
+        } else if (d.principal === 'cpu') {
+          linhas.push('Sua placa-mãe é compatível com este componente (mesmo soquete LGA 1200 — não precisa trocar a placa-mãe). Atualize a BIOS antes da troca.');
+          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis para manter a RTX 3060 alimentada.');
+        } else if (d.principal === 'ram') {
+          linhas.push('Sua placa-mãe é compatível com este componente (padrão DDR4). Prefira a mesma frequência do módulo atual para ativar o dual channel.');
+          linhas.push('Verifique se sua fonte possui pelo menos ' + p.fonte + 'W estáveis — memória quase não altera o consumo.');
+        }
+        return linhas;
+      }
+
+      function renderResultado(s, d, p) {
+        var box = $('resultado');
+
+        if (!d.principal) {
+          box.innerHTML =
+            '<div class="pop grid gap-8 p-5 sm:p-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">' +
+              '<div>' +
+                '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Resultado · ' + PERFIS[s.perfil].nome + '</p>' +
+                '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Nenhum gargalo encontrado.</h3>' +
+                '<p class="mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">Seu computador está equilibrado para esse uso. Comprar peças agora seria gastar sem ganho real — o Aferir também existe para te dizer quando <span class="text-zinc-200">não</span> comprar.</p>' +
+              '</div>' +
+              '<div class="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] p-6">' +
+                '<p class="text-xs text-zinc-500">Adequação ao seu uso</p>' +
+                '<p class="mt-1 text-4xl font-semibold tracking-[-0.04em] text-white">' + p.atual + '%</p>' +
+                '<div class="mt-4 h-2 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" data-w="' + p.atual + '" style="width:0%"></div></div>' +
+                '<p class="mt-4 font-mono text-[11px] text-zinc-500">Investimento recomendado agora · <span class="text-cyan-300">R$ 0</span></p>' +
+              '</div>' +
+            '</div>';
+          return animarBarras(box);
+        }
+
+        var up = UPGRADES[d.principal];
+        var menor = Math.min.apply(null, up.lojas.map(function (l) { return l.preco; }));
+        var total = menor + (d.secundario ? UPGRADES.ram.lojas[0].preco : 0);
+        var ganhoPts = p.novo - p.atual;
+        var notas = notaSeguranca(s, d, p);
+
+        var extra = '';
+        if (d.secundario) {
+          extra += '<div class="flex items-start gap-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.03] px-4 py-3 text-xs leading-relaxed text-zinc-300">' +
+                     '<span aria-hidden="true">🟡</span><span><span class="text-zinc-100">Também recomendado:</span> ' + UPGRADES.ram.produto + ' (' + brl(250) + ' – ' + brl(400) + '). Já incluído no orçamento com o kit de 8 GB.</span>' +
+                   '</div>';
+        }
+        if (p.proximoLimite) {
+          extra += '<div class="flex items-start gap-3 rounded-lg border border-white/10 px-4 py-3 text-xs leading-relaxed text-zinc-400">' +
+                     '<span class="font-mono text-cyan-400" aria-hidden="true">→</span><span>' + p.proximoLimite + '</span>' +
+                   '</div>';
+        }
+
+        box.innerHTML =
+          '<div class="pop p-5 sm:p-8">' +
+            '<div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">' +
+              '<div>' +
+                '<p class="font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-400/80">Solução personalizada · ' + PERFIS[s.perfil].nome + '</p>' +
+                '<h3 class="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Upgrade ideal: <span class="text-cyan-300">' + up.produto + '</span></h3>' +
+              '</div>' +
+              '<p class="font-mono text-[11px] text-zinc-500">substitui · ' + up.tipo + '</p>' +
+            '</div>' +
+
+            '<div class="mt-8 grid gap-6 lg:grid-cols-[1.25fr_1fr]">' +
+
+              // Gráfico
+              '<div class="rounded-xl border border-white/10 p-5 sm:p-6">' +
+                '<div class="flex items-baseline justify-between gap-3">' +
+                  '<p class="text-xs text-zinc-500">Desempenho para ' + PERFIS[s.perfil].curto.toLowerCase() + '</p>' +
+                  '<p class="font-mono text-xs text-cyan-300">+' + ganhoPts + ' pontos</p>' +
+                '</div>' +
+                '<p class="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white"><span class="text-rose-300/90">' + p.atual + '%</span> <span class="text-zinc-600">→</span> ' + p.novo + '%</p>' +
+                '<div class="mt-7 space-y-5" role="img" aria-label="Desempenho atual ' + p.atual + '%, desempenho otimizado ' + p.novo + '%">' +
+                  '<div>' +
+                    '<div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Desempenho atual</span><span class="font-mono text-rose-300/90">' + p.atual + '%</span></div>' +
+                    '<div class="h-3 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full border border-rose-500/50 bg-rose-500/30" data-w="' + p.atual + '" style="width:0%"></div></div>' +
+                  '</div>' +
+                  '<div>' +
+                    '<div class="mb-2 flex justify-between text-xs"><span class="text-zinc-400">Desempenho otimizado</span><span class="font-mono text-cyan-300">' + p.novo + '%</span></div>' +
+                    '<div class="h-3 overflow-hidden rounded-full bg-white/5"><div class="bar h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-[0_0_20px_-4px_rgba(34,211,238,0.6)]" data-w="' + p.novo + '" style="width:0%"></div></div>' +
+                  '</div>' +
+                  '<div class="flex justify-between font-mono text-[10px] text-zinc-600"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>' +
+                '</div>' +
+              '</div>' +
+
+              // Preços
+              '<div class="flex flex-col rounded-xl border border-white/10 p-5 sm:p-6">' +
+                '<p class="text-xs text-zinc-500">Preços médios no Brasil (simulados)</p>' +
+                '<ul class="mt-4 space-y-2">' + htmlLojas(up.lojas) + '</ul>' +
+                '<div class="mt-auto flex items-end justify-between border-t border-white/5 pt-4">' +
+                  '<span class="text-xs text-zinc-500">Orçamento estimado</span>' +
+                  '<span class="text-2xl font-semibold tracking-tight text-white">' + brl(total) + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+
+            (extra ? '<div class="mt-4 space-y-2">' + extra + '</div>' : '') +
+
+            // Nota de segurança
+            '<div class="mt-4 flex items-start gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] px-5 py-4">' +
+              '<svg class="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">' +
+                '<path d="M12 3 5 6v5.5c0 4.2 3 7.8 7 9.5 4-1.7 7-5.3 7-9.5V6l-7-3Z" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '</svg>' +
+              '<div><p class="text-sm font-medium text-zinc-100">Nota de segurança</p>' +
+              notas.map(function (n) { return '<p class="mt-1 text-sm leading-relaxed text-zinc-400">' + n + '</p>'; }).join('') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        animarBarras(box);
+      }
+
+      function animarBarras(box) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            box.querySelectorAll('.bar[data-w]').forEach(function (b) { b.style.width = b.dataset.w + '%'; });
+          });
+        });
+      }
+
+      // =====================================================================
+      // Fluxo do simulador
+      // =====================================================================
+      var ultimoDiagnostico = null;
+      var jaAferiu = false;
+      var escaneando = false;
+
+      function aplicarDiagnostico() {
+        var s = { cpu: estado.cpu, ram: estado.ram, gpu: estado.gpu, perfil: estado.perfil };
+        var d = diagnosticar(s);
+        var p = projetar(s, d);
+
+        ['cpu', 'ram', 'gpu'].forEach(function (k) { pintarLinha(k, d.status[k], d.motivo[k]); });
+        $('resumo').textContent = textoResumo(s, d);
+        $('resumo').className = 'mt-2 text-sm leading-relaxed text-zinc-200';
+        renderResultado(s, d, p);
+        $('resultado').classList.remove('hidden');
+        $('leadSimWrap').classList.remove('hidden');
+
+        var nCrit = ['cpu', 'gpu'].filter(function (k) { return d.status[k] === 'critico'; }).length;
+        var nLim = d.status.ram === 'limite' ? 1 : 0;
+        $('statusJanela').innerHTML = nCrit
+          ? '<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span> ' + nCrit + ' gargalo' + (nLim ? ' · 1 alerta' : '')
+          : nLim
+            ? '<span class="h-1.5 w-1.5 rounded-full bg-amber-300"></span> 1 alerta'
+            : '<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span> equilibrado';
+
+        ultimoDiagnostico = {
+          resumo: d.principal ? 'Gargalo em ' + UPGRADES[d.principal].tipo + ' → ' + UPGRADES[d.principal].produto : 'Sistema equilibrado, sem upgrade necessário',
+          perfil: PERFIS[s.perfil].nome
+        };
+      }
+
+      var ETAPAS = ['Lendo processador…', 'Lendo memória…', 'Lendo placa de vídeo…', 'Cruzando preços e compatibilidade…'];
+
+      function escanear() {
+        if (escaneando) return;
+        escaneando = true;
+        var btn = $('btnAferir');
+        btn.disabled = true;
+        $('scanOverlay').classList.remove('hidden');
+        $('statusJanela').innerHTML = '<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400"></span> lendo';
+        resetarLinhas();
+
+        var i = 0;
+        $('btnAferirTxt').textContent = ETAPAS[0];
+        var timer = setInterval(function () {
+          i++;
+          if (i < ETAPAS.length) { $('btnAferirTxt').textContent = ETAPAS[i]; return; }
+          clearInterval(timer);
+          $('scanOverlay').classList.add('hidden');
+          btn.disabled = false;
+          escaneando = false;
+          $('btnAferirTxt').textContent = 'Aferir novamente';
+          $('dicaAoVivo').classList.remove('hidden');
+
+          aplicarDiagnostico();
+
+          if (!jaAferiu) {
+            jaAferiu = true;
+            var res = $('resultado');
+            if (res.getBoundingClientRect().top > window.innerHeight * 0.85) {
+              res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }, 260);
+      }
+
+      $('simForm').addEventListener('change', function (e) {
+        if (!e.target.name || !(e.target.name in estado)) return;
+        estado[e.target.name] = e.target.value;
+        atualizarModelos();
+        if (jaAferiu && !escaneando) aplicarDiagnostico();   // diagnóstico ao vivo após a 1ª leitura
+      });
+
+      $('simForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        escanear();
+      });
+
+      atualizarModelos();
+      resetarLinhas();
+
+      // =====================================================================
+      // Captura de lead (simulador + rodapé compartilham o mesmo fluxo)
+      // =====================================================================
+      var tpl = $('tplLead');
+      var leads = [];
+      var posicao = 100 + Math.floor(Math.random() * 1401);   // 100–1500
       var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+      document.querySelectorAll('[data-lead]').forEach(function (slot) {
+        slot.appendChild(tpl.content.cloneNode(true));
+        var form = slot.querySelector('.lead-form');
+        var ref = {
+          form: form,
+          ok: slot.querySelector('.lead-ok'),
+          msg: slot.querySelector('.lead-ok-msg'),
+          diag: slot.querySelector('.lead-ok-diag'),
+          nome: form.querySelector('[name="nome"]'),
+          email: form.querySelector('[name="email"]'),
+          erro: form.querySelector('.lead-erro'),
+          btn: form.querySelector('button'),
+          btnTxt: form.querySelector('.lead-btn-txt')
+        };
+        leads.push(ref);
+
+        [ref.nome, ref.email].forEach(function (input) {
+          input.addEventListener('input', function () { marcar(input, false); ref.erro.classList.add('hidden'); });
+        });
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var nome = ref.nome.value.trim();
+          var email = ref.email.value.trim();
+          var nomeInv = nome.length < 2;
+          var emailInv = !emailOk.test(email);
+          marcar(ref.nome, nomeInv);
+          marcar(ref.email, emailInv);
+          if (nomeInv || emailInv) {
+            ref.erro.textContent = nomeInv ? 'Informe seu nome para continuar.' : 'Confira o e-mail digitado.';
+            ref.erro.classList.remove('hidden');
+            (nomeInv ? ref.nome : ref.email).focus();
+            return;
+          }
+
+          ref.btn.disabled = true;
+          ref.btnTxt.innerHTML =
+            '<span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+            '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>' +
+            '<path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Enviando…</span>';
+
+          // Envio simulado — substituir por integração real (API, planilha, CRM)
+          setTimeout(function () { concluir(nome.split(/\s+/)[0], ref); }, 900);
+        });
+      });
 
       function marcar(input, invalido) {
         input.classList.toggle('border-rose-500/60', invalido);
@@ -796,40 +1127,23 @@
         input.setAttribute('aria-invalid', invalido ? 'true' : 'false');
       }
 
-      [nome, email].forEach(function (input) {
-        input.addEventListener('input', function () { marcar(input, false); erro.classList.add('hidden'); });
-      });
+      function concluir(primeiroNome, origem) {
+        var msg = 'Pronto, ' + primeiroNome + '! Você está na lista do Aferir na posição #' + posicao + '. ' +
+          (ultimoDiagnostico
+            ? 'Enviamos os detalhes do seu diagnóstico para o seu e-mail.'
+            : 'Avisaremos assim que o primeiro lote de convites for liberado.');
 
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var nomeInvalido = nome.value.trim().length < 2;
-        var emailInvalido = !emailOk.test(email.value.trim());
-        marcar(nome, nomeInvalido);
-        marcar(email, emailInvalido);
-
-        if (nomeInvalido || emailInvalido) {
-          erro.textContent = nomeInvalido ? 'Informe seu nome para continuar.' : 'Confira o e-mail digitado.';
-          erro.classList.remove('hidden');
-          (nomeInvalido ? nome : email).focus();
-          return;
-        }
-
-        btn.disabled = true;
-        $('submitTxt').innerHTML =
-          '<span class="inline-flex items-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-          '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>' +
-          '<path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Enviando…</span>';
-
-        // Simulação de envio — substituir por integração real (API, planilha, CRM)
-        setTimeout(function () {
-          $('sucessoNome').textContent = nome.value.trim().split(/\s+/)[0];
-          $('posicao').textContent = '#' + (1200 + Math.floor(Math.random() * 400)).toLocaleString('pt-BR');
-          form.classList.add('hidden');
-          var ok = $('sucesso');
-          ok.classList.remove('hidden');
-          ok.focus({ preventScroll: true });
-        }, 900);
-      });
+        leads.forEach(function (ref) {
+          ref.form.classList.add('hidden');
+          ref.msg.textContent = msg;
+          if (ultimoDiagnostico) {
+            ref.diag.textContent = 'Relatório salvo · ' + ultimoDiagnostico.resumo + ' · ' + ultimoDiagnostico.perfil;
+            ref.diag.classList.remove('hidden');
+          }
+          ref.ok.classList.remove('hidden');
+        });
+        origem.ok.focus({ preventScroll: true });
+      }
 
       $('ano').textContent = new Date().getFullYear();
     })();
