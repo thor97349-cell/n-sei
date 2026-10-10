@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "echo:dev": "npm --prefix project-echo install && npm --prefix project-echo run dev",
+    "echo:build": "npm --prefix project-echo install && npm --prefix project-echo run build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

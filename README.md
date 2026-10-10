@@ -104,3 +104,12 @@ cada lead no painel `/admin` tem um campo de **status de pagamento**
 (pendente / cobrado / pago), hoje atualizado manualmente. Nenhum pagamento
 é processado pelo app ainda; é só a estrutura de dados já pronta para
 quando a cobrança da comissão for automatizada.
+
+## PROJECT ECHO (protótipo de FPS)
+
+O diretório [`project-echo/`](project-echo/README.md) contém um projeto independente (Three.js + Vite):
+o protótipo jogável do FPS tático **PROJECT ECHO — NODE-7**. Ele não interfere no app Next.js.
+
+```bash
+cd project-echo && npm install && npm run dev   # http://localhost:5173
+```

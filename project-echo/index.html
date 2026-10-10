@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PROJECT ECHO — NODE-7</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <!-- ===================== HUD ===================== -->
+    <div id="hud" class="hidden">
+      <div id="markers"></div>
+
+      <div id="top">
+        <div class="score"><span class="atk">ATK <b id="scoreAtk">0</b></span><span class="sep">ROUND <b id="roundNum">1</b></span><span class="def"><b id="scoreDef">0</b> DEF</span></div>
+        <div id="timer">0:15</div>
+        <div id="phase">BUY PHASE</div>
+      </div>
+
+      <div id="objective">
+        <div class="label">OBJECTIVE · DATA EXTRACTION</div>
+        <div id="objText">Steal the data module from the DATA ROOM terminal.</div>
+        <div class="row"><span>DATA MODULE</span><b id="modStatus">IN TERMINAL</b></div>
+        <div class="row"><span>DEFENDERS</span><b id="botsAlive">3 / 3</b></div>
+        <div id="areaName">SOUTH SPAWN</div>
+      </div>
+
+      <div id="killfeed"></div>
+      <div id="fps" class="hidden">-- fps</div>
+
+      <div id="soundRing"></div>
+      <div id="damageRing"></div>
+
+      <div id="crosshair">
+        <i class="ch t"></i><i class="ch b"></i><i class="ch l"></i><i class="ch r"></i><i class="dot"></i>
+      </div>
+      <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+
+      <div id="progress" class="hidden">
+        <div id="progressLabel">EXTRACTING</div>
+        <div class="bar"><div id="progressFill"></div></div>
+      </div>
+      <div id="prompt" class="hidden"></div>
+      <div id="toast"></div>
+      <div id="lockHint" class="hidden">Click to capture the mouse</div>
+
+      <div id="vitals">
+        <div id="credits">$ <b id="creditsVal">3500</b></div>
+        <div class="vital"><span>HEALTH</span><b id="hp">100</b><div class="vbar"><div id="hpBar"></div></div></div>
+        <div class="vital"><span>ARMOR</span><b id="ap">0</b><div class="vbar armor"><div id="apBar"></div></div></div>
+      </div>
+
+      <div id="weaponPanel">
+        <div id="weaponName">LINHA</div>
+        <div id="ammo"><b id="mag">12</b><span>/ <i id="reserve">36</i></span></div>
+        <div id="slots"><span id="slot1">1 · —</span><span id="slot2" class="on">2 · LINHA</span></div>
+        <div id="reloadHint" class="hidden">RELOADING</div>
+      </div>
+
+      <div id="buyHint" class="hidden">Press <kbd>B</kbd> to buy · Map opens when the timer ends</div>
+      <div id="deadOverlay" class="hidden"></div>
+    </div>
+
+    <!-- ===================== BUY MENU ===================== -->
+    <div id="buy" class="panel hidden">
+      <div class="panelHead"><h2>ARMORY</h2><div class="credits">$ <b id="buyCredits">0</b></div></div>
+      <div id="buyItems"></div>
+      <p class="hint">Click an item or press its number. <kbd>B</kbd> / <kbd>Esc</kbd> closes. Purchases only during the buy phase.</p>
+    </div>
+
+    <!-- ===================== ROUND END ===================== -->
+    <div id="roundEnd" class="hidden">
+      <div id="reTitle">ROUND WON</div>
+      <div id="reReason">Data extracted</div>
+      <div id="reRows"></div>
+      <div id="reNext"></div>
+      <button id="btnNewMatch" class="btn hidden">NEW MATCH</button>
+    </div>
+
+    <!-- ===================== START SCREEN ===================== -->
+    <div id="start" class="screen">
+      <div class="startCard">
+        <div class="brand">
+          <div class="logo">PROJECT <span>ECHO</span></div>
+          <div class="sub">NODE-7 · DATA EXTRACTION · PROTOTYPE</div>
+        </div>
+        <div class="cols">
+          <div>
+            <h3>BRIEFING</h3>
+            <p>You are the attacker. Infiltrate the NODE-7 data center, hack the terminal in the <b>DATA ROOM</b> (hold <kbd>E</kbd>), carry the data module out and hold an extraction zone: the <b>WEST LOADING DOCK</b> or the <b>EAST GARAGE</b>.</p>
+            <p>Three defenders guard the facility. They <b>hear</b> you: running, gunfire, doors and breaching all make noise. Walk (<kbd>Shift</kbd>) or crouch to stay quiet. Wooden barricades can be shot down to open new routes.</p>
+            <p class="dim">The mouse is captured while you play. Press <kbd>Esc</kbd> at any time to release it and pause.</p>
+          </div>
+          <div>
+            <h3>CONTROLS</h3>
+            <table class="controls">
+              <tr><td><kbd>W A S D</kbd></td><td>Move</td></tr>
+              <tr><td>Mouse</td><td>Aim / look</td></tr>
+              <tr><td>Left click</td><td>Fire</td></tr>
+              <tr><td>Right click (hold)</td><td>Aim down sights</td></tr>
+              <tr><td><kbd>R</kbd></td><td>Reload</td></tr>
+              <tr><td><kbd>Shift</kbd></td><td>Walk quietly</td></tr>
+              <tr><td><kbd>Ctrl</kbd> / <kbd>C</kbd></td><td>Crouch</td></tr>
+              <tr><td><kbd>Space</kbd></td><td>Jump</td></tr>
+              <tr><td><kbd>E</kbd></td><td>Doors · hold to hack terminal</td></tr>
+              <tr><td><kbd>1</kbd> <kbd>2</kbd> / <kbd>Q</kbd></td><td>Rifle / pistol / last weapon</td></tr>
+              <tr><td><kbd>B</kbd></td><td>Buy menu (buy phase)</td></tr>
+              <tr><td><kbd>Esc</kbd></td><td>Release mouse · pause</td></tr>
+              <tr><td><kbd>F3</kbd></td><td>FPS counter</td></tr>
+            </table>
+            <p class="dim small">Tip: some browsers close the tab on <kbd>Ctrl</kbd>+<kbd>W</kbd>. Use <kbd>C</kbd> to crouch, or enable fullscreen below.</p>
+          </div>
+        </div>
+        <div class="settings">
+          <label>Graphics
+            <select id="setGraphics"><option value="low">Low (Chromebook)</option><option value="high">High</option></select>
+          </label>
+          <label>Sensitivity <input id="setSens" type="range" min="0.3" max="2.5" step="0.05" value="1" /><output id="sensOut">1.00</output></label>
+          <label>Volume <input id="setVol" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
+          <label class="check"><input id="setFull" type="checkbox" /> Fullscreen</label>
+        </div>
+        <button id="btnStart" class="btn primary">CLICK TO DEPLOY</button>
+        <div id="startNote" class="dim small"></div>
+      </div>
+    </div>
+
+    <!-- ===================== PAUSE ===================== -->
+    <div id="pause" class="screen hidden">
+      <div class="startCard narrow">
+        <div class="logo small">PAUSED</div>
+        <p class="dim">Mouse released. The match is frozen.</p>
+        <button id="btnResume" class="btn primary">RESUME (click)</button>
+        <div class="settings">
+          <label>Graphics
+            <select id="pauseGraphics"><option value="low">Low (Chromebook)</option><option value="high">High</option></select>
+          </label>
+          <label>Sensitivity <input id="pauseSens" type="range" min="0.3" max="2.5" step="0.05" value="1" /></label>
+          <label>Volume <input id="pauseVol" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
+        </div>
+        <button id="btnRestart" class="btn">RESTART MATCH</button>
+        <button id="btnMenu" class="btn">RETURN TO START SCREEN</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
