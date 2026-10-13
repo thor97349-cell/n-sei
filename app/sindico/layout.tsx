@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./sindico.css";
 
 export const metadata: Metadata = {
   title: "Síndico — Edifício Primavera (protótipo)",

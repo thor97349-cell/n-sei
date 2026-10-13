@@ -101,6 +101,19 @@ export const PAUTAS: PautaDef[] = [
     no: { effects: { clearFlags: ["pauta_fachada"] }, result: "Rejeitado. A fachada continua cor de 'cinza-poluição'." },
   },
   {
+    id: "baixar_taxa",
+    title: "Baixar a taxa em R$ 50",
+    text: "O caixa está folgado. Devolver parte pros moradores com uma taxa menor.",
+    repeatable: true,
+    requires: { minMoney: 6000 },
+    leaning: { economia: 10, seguranca: -2 },
+    yes: {
+      effects: { fee: -50, tags: { economia: 6 } },
+      result: "Taxa reduzida! Até o Seu Osvaldo comemorou (ele nem paga).",
+    },
+    no: { effects: {}, result: "Rejeitado?! O prédio preferiu deixar o dinheiro no caixa. Inédito." },
+  },
+  {
     id: "academia",
     title: "Transformar o depósito em academia",
     text: "Equipar o depósito velho com aparelhos usados. R$ 2.500.",

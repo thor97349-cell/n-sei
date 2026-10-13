@@ -19,6 +19,7 @@ export const RESIDENTS: Resident[] = [
     apt: "401",
     avatar: "👴🏾",
     bio: "Aposentado, gente boa, conhece todo mundo. Não paga o condomínio há 8 meses.",
+    special: "Não paga o condomínio até você resolver a dívida dele.",
     likes: { economia: 1, tradicao: 0.5, festa: 0.3, regras: -0.5 },
     startApproval: 60,
     reactions: {
@@ -45,6 +46,7 @@ export const RESIDENTS: Resident[] = [
     apt: "301",
     avatar: "🧔🏻‍♂️",
     bio: "Baterista da banda 'Os Inadimplentes'. Ensaia em casa. Não entende o problema.",
+    special: "Ensaia toda semana. Sem regra do silêncio ou estúdio, a Dona Cida e o Rafael perdem a paciência aos poucos.",
     likes: { festa: 1, regras: -0.8, silencio: -0.7, economia: 0.4 },
     startApproval: 52,
     reactions: {
@@ -58,6 +60,7 @@ export const RESIDENTS: Resident[] = [
     apt: "302",
     avatar: "👵🏼",
     bio: "Administradora do grupo do prédio. Sabe de tudo antes de acontecer. O humor dela contamina o grupo.",
+    special: "Admin do grupo: toda semana, o humor dela puxa o de todo mundo pra cima ou pra baixo.",
     likes: { seguranca: 0.6, tradicao: 0.6, regras: 0.5, festa: -0.3 },
     startApproval: 50,
     reactions: {
@@ -71,6 +74,7 @@ export const RESIDENTS: Resident[] = [
     apt: "201",
     avatar: "👨🏻‍⚖️",
     bio: "Advogado aposentado. Perdeu a eleição pra você por 1 voto. Sabe o regimento de cor.",
+    special: "Se ficar furioso (abaixo de 25%), processa o condomínio.",
     likes: { regras: 1, economia: 0.6, estetica: 0.3, festa: -0.5, pets: -0.3 },
     startApproval: 38,
     reactions: {
@@ -84,6 +88,7 @@ export const RESIDENTS: Resident[] = [
     apt: "202",
     avatar: "💁🏻‍♀️",
     bio: "Influencer (38 mil seguidores). Grava tudo. O prédio aparece nos stories dela todo dia.",
+    special: "Stories: se ela te adora (70%+), posta elogios e o prédio todo melhora. Se te odeia (30%-), detona você.",
     likes: { estetica: 1, festa: 0.8, pets: 0.3, regras: -0.5 },
     startApproval: 55,
     reactions: {
@@ -97,6 +102,7 @@ export const RESIDENTS: Resident[] = [
     apt: "101",
     avatar: "👵🏻",
     bio: "78 anos, mora no prédio há 40. Faz bolo pra todo mundo. Odeia barulho e mudança.",
+    special: "Se te adora (75%+), distribui bolo pro prédio todo uma vez por mês.",
     likes: { silencio: 1, tradicao: 1, festa: -0.6, economia: 0.4, pets: -0.2 },
     startApproval: 55,
     reactions: {

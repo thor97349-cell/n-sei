@@ -1,0 +1,89 @@
+/* Animações do prédio no protótipo "Síndico". */
+
+@keyframes sindico-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -4px) scale(1.1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px) scale(1);
+  }
+}
+
+@keyframes sindico-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px) rotate(-1deg);
+  }
+  40% {
+    transform: translateX(4px) rotate(1deg);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes sindico-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgb(16 185 129 / 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgb(16 185 129 / 0);
+  }
+}
+
+@keyframes sindico-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.sindico-float {
+  animation: sindico-float-up 1.6s ease-out forwards;
+}
+
+.sindico-shake {
+  animation: sindico-shake 0.5s ease-in-out;
+}
+
+.sindico-glow {
+  animation: sindico-glow 0.9s ease-out;
+}
+
+.sindico-pop {
+  animation: sindico-pop 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sindico-float,
+  .sindico-shake,
+  .sindico-glow,
+  .sindico-pop {
+    animation: none;
+  }
+  .sindico-float {
+    opacity: 0;
+  }
+}

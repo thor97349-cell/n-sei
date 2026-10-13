@@ -1,0 +1,148 @@
+import { ActionDef, UpgradeDef } from "../types";
+
+// Coisas que o síndico faz por iniciativa própria, gastando horas livres.
+// "Visitar morador" fica no perfil de cada morador (engine.visitResident).
+export const ACTIONS: ActionDef[] = [
+  {
+    id: "vistoria",
+    icon: "🔦",
+    label: "Vistoria no prédio",
+    text: "Rodar o prédio trocando lâmpada e apertando registro.",
+    hours: 2,
+    limit: "week",
+    effects: { condition: 5 },
+    result: "Você trocou 4 lâmpadas, achou um vazamento pequeno e o controle da garagem perdido em 2019.",
+  },
+  {
+    id: "plantao",
+    icon: "🪑",
+    label: "Plantão no hall",
+    text: "Ficar 2 horas no hall ouvindo reclamação de quem passar.",
+    hours: 2,
+    limit: "week",
+    effects: { all: 1 },
+    result: "Ouviu de tudo, de goteira a briga de casal. Todo mundo se sentiu ouvido.",
+  },
+  {
+    id: "mutirao",
+    icon: "🧹",
+    label: "Mutirão de limpeza",
+    text: "Juntar os moradores num sábado pra limpar a garagem e o depósito.",
+    hours: 2,
+    limit: "month",
+    effects: { condition: 4, tags: { tradicao: 4, regras: 2 }, all: 1 },
+    result: "Acharam 3 bicicletas abandonadas, uma TV de tubo e a escritura do prédio de 1978.",
+  },
+  {
+    id: "bazar",
+    icon: "🧺",
+    label: "Bazar no salão",
+    text: "Cada um vende o que não usa. Uns R$ 300 ficam pro caixa.",
+    hours: 1,
+    limit: "month",
+    effects: { money: 300, tags: { tradicao: 2, economia: 2 } },
+    result: "Bazar lotado. A Kelly vendeu 40 peças de roupa. O caixa ganhou R$ 300.",
+  },
+  {
+    id: "arraia",
+    icon: "🎪",
+    label: "Arraiá do Primavera",
+    text: "Festa junina no salão: quentão, quadrilha e correio elegante. Custa R$ 400.",
+    hours: 2,
+    limit: "month",
+    effects: { money: -400, tags: { festa: 8, tradicao: 6, silencio: -5 }, all: 1 },
+    result: "Quadrilha com o Dr. Valdemar de noivo. Nunca mais vão esquecer.",
+  },
+];
+
+export const ACTIONS_BY_ID = Object.fromEntries(ACTIONS.map((a) => [a.id, a])) as Record<string, ActionDef>;
+
+// Melhorias permanentes: o lugar pra investir o dinheiro do caixa.
+export const UPGRADES: UpgradeDef[] = [
+  {
+    id: "jardim",
+    icon: "🌳",
+    name: "Jardim no térreo",
+    text: "Canteiro, banco e a roseira que a Dona Cida pede há 10 anos.",
+    cost: 1500,
+    effects: { condition: 3, tags: { estetica: 3, tradicao: 2 }, residents: { cida: 3 } },
+    result: "Jardim inaugurado. A Dona Cida passa as tardes no banco.",
+  },
+  {
+    id: "interfone",
+    icon: "📞",
+    name: "Interfone novo",
+    text: "O atual só funciona se bater nele.",
+    cost: 1200,
+    effects: { condition: 2, tags: { seguranca: 3 } },
+    result: "Interfone novo. Agora dá pra ouvir o que o Zé fala.",
+  },
+  {
+    id: "bicicletario",
+    icon: "🚲",
+    name: "Bicicletário com cadeado",
+    text: "Bicicletas presas e longe do portão.",
+    cost: 800,
+    effects: { tags: { seguranca: 2 }, residents: { patricia: 2 } },
+    result: "Bicicletário pronto. O filho da Patrícia estreou no mesmo dia.",
+  },
+  {
+    id: "playground",
+    icon: "🛝",
+    name: "Playground",
+    text: "Escorregador e balanço no fundo do terreno.",
+    cost: 2500,
+    effects: { condition: 2, tags: { silencio: -1 }, residents: { patricia: 5, rafael: 3 } },
+    result: "Playground lotado. A gritaria também.",
+  },
+  {
+    id: "estudio",
+    icon: "🥁",
+    name: "Estúdio com isolamento acústico",
+    text: "Transformar o depósito num estúdio. Acaba o ensaio do Marcão dentro de casa.",
+    cost: 3000,
+    effects: { tags: { silencio: 4 }, residents: { marcao: 7 } },
+    result: "Estúdio pronto. O Marcão chorou. O bebê do 102 dormiu 8 horas seguidas.",
+  },
+  {
+    id: "salao",
+    icon: "🪩",
+    name: "Reforma do salão de festas",
+    text: "Salão novo dá pra alugar pra fora. Rende uns R$ 200/mês.",
+    cost: 3500,
+    monthly: -200,
+    effects: { condition: 4, fixedCosts: -200, tags: { festa: 3, estetica: 3 } },
+    result: "Salão reformado e já tem aluguel marcado pra 3 aniversários.",
+  },
+  {
+    id: "lavanderia",
+    icon: "🧺",
+    name: "Lavanderia compartilhada",
+    text: "Máquinas de ficha no térreo. Rende uns R$ 250/mês.",
+    cost: 2800,
+    monthly: -250,
+    effects: { fixedCosts: -250, tags: { economia: 1 }, residents: { patricia: 2 } },
+    result: "Lavanderia funcionando. A fila de sábado virou ponto de fofoca.",
+  },
+  {
+    id: "bomba",
+    icon: "💧",
+    name: "Bomba d'água reserva",
+    text: "Se a bomba principal queimar, a reserva assume.",
+    cost: 1800,
+    effects: { condition: 5 },
+    result: "Bomba reserva instalada. Ninguém percebeu, que é o objetivo.",
+  },
+  {
+    id: "solar",
+    icon: "☀️",
+    name: "Placas solares",
+    text: "Investimento alto, mas corta a conta de luz das áreas comuns: −R$ 350/mês.",
+    cost: 6000,
+    monthly: -350,
+    effects: { fixedCosts: -350, tags: { economia: 2, estetica: 1 } },
+    result: "Placas instaladas. O Seu Osvaldo sobe no terraço todo dia pra 'ver a energia'.",
+  },
+];
+
+export const UPGRADES_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u])) as Record<string, UpgradeDef>;

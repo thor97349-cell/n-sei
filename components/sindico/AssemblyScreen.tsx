@@ -1,18 +1,22 @@
 import { PAUTAS_BY_ID } from "@/lib/sindico/data/pautas";
 import { RESIDENTS, RESIDENTS_BY_ID } from "@/lib/sindico/data/residents";
 import { MAJORITY, predictVote } from "@/lib/sindico/engine";
-import { brl, signedBrl } from "@/lib/sindico/format";
-import { GameState, Votes } from "@/lib/sindico/types";
+import { brl, moodEmoji, signedBrl } from "@/lib/sindico/format";
+import { GameState, ResidentId, Votes } from "@/lib/sindico/types";
 
 // goodWhenYes=false inverte as cores (na destituição, "sim" é ruim pro síndico).
 function VoteGrid({ votes, yesLabel, noLabel, goodWhenYes = true }: { votes: Votes; yesLabel: string; noLabel: string; goodWhenYes?: boolean }) {
   return (
     <ul className="grid grid-cols-4 gap-2">
-      {RESIDENTS.map((r) => {
+      {RESIDENTS.map((r, i) => {
         const v = votes[r.id];
         const good = v === goodWhenYes;
         return (
-          <li key={r.id} className={`flex flex-col items-center rounded-lg p-2 text-center ${good ? "bg-emerald-100" : "bg-rose-100"}`}>
+          <li
+            key={r.id}
+            style={{ animationDelay: `${i * 120}ms` }}
+            className={`sindico-pop flex flex-col items-center rounded-lg p-2 text-center ${good ? "bg-emerald-100" : "bg-rose-100"}`}
+          >
             <span className="text-2xl">{r.avatar}</span>
             <span className="line-clamp-1 text-[11px] font-semibold text-stone-700">{r.name}</span>
             <span className={`text-[11px] font-black ${good ? "text-emerald-700" : "text-rose-700"}`}>{v ? yesLabel : noLabel}</span>
@@ -29,13 +33,81 @@ function climate(yes: number) {
   return { label: "Clima contra", style: "bg-rose-100 text-rose-800" };
 }
 
+function yesCount(state: GameState, pautaId: string) {
+  return RESIDENTS.filter((r) => predictVote(state, pautaId, r.id)).length;
+}
+
+function Lobby({
+  state,
+  pautaId,
+  onLobby,
+  onVote,
+}: {
+  state: GameState;
+  pautaId: string;
+  onLobby: (id: ResidentId) => void;
+  onVote: () => void;
+}) {
+  const a = state.assembly!;
+  const p = PAUTAS_BY_ID[pautaId];
+  const left = state.config.lobbySlots - a.lobbied.length;
+  const c = climate(yesCount(state, pautaId));
+  return (
+    <section className="mt-6">
+      <div className="rounded-xl bg-stone-100 p-4 text-stone-800">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-black">{p.title}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${c.style}`}>{c.label}</span>
+        </div>
+        <p className="text-sm text-stone-600">{p.text}</p>
+      </div>
+
+      <h2 className="mt-5 text-sm font-bold uppercase tracking-wide text-stone-300">🗣️ Conversas de corredor antes da votação</h2>
+      <p className="mt-1 text-sm text-stone-400">
+        Você tem <strong className="text-amber-300">{left}</strong> {left === 1 ? "conversa" : "conversas"}. Conversar descobre o voto e puxa a pessoa pro seu lado.
+      </p>
+      <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {RESIDENTS.map((r) => {
+          const talked = a.lobbied.includes(r.id);
+          const vote = predictVote(state, pautaId, r.id);
+          return (
+            <li key={r.id}>
+              <button
+                onClick={() => onLobby(r.id)}
+                disabled={talked || left === 0}
+                className={`flex h-full w-full flex-col items-center rounded-lg p-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                  talked ? (vote ? "bg-emerald-100 text-stone-800" : "bg-rose-100 text-stone-800") : "bg-stone-700 text-stone-100 enabled:hover:bg-stone-600 disabled:opacity-60"
+                }`}
+              >
+                <span className="text-2xl">{r.avatar}</span>
+                <span className="line-clamp-1 text-xs font-semibold">{r.name}</span>
+                <span className="text-[11px]">{moodEmoji(state.approval[r.id])}</span>
+                <span className={`text-[11px] font-black ${talked ? (vote ? "text-emerald-700" : "text-rose-700") : "text-amber-300"}`}>
+                  {talked ? (vote ? "Vota SIM" : "Continua contra") : left > 0 ? "Conversar" : "?"}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <button onClick={onVote} className="mt-5 w-full rounded-lg bg-amber-500 py-3 font-black text-stone-900 hover:bg-amber-400">
+        🔨 Abrir votação
+      </button>
+    </section>
+  );
+}
+
 export default function AssemblyScreen({
   state,
-  onPropose,
+  onSelect,
+  onLobby,
+  onVote,
   onContinue,
 }: {
   state: GameState;
-  onPropose: (pautaId: string | null) => void;
+  onSelect: (pautaId: string | null) => void;
+  onLobby: (id: ResidentId) => void;
+  onVote: () => void;
   onContinue: () => void;
 }) {
   const a = state.assembly;
@@ -53,15 +125,15 @@ export default function AssemblyScreen({
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <div className="rounded bg-stone-800 p-2">
               <p className="text-stone-400">Entrou</p>
-              <p className="font-bold text-emerald-400">{signedBrl(report.income)}</p>
+              <p className="font-bold tabular-nums text-emerald-400">{signedBrl(report.income)}</p>
             </div>
             <div className="rounded bg-stone-800 p-2">
               <p className="text-stone-400">Saiu</p>
-              <p className="font-bold text-rose-400">{signedBrl(-report.costs)}</p>
+              <p className="font-bold tabular-nums text-rose-400">{signedBrl(-report.costs)}</p>
             </div>
             <div className="rounded bg-stone-800 p-2">
               <p className="text-stone-400">Caixa</p>
-              <p className={`font-bold ${state.money < 0 ? "text-rose-400" : "text-stone-100"}`}>{brl(state.money)}</p>
+              <p className={`font-bold tabular-nums ${state.money < 0 ? "text-rose-400" : "text-stone-100"}`}>{brl(state.money)}</p>
             </div>
             <div className="rounded bg-stone-800 p-2">
               <p className="text-stone-400">Pagaram</p>
@@ -79,44 +151,11 @@ export default function AssemblyScreen({
           </p>
         </section>
 
-        {!a.result ? (
-          <section className="mt-6">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-stone-300">Qual pauta você coloca em votação?</h2>
-            <div className="mt-2 flex flex-col gap-2">
-              {a.offered.map((id) => {
-                const p = PAUTAS_BY_ID[id];
-                const yes = RESIDENTS.filter((r) => predictVote(state, id, r.id)).length;
-                const c = climate(yes);
-                return (
-                  <button
-                    key={id}
-                    onClick={() => onPropose(id)}
-                    className="rounded-lg bg-stone-100 p-3 text-left text-stone-800 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-                  >
-                    <span className="flex items-start justify-between gap-2">
-                      <span className="font-bold">{p.title}</span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${c.style}`}>{c.label}</span>
-                    </span>
-                    <span className="mt-1 block text-sm text-stone-600">{p.text}</span>
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => onPropose(null)}
-                className="rounded-lg border-2 border-dashed border-stone-500 p-3 text-left text-stone-300 hover:border-stone-300 hover:text-stone-100"
-              >
-                <span className="font-bold">Sem pauta</span>
-                <span className="block text-sm">Só prestar contas e liberar todo mundo cedo.</span>
-              </button>
-            </div>
-          </section>
-        ) : (
+        {a.result ? (
           <section className="mt-6 space-y-4">
             {a.result.pautaId && (
               <div>
-                <div
-                  className={`rounded-xl p-4 text-center ${a.result.passed ? "bg-emerald-600" : "bg-rose-700"}`}
-                >
+                <div className={`sindico-pop rounded-xl p-4 text-center ${a.result.passed ? "bg-emerald-600" : "bg-rose-700"}`}>
                   <p className="text-sm font-semibold opacity-90">{PAUTAS_BY_ID[a.result.pautaId].title}</p>
                   <p className="text-2xl font-black">{a.result.passed ? "APROVADA" : "REJEITADA"}</p>
                   {a.result.minerva && <p className="text-sm">Empate 4 x 4: você desempatou com o voto de minerva.</p>}
@@ -138,12 +177,41 @@ export default function AssemblyScreen({
               </div>
             )}
 
-            <button
-              onClick={onContinue}
-              className="w-full rounded-lg bg-amber-500 py-3 font-black text-stone-900 hover:bg-amber-400"
-            >
+            <button onClick={onContinue} className="w-full rounded-lg bg-amber-500 py-3 font-black text-stone-900 hover:bg-amber-400">
               {state.phase === "ended" ? "Ver o fim da história" : "Voltar ao trabalho ➜"}
             </button>
+          </section>
+        ) : a.selected ? (
+          <Lobby state={state} pautaId={a.selected} onLobby={onLobby} onVote={onVote} />
+        ) : (
+          <section className="mt-6">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-stone-300">Qual pauta você coloca em votação?</h2>
+            <div className="mt-2 flex flex-col gap-2">
+              {a.offered.map((id) => {
+                const p = PAUTAS_BY_ID[id];
+                const c = climate(yesCount(state, id));
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onSelect(id)}
+                    className="rounded-lg bg-stone-100 p-3 text-left text-stone-800 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                  >
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="font-bold">{p.title}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${c.style}`}>{c.label}</span>
+                    </span>
+                    <span className="mt-1 block text-sm text-stone-600">{p.text}</span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => onSelect(null)}
+                className="rounded-lg border-2 border-dashed border-stone-500 p-3 text-left text-stone-300 hover:border-stone-300 hover:text-stone-100"
+              >
+                <span className="font-bold">Sem pauta</span>
+                <span className="block text-sm">Só prestar contas e liberar todo mundo cedo.</span>
+              </button>
+            </div>
           </section>
         )}
       </div>

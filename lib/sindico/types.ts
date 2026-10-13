@@ -35,6 +35,7 @@ export interface Resident {
   apt: string;
   avatar: string;
   bio: string;
+  special?: string; // mecânica própria do morador, mostrada no perfil
   // -1 (odeia) a 1 (ama). Interesses ausentes = indiferente.
   likes: TagWeights;
   startApproval: number;
@@ -61,9 +62,12 @@ export interface Effects {
 
 export interface Requirements {
   flags?: string[];
+  anyFlags?: string[]; // pelo menos uma destas
   notFlags?: string[];
   minWeek?: number;
   maxCondition?: number;
+  minMoney?: number;
+  approvalBelow?: Partial<Record<ResidentId, number>>;
 }
 
 export interface Choice {
@@ -111,12 +115,61 @@ export interface ChatMessage {
   text: string;
 }
 
+export type Deltas = Partial<Record<ResidentId, number>>;
+
 export interface Outcome {
   title: string;
   result: string;
   money: number;
   condition: number;
-  deltas: Partial<Record<ResidentId, number>>;
+  deltas: Deltas;
+  // Motivo principal de cada mudança (ex: "🤫 Silêncio"), pra ensinar o jogador a ler os moradores.
+  reasons: Partial<Record<ResidentId, string>>;
+}
+
+// Ação que o próprio síndico decide fazer (não é pendência).
+export interface ActionDef {
+  id: string;
+  icon: string;
+  label: string;
+  text: string;
+  hours: number;
+  limit: "week" | "month";
+  requires?: Requirements;
+  effects: Effects;
+  result: string;
+}
+
+// Melhoria permanente do prédio, comprada uma vez.
+export interface UpgradeDef {
+  id: string;
+  icon: string;
+  name: string;
+  text: string;
+  cost: number;
+  monthly?: number; // + custo / − economia por mês (só pra mostrar; o efeito real vem de effects.fixedCosts)
+  effects: Effects;
+  result: string;
+}
+
+export type ProfileId = "novato" | "aposentado" | "advogado" | "influencer" | "contador";
+export type DifficultyId = "tranquilo" | "normal" | "caotico";
+
+export interface GameConfig {
+  profile: ProfileId;
+  difficulty: DifficultyId;
+  hoursPerWeek: number;
+  lobbySlots: number;
+  monthlyWear: number;
+  extraEventChance: number;
+}
+
+export interface GameStats {
+  resolved: number;
+  expired: number;
+  lobbied: number;
+  upgrades: number;
+  passedPautas: number;
 }
 
 export interface MonthReport {
@@ -134,6 +187,9 @@ export interface AssemblyState {
   month: number;
   offered: string[];
   report: MonthReport;
+  // undefined = ainda escolhendo; null = assembleia sem pauta
+  selected?: string | null;
+  lobbied: ResidentId[];
   result?: {
     pautaId: string | null;
     votes: Votes;
@@ -151,9 +207,13 @@ export interface Ending {
   title: string;
   text: string;
   votes?: Votes;
+  score: number;
+  achievements: string[];
 }
 
 export interface GameState {
+  version: number;
+  config: GameConfig;
   rng: number;
   week: number; // 1..TOTAL_WEEKS
   hours: number;
@@ -173,4 +233,10 @@ export interface GameState {
   lastOutcome: Outcome | null;
   assembly: AssemblyState | null;
   ending: Ending | null;
+  // Uso das ações do síndico: id -> semana (limite semanal) ou mês (limite mensal) do último uso.
+  actionsUsed: Record<string, number>;
+  visitedMonth: Partial<Record<ResidentId, number>>;
+  stats: GameStats;
+  // Pra animar o prédio: muda a cada decisão, com as variações de aprovação.
+  fx: { tick: number; deltas: Deltas };
 }

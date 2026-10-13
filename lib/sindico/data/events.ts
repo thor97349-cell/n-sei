@@ -1,9 +1,10 @@
 import { EventDef } from "../types";
+import { LATE_EVENTS } from "./events-late";
 
 // Cada evento é uma "pendência" que chega pro síndico. Eventos podem ligar
 // flags que destravam continuações (ex: ignorar o barulho do Marcão -> ele
 // marca um show no salão). Isso é o que dá "memória" ao prédio.
-export const EVENTS: EventDef[] = [
+const BASE_EVENTS: EventDef[] = [
   {
     id: "bateria_23h",
     from: "rafael",
@@ -569,7 +570,7 @@ export const EVENTS: EventDef[] = [
     title: "Bicicleta roubada",
     text: "Levaram a bicicleta do meu filho DE DENTRO DA GARAGEM. O portão tava aberto, igual sempre.",
     deadline: 1,
-    requires: { flags: ["portao_aberto"], minWeek: 6 },
+    requires: { flags: ["portao_aberto"], minWeek: 6, notFlags: ["melhoria_bicicletario"] },
     choices: [
       {
         label: "Pagar uma bike nova e consertar o portão (R$ 1.500)",
@@ -955,5 +956,7 @@ export const EVENTS: EventDef[] = [
     },
   },
 ];
+
+export const EVENTS: EventDef[] = [...BASE_EVENTS, ...LATE_EVENTS];
 
 export const EVENTS_BY_ID = Object.fromEntries(EVENTS.map((e) => [e.id, e])) as Record<string, EventDef>;
