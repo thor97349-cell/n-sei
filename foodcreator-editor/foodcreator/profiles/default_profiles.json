@@ -1,0 +1,53 @@
+{
+  "FOOD_REVIEW": {
+    "label": "Avaliação de comida",
+    "description": "Restaurantes, lanches e doces. Prioriza reações e falas claras: pausas de degustação são encurtadas (não removidas), legendas dinâmicas curtas e zooms discretos nas reações.",
+    "settings": {
+      "silence_threshold_db": -35.0,
+      "min_silence": 0.8,
+      "speech_padding": 0.25,
+      "long_pause": 3.0,
+      "long_pause_keep": 1.6,
+      "subtitle_style": "dinamica",
+      "subtitle_max_words": 4,
+      "zoom_factor": 1.08,
+      "zoom_duration": 2.5,
+      "zoom_min_interval": 7.0,
+      "music_volume_db": -24.0
+    }
+  },
+  "COOKING": {
+    "label": "Receita / preparo",
+    "description": "Receitas e passo a passo. Cortes mais conservadores para manter a sequência lógica: só remove silêncio de verdade (o som do preparo fica), mantém mais tempo nas pausas de demonstração e usa legendas em frases inteiras.",
+    "settings": {
+      "silence_threshold_db": -40.0,
+      "min_silence": 1.2,
+      "speech_padding": 0.35,
+      "long_pause": 2.5,
+      "long_pause_keep": 2.0,
+      "subtitle_style": "classica",
+      "subtitle_max_words": 7,
+      "zoom_factor": 1.05,
+      "zoom_duration": 3.5,
+      "zoom_min_interval": 15.0,
+      "music_volume_db": -26.0
+    }
+  },
+  "CHALLENGE": {
+    "label": "Desafio / experimento",
+    "description": "Desafios e testes. Ritmo mais rápido: corta pausas menores, legendas dinâmicas bem curtas e zooms mais frequentes para marcar etapas, resultados e reações.",
+    "settings": {
+      "silence_threshold_db": -33.0,
+      "min_silence": 0.6,
+      "speech_padding": 0.2,
+      "long_pause": 4.0,
+      "long_pause_keep": 1.0,
+      "subtitle_style": "dinamica",
+      "subtitle_max_words": 3,
+      "zoom_factor": 1.1,
+      "zoom_duration": 2.0,
+      "zoom_min_interval": 5.0,
+      "music_volume_db": -20.0
+    }
+  }
+}

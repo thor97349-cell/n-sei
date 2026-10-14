@@ -1,0 +1,3 @@
+# Opcional: legendas automáticas com transcrição local (download de ~300 MB de bibliotecas;
+# o modelo de voz é baixado depois, só com sua confirmação).
+faster-whisper>=1.1,<1.3

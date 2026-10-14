@@ -104,3 +104,9 @@ cada lead no painel `/admin` tem um campo de **status de pagamento**
 (pendente / cobrado / pago), hoje atualizado manualmente. Nenhum pagamento
 é processado pelo app ainda; é só a estrutura de dados já pronta para
 quando a cobrança da comissão for automatizada.
+
+## Outros projetos neste repositório
+
+- [`foodcreator-editor/`](foodcreator-editor/README.md): aplicativo desktop (Python +
+  PySide6 + FFmpeg) que automatiza a edição de vídeos de culinária para YouTube e Shorts.
+  É independente do site Next.js.

@@ -1,0 +1,2 @@
+# Interface (só os módulos essenciais do Qt; evita baixar o WebEngine e outros extras)
+PySide6-Essentials>=6.8,<6.13
