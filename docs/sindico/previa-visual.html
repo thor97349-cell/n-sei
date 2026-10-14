@@ -1,0 +1,901 @@
+<title>Síndico, visual novo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Courier+Prime:wght@400;700&family=Kalam:wght@400;700&family=Yellowtail&display=swap">
+<style>
+/* Layout: o saguão do prédio. Balcão da portaria no topo (os números do jogo como objetos),
+   e três "janelas" lado a lado: o prédio em corte, o quadro de avisos de cortiça e o celular.
+   Visual único (sem tema escuro) por escolha: é o mundo do jogo, de dia. */
+:root {
+  --parede: #dde6d6;      /* tinta verde-clara do saguão */
+  --reboco: #efe0c3;      /* fachada bege */
+  --pastilha: #79b2a0;    /* pastilha verde dos anos 80 */
+  --esquadria: #6a4630;   /* alumínio bronze das janelas */
+  --cortica: #c4945e;
+  --madeira: #7a5130;
+  --papel: #fbf5e6;
+  --tinta: #2a2420;
+  --bic: #1f4c9b;         /* caneta azul */
+  --carimbo: #b8312b;
+  --gema: #efb83a;
+  --zap: #1f6b5a;
+  --bom: #3c9468;
+  --atencao: #d99a1f;
+  --ruim: #d0702a;
+  --pessimo: #b8312b;
+
+  --f-ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mao: "Kalam", "Comic Sans MS", "Segoe Print", cursive;
+  --f-maquina: "Courier Prime", "Courier New", monospace;
+  --f-letreiro: "Yellowtail", "Brush Script MT", cursive;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--parede); color: var(--tinta); }
+body {
+  font-family: var(--f-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  /* azulejo meia-parede do saguão, bem sutil */
+  background:
+    repeating-linear-gradient(0deg, transparent 0 38px, rgb(0 0 0 / 0.035) 38px 40px),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgb(0 0 0 / 0.035) 38px 40px),
+    var(--parede);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--bic); outline-offset: 2px; }
+
+.aviso-previa {
+  max-width: 1320px; margin: 0 auto; padding: 8px 0;
+  font-family: var(--f-maquina); font-size: 12px; color: #5d6b5c; text-align: center;
+}
+
+/* ---------- balcão (HUD) ---------- */
+.balcao {
+  max-width: 1320px; margin: 0 auto 20px;
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px;
+  padding: 14px 16px 18px;
+  border-radius: 6px 6px 14px 14px;
+  background:
+    repeating-linear-gradient(92deg, rgb(255 255 255 / 0.05) 0 2px, transparent 2px 9px),
+    linear-gradient(#8c5d37, #6f4527);
+  box-shadow: 0 6px 0 #4f301b, 0 14px 24px rgb(60 40 20 / 0.25);
+}
+.placa {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 8px 18px; margin-right: auto;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f1d58a, #c9a24c 45%, #f3dd98 60%, #b98f3c);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 2px 0 #7a5a20;
+  position: relative;
+}
+.placa::before, .placa::after {
+  content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -3px;
+  border-radius: 50%; background: #8a6a2a; box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.4);
+}
+.placa::before { left: 6px; } .placa::after { right: 6px; }
+.placa b { font-weight: 900; font-size: 26px; letter-spacing: 0.18em; color: #4a3510; text-shadow: 0 1px 0 rgb(255 255 255 / 0.5); line-height: 1; }
+.placa span { font-family: var(--f-letreiro); font-size: 17px; color: #5a4214; line-height: 1.2; }
+
+.objeto {
+  background: var(--papel); border-radius: 3px; padding: 8px 12px;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.15);
+  display: flex; flex-direction: column; justify-content: center; min-width: 0;
+}
+.rotulo { font-family: var(--f-maquina); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b5d4c; }
+.valor { font-family: var(--f-maquina); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.valor.negativo { color: var(--carimbo); }
+
+.folhinha { padding: 0; overflow: hidden; text-align: center; width: 92px; }
+.folhinha .topo { background: var(--carimbo); color: #fff; font-family: var(--f-maquina); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; padding: 3px 4px; }
+.folhinha .dia { font-weight: 900; font-size: 30px; line-height: 1; padding-top: 4px; font-variant-numeric: tabular-nums; }
+.folhinha .pe { font-family: var(--f-maquina); font-size: 10px; letter-spacing: 0.1em; padding-bottom: 5px; color: #6b5d4c; }
+
+.regua { width: 140px; height: 10px; margin-top: 6px; border-radius: 2px; position: relative;
+  background: linear-gradient(90deg, var(--pessimo), var(--ruim) 30%, var(--atencao) 50%, var(--bom) 75%); }
+.regua i { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; background: var(--tinta); border-radius: 1px; transition: left 0.6s; }
+
+.relogios { display: flex; gap: 6px; margin-top: 4px; }
+.relogio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--tinta); position: relative; background: #fff; }
+.relogio::before, .relogio::after { content: ""; position: absolute; left: 50%; bottom: 50%; width: 2px; background: var(--tinta); transform-origin: bottom center; }
+.relogio::before { height: 6px; margin-left: -1px; }
+.relogio::after { height: 5px; margin-left: -1px; transform: rotate(100deg); }
+.relogio.gasto { background: #cfc6b4; border-color: #a99f8c; }
+.relogio.gasto::before, .relogio.gasto::after { background: #a99f8c; }
+
+.urna { display: flex; gap: 3px; margin-top: 5px; }
+.urna i { width: 10px; height: 16px; border-radius: 2px; background: #d8cfbd; }
+.urna i.voto { background: var(--bom); }
+.urna-texto { font-family: var(--f-maquina); font-size: 12px; margin-top: 2px; }
+
+/* ---------- cena ---------- */
+.cena {
+  max-width: 1320px; margin: 0 auto;
+  display: grid; gap: 20px; align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.8fr);
+}
+@media (max-width: 1120px) { .cena { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .celular-wrap { grid-column: 1 / -1; } }
+@media (max-width: 720px) {
+  .cena { grid-template-columns: minmax(0, 1fr); }
+  .quadro-col { order: 1; } .predio-col { order: 2; } .celular-wrap { order: 3; }
+}
+
+.dymo {
+  display: inline-block; background: #1d1d1f; color: #f4f4f4;
+  font-family: var(--f-ui); font-weight: 800; font-size: 12px; letter-spacing: 0.22em;
+  padding: 4px 10px 3px; border-radius: 2px;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.25), 0 -1px 0 rgb(0 0 0 / 0.6);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+/* prédio */
+.predio-col { position: relative; }
+.janela-ceu {
+  border-radius: 10px; overflow: hidden; position: relative;
+  background:
+    radial-gradient(60px 22px at 22% 14%, rgb(255 255 255 / 0.85), transparent 70%),
+    radial-gradient(80px 26px at 70% 8%, rgb(255 255 255 / 0.7), transparent 70%),
+    linear-gradient(#a9d6dd, #e9ddc2 85%);
+  box-shadow: inset 0 0 0 6px #f6efe0, 0 4px 14px rgb(40 50 40 / 0.18);
+  padding: 12px 10px 0;
+}
+.janela-ceu svg { display: block; width: 100%; height: auto; }
+.apto { cursor: pointer; }
+.apto:focus { outline: none; }
+.apto:focus-visible .moldura { stroke: var(--bic); stroke-width: 6; }
+.apto:hover .moldura { stroke: #8a5f40; }
+.anima { transform-box: fill-box; transform-origin: center; }
+.treme { animation: treme 0.5s ease-in-out; }
+.brilha { animation: brilha 0.9s ease-out; }
+@keyframes treme { 20% { transform: translateX(-4px) rotate(-1.5deg); } 40% { transform: translateX(4px) rotate(1.5deg); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes brilha { 0% { filter: brightness(1.35) drop-shadow(0 0 6px #fff6c2); } 100% { filter: none; } }
+.flutua {
+  position: absolute; transform: translate(-50%, 0); pointer-events: none;
+  font-family: var(--f-maquina); font-weight: 700; font-size: 15px; color: #fff;
+  padding: 1px 7px; border-radius: 999px; animation: flutua 1.7s ease-out forwards;
+}
+@keyframes flutua { 0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); } 15% { opacity: 1; transform: translate(-50%, -2px) scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -30px); } }
+.legenda { font-family: var(--f-maquina); font-size: 12px; color: #5d6b5c; text-align: center; margin: 8px 0 0; }
+
+/* quadro de avisos */
+.quadro {
+  border: 12px solid var(--madeira); border-radius: 6px;
+  background:
+    radial-gradient(circle at 30% 40%, rgb(80 45 15 / 0.18) 0 1px, transparent 1.6px) 0 0 / 7px 7px,
+    radial-gradient(circle at 70% 70%, rgb(255 230 190 / 0.22) 0 1px, transparent 1.6px) 3px 2px / 9px 9px,
+    var(--cortica);
+  box-shadow: inset 0 0 18px rgb(60 30 10 / 0.35), 0 4px 0 #573820, 0 10px 18px rgb(40 30 20 / 0.2);
+  padding: 16px 14px 20px; min-height: 420px;
+}
+.quadro-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.contador { font-family: var(--f-mao); font-size: 17px; color: #3b2612; background: var(--papel); padding: 0 8px; transform: rotate(1.5deg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.bilhetes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+@media (max-width: 520px) { .bilhetes { grid-template-columns: minmax(0, 1fr); } }
+.vazio { grid-column: 1 / -1; font-family: var(--f-mao); font-size: 20px; color: #3b2612; text-align: center; padding: 40px 10px; }
+
+.bilhete {
+  position: relative; text-align: left; border: 0; padding: 18px 14px 14px;
+  background: var(--papel); color: var(--tinta);
+  box-shadow: 0 3px 5px rgb(0 0 0 / 0.25);
+  transform: rotate(var(--giro, 0deg));
+  transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0;
+}
+.bilhete:hover { transform: rotate(0deg) translateY(-3px) scale(1.02); box-shadow: 0 8px 14px rgb(0 0 0 / 0.28); z-index: 2; }
+.bilhete .alfinete { position: absolute; top: 5px; left: 50%; width: 13px; height: 13px; margin-left: -6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff8 0 2px, transparent 3px), var(--pino, #c0392b); box-shadow: 1px 2px 2px rgb(0 0 0 / 0.35); }
+.bilhete .de { display: block; font-family: var(--f-mao); font-size: 14px; color: #6d5b48; margin-top: 4px; }
+.bilhete .titulo { display: block; font-weight: 800; font-size: 15px; line-height: 1.2; }
+.bilhete .texto { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--f-mao); font-size: 15px; color: var(--bic); line-height: 1.3; margin-top: 6px; }
+.prazo { display: inline-block; margin-top: 10px; font-family: var(--f-maquina); font-weight: 700; font-size: 11px; letter-spacing: 0.06em;
+  border: 2px solid currentColor; padding: 1px 6px; border-radius: 3px; transform: rotate(-3deg); }
+.prazo.urgente { color: var(--carimbo); }
+.prazo.folga { color: #6a5a3a; }
+
+.b-pautado { background: repeating-linear-gradient(transparent 0 21px, #b9cbe6 21px 22px), var(--papel); background-position: 0 6px; border-left: 3px double #e0a0a0; }
+.b-postit { background: #fbe27a; }
+.b-rasgado { clip-path: polygon(0 4%, 6% 0, 12% 4%, 19% 1%, 26% 4%, 33% 0, 41% 3%, 49% 0, 57% 4%, 64% 1%, 72% 4%, 80% 0, 88% 3%, 95% 0, 100% 3%, 100% 100%, 0 100%); }
+.b-oficio { background: #fffdf6; }
+.b-oficio .texto, .b-memo .texto { font-family: var(--f-maquina); font-size: 13px; color: var(--tinta); }
+.b-oficio::after {
+  content: "NOTIFICAÇÃO"; position: absolute; right: 8px; bottom: 12px; transform: rotate(-12deg);
+  font-family: var(--f-maquina); font-weight: 700; font-size: 12px; color: rgb(184 49 43 / 0.75);
+  border: 2px solid rgb(184 49 43 / 0.75); padding: 0 4px; border-radius: 3px;
+}
+.timbre { display: block; font-family: var(--f-maquina); font-size: 10px; letter-spacing: 0.05em; color: #6b5d4c; border-bottom: 1px solid #cbbfa8; padding-bottom: 3px; margin-bottom: 4px; }
+
+/* agenda */
+.agenda {
+  margin-top: 18px; background: var(--papel); border-radius: 4px; position: relative;
+  padding: 14px 16px 14px 34px;
+  background-image: repeating-linear-gradient(transparent 0 25px, #cfd9ea 25px 26px);
+  box-shadow: 0 3px 6px rgb(0 0 0 / 0.18);
+}
+.agenda::before { content: ""; position: absolute; left: 10px; top: 10px; bottom: 10px; width: 10px;
+  background: radial-gradient(circle, #8b8b8b 0 3px, transparent 3.5px) 0 0 / 10px 16px; }
+.agenda h3 { margin: 0 0 8px; }
+.tarefa { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: none; border: 0; padding: 4px 0; font-family: var(--f-mao); font-size: 17px; color: var(--bic); }
+.tarefa .caixinha { flex: none; width: 15px; height: 15px; border: 2px solid var(--bic); border-radius: 2px; position: relative; top: 2px; }
+.tarefa.feita .caixinha::after { content: "✓"; position: absolute; left: 1px; top: -9px; font-size: 18px; }
+.tarefa.feita .nome { text-decoration: line-through; opacity: 0.6; }
+.tarefa .meta { margin-left: auto; font-family: var(--f-maquina); font-size: 12px; color: #6b5d4c; white-space: nowrap; }
+.tarefa:disabled { cursor: not-allowed; }
+.tarefa:not(:disabled):hover .nome { text-decoration: underline; text-decoration-style: wavy; }
+.fechar-semana {
+  margin-top: 12px; width: 100%; border: 3px solid var(--carimbo); color: var(--carimbo); background: rgb(184 49 43 / 0.06);
+  font-family: var(--f-maquina); font-weight: 700; font-size: 16px; letter-spacing: 0.14em; padding: 10px; border-radius: 6px;
+  transform: rotate(-0.6deg); transition: transform 0.12s, background 0.12s;
+}
+.fechar-semana:hover { background: rgb(184 49 43 / 0.12); }
+.fechar-semana:active { transform: rotate(-0.6deg) scale(0.97); }
+
+/* celular */
+.celular-wrap { display: flex; justify-content: center; }
+.celular {
+  width: 100%; max-width: 360px; height: 640px; border-radius: 34px; padding: 12px;
+  background: linear-gradient(145deg, #2c2c30, #18181b); box-shadow: 0 10px 24px rgb(0 0 0 / 0.3), inset 0 0 0 2px #3b3b40;
+  display: flex; flex-direction: column;
+}
+.tela { flex: 1; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; background: #ece4d7; min-height: 0; }
+.barra-status { background: var(--zap); color: #e6f1ec; font-size: 11px; padding: 6px 16px 0; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.cab-grupo { background: var(--zap); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 12px 10px; }
+.cab-grupo .foto { width: 36px; height: 36px; border-radius: 50%; background: var(--reboco); display: grid; place-items: center; overflow: hidden; flex: none; }
+.cab-grupo b { display: block; font-size: 15px; }
+.cab-grupo small { display: block; font-size: 12px; color: #cfe4dc; }
+.conversa {
+  flex: 1; overflow-y: auto; padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 6px;
+  background:
+    radial-gradient(circle at 20% 30%, rgb(0 0 0 / 0.035) 0 6px, transparent 7px) 0 0 / 46px 46px,
+    radial-gradient(circle at 70% 60%, rgb(0 0 0 / 0.03) 0 4px, transparent 5px) 0 0 / 38px 38px,
+    #ece4d7;
+}
+.dia-chip { align-self: center; background: #d9e9f2; color: #4a5a63; font-size: 11px; padding: 2px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+.msg { max-width: 86%; background: #fff; border-radius: 10px; border-top-left-radius: 2px; padding: 5px 9px 4px; box-shadow: 0 1px 1px rgb(0 0 0 / 0.12); animation: entra 0.25s ease-out; }
+.msg .quem { font-size: 12px; font-weight: 800; }
+.msg .txt { font-size: 14px; }
+.msg .hora { float: right; font-size: 10px; color: #8a8a8a; margin: 6px 0 0 10px; font-variant-numeric: tabular-nums; }
+.msg.sistema { align-self: center; max-width: 92%; background: #fff6d6; border-radius: 8px; font-size: 12.5px; text-align: center; color: #5a4b2a; }
+.msg.meu { align-self: flex-end; background: #d6f3d0; border-top-left-radius: 10px; border-top-right-radius: 2px; }
+@keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.figurinha {
+  width: 150px; height: 110px; border-radius: 8px; margin: 4px 0 2px; display: grid; place-items: center; text-align: center; padding: 8px;
+  background: radial-gradient(circle at 25% 30%, #f9c6d6 0 18px, transparent 19px), radial-gradient(circle at 78% 70%, #ffd77a 0 22px, transparent 23px), radial-gradient(circle at 70% 22%, #b7e2c4 0 14px, transparent 15px), linear-gradient(135deg, #fbe9f0, #fff4d4);
+  font-family: var(--f-letreiro); font-size: 22px; line-height: 1; color: #a3285b; text-shadow: 0 1px 0 #fff;
+}
+.audio { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.audio .play { width: 0; height: 0; border-left: 10px solid #5f6b66; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+.audio .onda { display: flex; align-items: center; gap: 2px; height: 22px; }
+.audio .onda i { width: 3px; border-radius: 2px; background: #9aa7a1; }
+.audio small { font-size: 11px; color: #7a7a7a; font-variant-numeric: tabular-nums; }
+.digitando { align-self: flex-start; background: #fff; border-radius: 10px; padding: 8px 12px; display: flex; gap: 4px; box-shadow: 0 1px 1px rgb(0 0 0 / 0.12); }
+.digitando i { width: 7px; height: 7px; border-radius: 50%; background: #9a9a9a; animation: pula 1s infinite; }
+.digitando i:nth-child(2) { animation-delay: 0.15s; } .digitando i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pula { 0%, 60%, 100% { transform: none; opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.digitar { background: #f3f0ea; padding: 8px 10px; display: flex; gap: 8px; align-items: center; }
+.digitar div { flex: 1; background: #fff; border-radius: 18px; padding: 7px 14px; color: #9a9a9a; font-size: 14px; }
+.digitar span { width: 34px; height: 34px; border-radius: 50%; background: var(--zap); flex: none; }
+
+/* ---------- prancheta (decisão) e ficha ---------- */
+.fundo { position: fixed; inset: 0; z-index: 20; background: rgb(30 25 20 / 0.55); display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.prancheta {
+  width: min(520px, 100%); max-height: 100%; overflow-y: auto; position: relative;
+  background: linear-gradient(#9a6a40, #855a35); border-radius: 14px; padding: 34px 16px 16px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.4); animation: aparece 0.25s ease-out;
+}
+@keyframes aparece { from { opacity: 0; transform: translateY(16px) rotate(1deg); } to { opacity: 1; transform: none; } }
+.prendedor { position: absolute; top: 8px; left: 50%; width: 120px; height: 30px; margin-left: -60px; border-radius: 6px 6px 10px 10px;
+  background: linear-gradient(#e2e2e2, #9b9b9b); box-shadow: 0 3px 4px rgb(0 0 0 / 0.35), inset 0 1px 0 #fff; }
+.folha { background: var(--papel); padding: 22px 20px 18px; position: relative; box-shadow: 0 2px 3px rgb(0 0 0 / 0.2); }
+.folha h2 { margin: 0; font-weight: 900; font-size: 22px; line-height: 1.15; text-wrap: balance; }
+.folha .de { font-family: var(--f-mao); color: #6d5b48; font-size: 16px; }
+.folha .corpo { font-family: var(--f-mao); color: var(--bic); font-size: 18px; line-height: 1.35; margin: 12px 0 4px; }
+.folha .pergunta { font-family: var(--f-maquina); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #6b5d4c; margin: 16px 0 6px; border-top: 1px dashed #cbbfa8; padding-top: 12px; }
+.opcao { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; background: none; border: 0; padding: 8px 4px; border-radius: 4px; }
+.opcao:hover:not(:disabled) { background: rgb(31 76 155 / 0.06); }
+.opcao:disabled { opacity: 0.45; cursor: not-allowed; }
+.opcao .caixinha { flex: none; width: 20px; height: 20px; border: 2px solid var(--bic); border-radius: 3px; margin-top: 3px; position: relative; }
+.opcao.marcada .caixinha::after { content: "✓"; position: absolute; left: 1px; top: -12px; font-family: var(--f-mao); font-size: 26px; color: var(--bic); }
+.opcao .rotulo-op { display: block; font-family: var(--f-mao); font-size: 19px; color: var(--bic); line-height: 1.25; }
+.opcao .custo { display: block; font-family: var(--f-maquina); font-size: 12px; color: #6b5d4c; margin-top: 2px; }
+.carimbo-ok {
+  position: absolute; right: 18px; top: 40%; transform: rotate(-14deg) scale(1.6); opacity: 0;
+  font-family: var(--f-maquina); font-weight: 700; font-size: 26px; letter-spacing: 0.1em; color: rgb(184 49 43 / 0.85);
+  border: 4px solid rgb(184 49 43 / 0.85); border-radius: 6px; padding: 2px 10px; pointer-events: none;
+}
+.carimbo-ok.bate { animation: bate 0.35s cubic-bezier(.2,1.6,.4,1) forwards; }
+@keyframes bate { to { opacity: 1; transform: rotate(-14deg) scale(1); } }
+.depois { display: block; margin: 14px auto 0; background: none; border: 0; color: #f3e6d2; font-family: var(--f-maquina); font-size: 13px; text-decoration: underline; }
+
+.ficha {
+  width: min(440px, 100%); background: #fffdf6; border-radius: 4px; padding: 0 0 16px; box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
+  background-image: repeating-linear-gradient(transparent 0 23px, #cfdcec 23px 24px); background-position: 0 54px;
+  animation: aparece 0.25s ease-out; overflow: hidden; max-height: 100%; overflow-y: auto;
+}
+.ficha-topo { display: flex; gap: 14px; align-items: center; padding: 14px 18px 10px; background: #fffdf6; border-bottom: 2px solid #e09a9a; }
+.ficha-topo svg { width: 110px; height: auto; border: 3px solid var(--esquadria); border-radius: 3px; flex: none; background: #fff; }
+.ficha-topo h2 { margin: 0; font-weight: 900; font-size: 22px; line-height: 1.1; }
+.ficha-topo .apto-n { font-family: var(--f-maquina); font-size: 13px; color: #6b5d4c; }
+.ficha-corpo { padding: 8px 18px 0; font-family: var(--f-maquina); font-size: 14px; line-height: 24px; }
+.ficha-corpo .bio { font-family: var(--f-mao); color: var(--bic); font-size: 17px; line-height: 24px; margin: 0; }
+.selos { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; }
+.selo { font-family: var(--f-maquina); font-size: 12px; font-weight: 700; padding: 0 6px; border: 2px solid; border-radius: 3px; line-height: 20px; }
+.selo.gosta { color: var(--bom); } .selo.odeia { color: var(--carimbo); }
+.ficha .fechar { display: block; margin: 12px auto 0; background: var(--tinta); color: var(--papel); border: 0; border-radius: 4px; padding: 8px 22px; font-weight: 800; }
+
+/* recibo (resultado) */
+.recibo {
+  position: fixed; left: 50%; z-index: 30; width: min(360px, calc(100% - 32px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%); background: #fffef8; padding: 12px 16px 16px;
+  font-family: var(--f-maquina); font-size: 13px; box-shadow: 0 8px 20px rgb(0 0 0 / 0.3);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 95% 100%, 90% calc(100% - 8px), 85% 100%, 80% calc(100% - 8px), 75% 100%, 70% calc(100% - 8px), 65% 100%, 60% calc(100% - 8px), 55% 100%, 50% calc(100% - 8px), 45% 100%, 40% calc(100% - 8px), 35% 100%, 30% calc(100% - 8px), 25% 100%, 20% calc(100% - 8px), 15% 100%, 10% calc(100% - 8px), 5% 100%, 0 calc(100% - 8px));
+  animation: recibo 0.3s ease-out;
+}
+@keyframes recibo { from { transform: translate(-50%, 30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+.recibo h4 { margin: 0 0 4px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px dashed #bbb; padding-bottom: 4px; }
+.recibo p { margin: 0 0 6px; font-family: var(--f-mao); font-size: 15px; color: var(--bic); }
+.recibo .linha { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.mais { color: var(--bom); font-weight: 700; } .menos { color: var(--carimbo); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
+</style>
+
+<p class="aviso-previa">Prévia do visual novo · retratos provisórios · 5 pendências de exemplo · clique nos bilhetes e nas janelas</p>
+
+<header class="balcao" aria-label="Situação do prédio">
+  <div class="placa"><b>SÍNDICO</b><span>Edifício Primavera</span></div>
+  <div class="objeto folhinha" aria-label="Data no jogo">
+    <div class="topo" id="hud-mes">MÊS 2 DE 6</div>
+    <div class="dia" id="hud-semana">3</div>
+    <div class="pe">SEMANA</div>
+  </div>
+  <div class="objeto">
+    <span class="rotulo">Livro-caixa</span>
+    <span class="valor" id="hud-caixa">R$ 4.230</span>
+    <span class="rotulo" style="text-transform:none;letter-spacing:0">taxa R$ 600/apto</span>
+  </div>
+  <div class="objeto">
+    <span class="rotulo">Conservação <b id="hud-cons-n" style="color:var(--tinta)">58%</b></span>
+    <div class="regua" aria-hidden="true"><i id="hud-cons"></i></div>
+  </div>
+  <div class="objeto">
+    <span class="rotulo">Horas livres</span>
+    <div class="relogios" id="hud-horas" aria-live="polite"></div>
+  </div>
+  <div class="objeto">
+    <span class="rotulo">Eleição hoje</span>
+    <div class="urna" id="hud-urna" aria-hidden="true"></div>
+    <span class="urna-texto" id="hud-urna-txt">5 de 8 votos</span>
+  </div>
+</header>
+
+<main class="cena">
+  <section class="predio-col" aria-label="O prédio">
+    <div class="janela-ceu" id="predio"></div>
+    <p class="legenda">Clique numa janela pra ver a ficha do morador.</p>
+  </section>
+
+  <section class="quadro-col" aria-label="Quadro de avisos">
+    <div class="quadro">
+      <div class="quadro-topo">
+        <span class="dymo">QUADRO DE AVISOS</span>
+        <span class="contador" id="contador">5 pendências</span>
+      </div>
+      <div class="bilhetes" id="bilhetes"></div>
+    </div>
+    <div class="agenda">
+      <h3><span class="dymo">AGENDA DO SÍNDICO</span></h3>
+      <div id="tarefas"></div>
+      <button class="fechar-semana" id="fechar-semana">FECHAR A SEMANA</button>
+    </div>
+  </section>
+
+  <div class="celular-wrap">
+    <section class="celular" aria-label="Grupo do prédio no celular">
+      <div class="tela">
+        <div class="barra-status"><span>19:42</span><span>4G ▮▮▮ 61%</span></div>
+        <div class="cab-grupo">
+          <div class="foto" aria-hidden="true">
+            <svg viewBox="0 0 36 36" width="36" height="36"><rect width="36" height="36" fill="#efe0c3"/><rect x="9" y="8" width="18" height="28" fill="#e2cfa8"/><g fill="#6a4630"><rect x="12" y="11" width="5" height="4"/><rect x="19" y="11" width="5" height="4"/><rect x="12" y="18" width="5" height="4"/><rect x="19" y="18" width="5" height="4"/><rect x="12" y="25" width="5" height="4"/><rect x="19" y="25" width="5" height="4"/></g><circle cx="29" cy="8" r="4" fill="#f2a3bd"/></svg>
+          </div>
+          <div><b>Edifício Primavera 🌸</b><small id="digitando-cab">Neide, Kelly, Marcão, Dr. Valdemar e mais 6</small></div>
+        </div>
+        <div class="conversa" id="conversa" aria-live="polite"></div>
+        <div class="digitar" aria-hidden="true"><div>Mensagem</div><span></span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="modal"></div>
+<div id="recibo"></div>
+
+<script>
+(() => {
+  // ---------------- moradores (retratos provisórios em vetor) ----------------
+  const M = {
+    osvaldo:  { nome: "Seu Osvaldo", apto: "401", pele: "#8d5a3b", roupa: "#e8e1cf", cabelo: "careca", corCabelo: "#efece4", parede: "#ead6ae", cortina: "#b7864e", extra: ["bigode"], decor: "retrato",
+                bio: "Aposentado, gente boa, conhece todo mundo. Não paga o condomínio há 8 meses.", desde: "1994", gosta: ["Economia", "Tradição", "Festa"], odeia: ["Regras"] },
+    patricia: { nome: "Patrícia", apto: "402", pele: "#b07850", roupa: "#3a8f86", cabelo: "rabo", corCabelo: "#3b2418", parede: "#cfe3df", cortina: "#e0b45a", extra: [], decor: "thor",
+                bio: "Mãe solo de 3 filhos e do Thor, um vira-lata de 30 kg. Vive no limite do orçamento.", desde: "2019", gosta: ["Pets", "Economia", "Segurança"], odeia: ["Silêncio"] },
+    marcao:   { nome: "Marcão", apto: "301", pele: "#e2b48c", roupa: "#26262b", cabelo: "barbudo", corCabelo: "#3a2a1e", parede: "#3d3b4a", cortina: "#7a2f3b", extra: [], decor: "prato",
+                bio: "Baterista da banda Os Inadimplentes. Ensaia em casa. Não entende o problema.", desde: "2021", gosta: ["Festa", "Economia"], odeia: ["Regras", "Silêncio"] },
+    neide:    { nome: "Dona Neide", apto: "302", pele: "#e8c2a2", roupa: "#e48aa8", cabelo: "bobes", corCabelo: "#b9b3ad", parede: "#f2d4da", cortina: "#9ec6a6", extra: ["oculos"], decor: "celular",
+                bio: "Administradora do grupo do prédio. Sabe de tudo antes de acontecer. O humor dela contamina o grupo.", desde: "1988", gosta: ["Segurança", "Tradição", "Regras"], odeia: ["Festa"] },
+    valdemar: { nome: "Dr. Valdemar", apto: "201", pele: "#f0c9a9", roupa: "#3e4657", cabelo: "risca", corCabelo: "#f2f0ea", parede: "#d9ccb5", cortina: "#5d6b4f", extra: ["oculosQuadrado", "gravata"], decor: "estante",
+                bio: "Advogado aposentado. Perdeu a eleição pra você por 1 voto. Sabe o regimento de cor.", desde: "1979", gosta: ["Regras", "Economia", "Estética"], odeia: ["Festa", "Pets"] },
+    kelly:    { nome: "Kelly", apto: "202", pele: "#f3cbb3", roupa: "#f08bb4", cabelo: "longo", corCabelo: "#d8a95a", parede: "#f7dae6", cortina: "#ffffff", extra: ["blush"], decor: "ringlight",
+                bio: "Influencer com 38 mil seguidores. Grava tudo. O prédio aparece nos stories dela todo dia.", desde: "2023", gosta: ["Estética", "Festa", "Pets"], odeia: ["Regras"] },
+    cida:     { nome: "Dona Cida", apto: "101", pele: "#f4d4bb", roupa: "#a99ac9", cabelo: "coque", corCabelo: "#f3f1ec", parede: "#e8e1f2", cortina: "#e7b6a1", extra: ["oculos", "blush"], decor: "relogio",
+                bio: "78 anos, mora no prédio há 40. Faz bolo pra todo mundo. Odeia barulho e mudança.", desde: "1986", gosta: ["Silêncio", "Tradição", "Economia"], odeia: ["Festa"] },
+    rafael:   { nome: "Rafael e Bia", apto: "102", pele: "#e7b994", roupa: "#7aa0c9", cabelo: "curto", corCabelo: "#2f2219", parede: "#d9e7f2", cortina: "#f2d27a", extra: ["olheira", "bebe"], decor: "mobile",
+                bio: "Casal com um bebê de 4 meses. Dormem 3 horas por noite. Paciência zero.", desde: "2024", gosta: ["Silêncio", "Segurança", "Economia"], odeia: ["Festa"] },
+    ze:       { nome: "Zé", apto: "T", pele: "#a86f48", roupa: "#2d3e66", cabelo: "quepe", corCabelo: "#24304f", parede: "#cbd7d1", cortina: null, extra: ["bigode"], decor: null },
+  };
+  const ANDARES = [["osvaldo", "patricia"], ["marcao", "neide"], ["valdemar", "kelly"], ["cida", "rafael"]];
+  const NOMES_GRUPO = { cida: "#b0396b", rafael: "#2d6aa3", valdemar: "#4a4f5c", kelly: "#a8317d", marcao: "#b13a2a", neide: "#6a3fa0", osvaldo: "#8a5a12", patricia: "#1d7a70", ze: "#2d6b3a" };
+
+  const humor = (a) => (a >= 70 ? 2 : a >= 55 ? 1 : a >= 40 ? 0 : a >= 20 ? -1 : -2);
+  const corNota = (a) => (a >= 55 ? "var(--bom)" : a >= 40 ? "var(--atencao)" : a >= 20 ? "var(--ruim)" : "var(--pessimo)");
+
+  function retrato(id, aprov) {
+    const p = M[id];
+    const h = humor(aprov ?? 55);
+    let s = `<rect width="120" height="70" fill="${p.parede}"/>`;
+    // decoração do apartamento
+    switch (p.decor) {
+      case "retrato": s += `<rect x="16" y="10" width="17" height="14" fill="#c9a46a" stroke="#6a4630" stroke-width="1.5"/><rect x="19" y="13" width="11" height="8" fill="#9fb7c4"/>`; break;
+      case "prato": s += `<rect x="15" y="8" width="18" height="24" fill="#b8312b"/><rect x="18" y="12" width="12" height="2" fill="#f4e3c0"/><rect x="18" y="17" width="9" height="2" fill="#f4e3c0"/><line x1="100" y1="30" x2="100" y2="70" stroke="#999" stroke-width="1.5"/><ellipse cx="100" cy="30" rx="13" ry="3" fill="#d6a93a"/>`; break;
+      case "celular": s += `<rect x="96" y="12" width="12" height="9" fill="#fff" stroke="#c98ea0"/><path d="M98 16 h8 M98 18 h5" stroke="#c98ea0"/>`; break;
+      case "estante": s += `<rect x="12" y="24" width="26" height="2" fill="#6a4630"/><rect x="13" y="12" width="4" height="12" fill="#7b2f2f"/><rect x="18" y="14" width="4" height="10" fill="#2f4f7b"/><rect x="23" y="11" width="4" height="13" fill="#2f6b4a"/><rect x="28" y="15" width="4" height="9" fill="#7b5f2f"/><rect x="33" y="13" width="4" height="11" fill="#5a2f7b"/>`; break;
+      case "relogio": s += `<circle cx="101" cy="18" r="7" fill="#fff" stroke="#6a4630" stroke-width="1.5"/><path d="M101 18 V13 M101 18 h3" stroke="#2a2420" stroke-width="1.2"/>`; break;
+      case "mobile": s += `<line x1="22" y1="0" x2="22" y2="8" stroke="#888"/><line x1="12" y1="8" x2="32" y2="8" stroke="#888"/><circle cx="13" cy="14" r="3" fill="#f2a3bd"/><circle cx="22" cy="16" r="3" fill="#8ec9e8"/><circle cx="31" cy="14" r="3" fill="#ffd36e"/>`; break;
+    }
+    if (p.decor === "ringlight") s += `<circle cx="60" cy="37" r="25" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="10"/><circle cx="60" cy="37" r="25" fill="none" stroke="#fff" stroke-width="3.5"/>`;
+    // cortinas
+    if (p.cortina) s += `<path d="M0 0 H11 Q7 30 12 70 H0 Z" fill="${p.cortina}" opacity="0.85"/><path d="M120 0 H109 Q113 30 108 70 H120 Z" fill="${p.cortina}" opacity="0.85"/>`;
+    // cabelo atrás
+    if (p.cabelo === "longo") s += `<path d="M43 38 Q41 19 60 19 Q79 19 77 38 L82 70 H38 Z" fill="${p.corCabelo}"/>`;
+    if (p.cabelo === "barbudo") s += `<path d="M44 36 Q43 18 60 18 Q77 18 76 36 L80 64 H40 Z" fill="${p.corCabelo}"/>`;
+    if (p.cabelo === "rabo") s += `<ellipse cx="77" cy="40" rx="5.5" ry="11" fill="${p.corCabelo}"/>`;
+    // pescoço, ombros, cabeça
+    s += `<rect x="55" y="47" width="10" height="10" fill="${p.pele}"/>`;
+    s += `<path d="M27 74 Q30 55 60 54 Q90 55 93 74 Z" fill="${p.roupa}"/>`;
+    if (p.extra.includes("gravata")) s += `<path d="M56 54 L64 54 L62 58 L64 70 L60 74 L56 70 L58 58 Z" fill="#9b2f2f"/><path d="M52 54 L60 62 L68 54" fill="none" stroke="#f2f0ea" stroke-width="2.5"/>`;
+    s += `<circle cx="45.5" cy="38" r="3" fill="${p.pele}"/><circle cx="74.5" cy="38" r="3" fill="${p.pele}"/>`;
+    s += `<circle cx="60" cy="37" r="14" fill="${p.pele}"/>`;
+    // cabelo na frente
+    const capa = `<path d="M46 35 Q45 21 60 20.5 Q75 21 74 35 Q72 27.5 60 27 Q48 27.5 46 35 Z" fill="${p.corCabelo}"/>`;
+    switch (p.cabelo) {
+      case "careca": s += `<ellipse cx="46.5" cy="35" rx="2.6" ry="4" fill="${p.corCabelo}"/><ellipse cx="73.5" cy="35" rx="2.6" ry="4" fill="${p.corCabelo}"/>`; break;
+      case "bobes": s += capa + `<circle cx="50" cy="23.5" r="3.4" fill="#f2a3bd"/><circle cx="57" cy="20.5" r="3.4" fill="#8ec9e8"/><circle cx="64" cy="20.5" r="3.4" fill="#ffd36e"/><circle cx="71" cy="23.5" r="3.4" fill="#9fd6a6"/>`; break;
+      case "coque": s += capa + `<circle cx="60" cy="19" r="6" fill="${p.corCabelo}"/>`; break;
+      case "risca": s += capa + `<path d="M55 21.5 L51.5 30" stroke="#cfcac0" stroke-width="1.2"/>`; break;
+      case "quepe": s += `<path d="M45.5 31 Q46 18 60 18 Q74 18 74.5 31 Z" fill="${p.corCabelo}"/><path d="M44 30 H79 L82 34 H44 Z" fill="#141a2b"/><rect x="56" y="22" width="8" height="4" rx="1" fill="#d9b44a"/>`; break;
+      default: s += capa;
+    }
+    // olhos e sobrancelhas
+    const bravo = h < 0;
+    s += `<circle cx="55" cy="36.5" r="1.8" fill="#2a2420"/><circle cx="65" cy="36.5" r="1.8" fill="#2a2420"/>`;
+    const cs = p.cabelo === "careca" || p.cabelo === "quepe" ? "#5a3a26" : (p.corCabelo === "#efece4" || p.corCabelo === "#f2f0ea" || p.corCabelo === "#f3f1ec" || p.corCabelo === "#b9b3ad" ? "#8a8278" : p.corCabelo);
+    s += bravo
+      ? `<path d="M51.5 31 L58 33.5 M68.5 31 L62 33.5" stroke="${cs}" stroke-width="1.6" stroke-linecap="round"/>`
+      : `<path d="M52 ${h === 2 ? 30.5 : 32} Q55 ${h === 2 ? 29 : 31} 58 ${h === 2 ? 30.5 : 32} M62 ${h === 2 ? 30.5 : 32} Q65 ${h === 2 ? 29 : 31} 68 ${h === 2 ? 30.5 : 32}" fill="none" stroke="${cs}" stroke-width="1.5" stroke-linecap="round"/>`;
+    if (p.extra.includes("olheira")) s += `<path d="M52.5 39.5 Q55 41 57.5 39.5 M62.5 39.5 Q65 41 67.5 39.5" fill="none" stroke="#a7795f" stroke-width="1"/>`;
+    if (p.extra.includes("blush") && h >= 0) s += `<circle cx="51" cy="41.5" r="2.6" fill="#e8707a" opacity="0.35"/><circle cx="69" cy="41.5" r="2.6" fill="#e8707a" opacity="0.35"/>`;
+    if (p.cabelo === "barbudo") s += `<path d="M46 37 Q47 54 60 55 Q73 54 74 37 Q70 45.5 60 45.5 Q50 45.5 46 37 Z" fill="${p.corCabelo}"/>`;
+    if (p.extra.includes("bigode")) s += `<path d="M53 42.3 Q60 39 67 42.3 Q60 44.5 53 42.3 Z" fill="${p.cabelo === "quepe" ? "#2a1d14" : p.corCabelo}"/>`;
+    // boca
+    const bc = p.cabelo === "barbudo" ? "#f3d6bd" : "#5a2a26";
+    const boca = {
+      2: `<path d="M53.5 44.5 Q60 53 66.5 44.5 Z" fill="#5a2a26"/><path d="M55 45 Q60 47 65 45" fill="#fff"/>`,
+      1: `<path d="M54.5 45.5 Q60 49.5 65.5 45.5" fill="none" stroke="${bc}" stroke-width="1.6" stroke-linecap="round"/>`,
+      0: `<path d="M55.5 46.5 H64.5" stroke="${bc}" stroke-width="1.6" stroke-linecap="round"/>`,
+      "-1": `<path d="M55 48 Q60 44.5 65 48" fill="none" stroke="${bc}" stroke-width="1.6" stroke-linecap="round"/>`,
+      "-2": `<path d="M55.5 49.5 Q60 42.5 64.5 49.5 Z" fill="#5a2a26"/>`,
+    }[h];
+    s += boca;
+    if (p.extra.includes("oculos")) s += `<circle cx="55" cy="36.5" r="4.3" fill="#fff" fill-opacity="0.2" stroke="#4a3a30" stroke-width="1.2"/><circle cx="65" cy="36.5" r="4.3" fill="#fff" fill-opacity="0.2" stroke="#4a3a30" stroke-width="1.2"/><path d="M59.3 36.5 H60.7" stroke="#4a3a30" stroke-width="1.2"/>`;
+    if (p.extra.includes("oculosQuadrado")) s += `<rect x="50.2" y="33" width="9.2" height="7" rx="1.2" fill="#fff" fill-opacity="0.2" stroke="#1d1d1d" stroke-width="1.9"/><rect x="60.6" y="33" width="9.2" height="7" rx="1.2" fill="#fff" fill-opacity="0.2" stroke="#1d1d1d" stroke-width="1.9"/>`;
+    // extras na frente
+    if (p.decor === "thor") s += `<g transform="translate(22 56)"><ellipse cx="-7" cy="-5" rx="4" ry="7" fill="#7a4f28" transform="rotate(-20 -7 -5)"/><ellipse cx="7" cy="-5" rx="4" ry="7" fill="#7a4f28" transform="rotate(20 7 -5)"/><circle r="9" fill="#a8743f"/><ellipse cy="4" rx="5" ry="3.6" fill="#d9b48a"/><circle cx="-3.4" cy="-1.5" r="1.3" fill="#2a2420"/><circle cx="3.4" cy="-1.5" r="1.3" fill="#2a2420"/><ellipse cy="2.4" rx="1.8" ry="1.3" fill="#2a2420"/>${h < 0 ? `<path d="M-2 6 Q0 8 2 6" stroke="#c0392b" stroke-width="1.6" fill="none"/>` : ""}</g>`;
+    if (p.decor === "celular") s += `<rect x="78" y="47" width="7" height="12" rx="1.2" fill="#222" transform="rotate(-12 81 53)"/><circle cx="81" cy="58" r="3.2" fill="${p.pele}"/>`;
+    if (p.extra.includes("bebe")) {
+      const chora = h < 0;
+      s += `<g transform="translate(86 58)"><circle r="8" fill="#f2c9a6"/><path d="M-2 -8 Q0 -12 2 -8" stroke="#3b2a20" stroke-width="1.3" fill="none"/>${chora ? `<path d="M-4 -1 L-1 0 M4 -1 L1 0" stroke="#2a2420" stroke-width="1"/><ellipse cy="3.5" rx="2" ry="2.6" fill="#5a2a26"/><path d="M-5 1 Q-6 4 -5 6" stroke="#7fb7e0" stroke-width="1.2" fill="none"/>` : `<path d="M-4.5 -0.5 Q-3 1 -1.5 -0.5 M1.5 -0.5 Q3 1 4.5 -0.5" stroke="#2a2420" stroke-width="1" fill="none"/><path d="M-1.5 3.5 Q0 4.5 1.5 3.5" stroke="#b9645a" stroke-width="1" fill="none"/>`}</g>`;
+    }
+    return s;
+  }
+
+  // ---------------- estado da prévia ----------------
+  const st = {
+    mes: 2, semana: 3, caixa: 4230, cons: 58, horas: 3,
+    aprov: { osvaldo: 62, patricia: 47, marcao: 52, neide: 50, valdemar: 38, kelly: 58, cida: 55, rafael: 46 },
+    feitas: {},
+  };
+
+  const BILHETES = [
+    { id: "bolo", de: "cida", estilo: "b-pautado", giro: -2, pino: "#2e7dbf", titulo: "Bolo de fubá", prazo: 1,
+      texto: "Meu filho, fiz um bolo de fubá pro síndico! Passa aqui pra tomar um cafezinho? ☕",
+      opcoes: [
+        { t: "Tomar café com ela", h: 1, d: { cida: 12, neide: 3 }, r: "Uma hora de café e 40 anos de fofoca do prédio. Agora você sabe coisas.", fala: [["cida", "Que síndico bom 🥰"]] },
+        { t: "Agradecer e levar o bolo pra viagem", h: 0, d: { cida: 3 }, r: "Bolo delicioso. A Dona Cida queria companhia, mas entendeu." },
+        { t: "Dizer que está de dieta", h: 0, d: { cida: -8 }, r: "A Dona Cida deu o bolo pro Zé. Ele mandou 'obg síndico 😋' sem saber de nada.", fala: [["ze", "obg síndico 😋"]] },
+      ],
+      vence: { d: { cida: -6 }, r: "O bolo ficou na mesa dela, esperando. A Dona Cida comentou com a Neide." } },
+    { id: "bateria", de: "rafael", estilo: "b-postit", giro: 2.5, pino: "#c0392b", titulo: "Bateria às 23h", prazo: 1,
+      texto: "O Marcão tá ensaiando bateria às 23h DE NOVO. O bebê acordou 3 vezes. Faz alguma coisa!!",
+      opcoes: [
+        { t: "Ir lá conversar com o Marcão", h: 1, d: { rafael: 9, cida: 6, marcao: -6 }, r: "O Marcão pediu desculpas e prometeu comprar um abafador. Vamos ver.", fala: [["rafael", "Valeu demais, síndico 🙏"]] },
+        { t: "Mandar advertência formal por escrito", h: 1, d: { rafael: 7, cida: 6, valdemar: 7, marcao: -16, kelly: -4 }, r: "Advertência entregue. O Marcão colou na porta como troféu.", fala: [["marcao", "Careta."], ["valdemar", "Decisão juridicamente adequada."]] },
+        { t: "Ignorar e botar um fone de ouvido", h: 0, d: { rafael: -10, cida: -5 }, r: "Você dormiu bem. O Rafael não.", fala: [["rafael", "O bebê acordou de novo. Obrigado, síndico. 🙃"]] },
+      ],
+      vence: { d: { rafael: -10, cida: -5 }, r: "Ninguém respondeu o Rafael. Ele mandou 14 áudios no grupo às 2h da manhã." } },
+    { id: "vazamento", de: "neide", estilo: "b-rasgado", giro: 1.5, pino: "#e0a21c", titulo: "Água escorrendo do teto", prazo: 1,
+      texto: "Tem água escorrendo do teto do meu banheiro!!! Só pode ser do 402!!! 😱😱",
+      opcoes: [
+        { t: "Chamar um encanador bom", h: 1, caixa: -900, d: { neide: 10, patricia: 3 }, r: "Cano trocado, problema resolvido. A Neide elogiou no grupo.", fala: [["neide", "Gente, o síndico resolveu, viu? 👏👏👏"]] },
+        { t: "Chamar o sobrinho do Zé, que 'entende de encanamento'", h: 1, caixa: -200, d: { neide: 4 }, r: "Ele resolveu com fita isolante e fé. Parou de vazar. Por enquanto." },
+        { t: "Dizer que é problema entre o 302 e o 402", h: 0, d: { neide: -12, patricia: -6, valdemar: 3 }, r: "Tecnicamente correto. A Neide e a Patrícia não se falam mais.", fala: [["neide", "Hmmmm 🤔 vou comentar com o pessoal..."]] },
+      ],
+      vence: { caixa: -400, d: { neide: -14, kelly: -4 }, r: "A infiltração chegou no 202. A Kelly filmou a parede pingando. Viralizou." } },
+    { id: "xixi", de: "valdemar", estilo: "b-memo", giro: -1.5, pino: "#3c9468", titulo: "Ofício nº 14/2026", prazo: 1,
+      timbre: "DR. VALDEMAR A. · OAB/SP 41.882 · APTO 201",
+      texto: "O cão do 402 urinou no elevador. Exijo providências conforme o Art. 12 do Regimento Interno.",
+      opcoes: [
+        { t: "Multar a Patrícia", h: 1, caixa: 150, d: { valdemar: 8, patricia: -14, kelly: -3 }, r: "Multa aplicada. O Thor agora late toda vez que te vê.", fala: [["patricia", "Sério isso? 🙄"]] },
+        { t: "Pedir pra Patrícia limpar e pôr um aviso", h: 1, d: { valdemar: 3, patricia: 3 }, r: "Resolvido na conversa. Aviso colado: 'Thor, aqui não!'" },
+        { t: "Responder 'acontece, Doutor'", h: 0, d: { valdemar: -12, patricia: 6, kelly: 2 }, r: "O Dr. Valdemar printou a mensagem. Disse que vai guardar 'para os autos'.", fala: [["valdemar", "Registrado. Será usado na assembleia."]] },
+      ],
+      vence: { d: { valdemar: -14 }, r: "O Dr. Valdemar protocolou uma reclamação formal de 6 páginas." } },
+    { id: "calcada", de: "prefeitura", estilo: "b-oficio", giro: 2, pino: "#7d4cb3", titulo: "Calçada irregular", prazo: 2,
+      timbre: "PREFEITURA MUNICIPAL · NOTIF. Nº 2.318/2026",
+      texto: "Calçada em desacordo com a Lei 12.401. Prazo: 14 dias. Multa: R$ 1.000,00.",
+      opcoes: [
+        { t: "Arrumar a calçada", h: 1, caixa: -700, cons: 3, d: { valdemar: 3, cida: 3 }, r: "Calçada nova. A Dona Cida não tropeça mais." },
+        { t: "Recorrer da multa com o Dr. Valdemar", h: 2, d: { valdemar: 8 }, r: "O Doutor escreveu 11 páginas. A prefeitura desistiu por cansaço.", fala: [["valdemar", "Ao menos dessa vez, de acordo."]] },
+        { t: "Pagar a multa e deixar como está", h: 0, caixa: -1000, d: {}, r: "Multa paga. A calçada continua tentando derrubar a Dona Cida." },
+      ],
+      vence: { caixa: -1000, d: {}, r: "O prazo venceu. Multa aplicada." } },
+  ];
+  let quadro = BILHETES.map((b) => b.id);
+
+  const TAREFAS = [
+    { id: "vistoria", t: "Vistoria no prédio", h: 2, meta: "2h · +5% conservação", r: "Você trocou 4 lâmpadas e achou o controle da garagem perdido em 2019.", cons: 5 },
+    { id: "bazar", t: "Bazar no salão", h: 1, meta: "1h · +R$ 300", r: "Bazar lotado. A Kelly vendeu 40 peças de roupa.", caixa: 300 },
+  ];
+
+  // ---------------- prédio ----------------
+  const W0 = 70, W1 = 210, TOPO = 105, ALT = 105;
+  const janelaPos = {};
+  ANDARES.forEach((par, i) => { par.forEach((id, j) => { janelaPos[id] = { x: j ? W1 : W0, y: TOPO + i * ALT + 12 }; }); });
+
+  function desenhaPredio() {
+    let s = `<svg viewBox="0 0 400 662" role="img" aria-label="Edifício Primavera visto de frente, com os moradores nas janelas">
+      <defs>
+        <pattern id="pastilha" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="#5f9886"/><rect x="0.6" y="0.6" width="5.8" height="5.8" rx="0.8" fill="var(--pastilha)"/></pattern>
+        <pattern id="ondas" width="40" height="18" patternUnits="userSpaceOnUse"><rect width="40" height="18" fill="#f3efe6"/><path d="M0 9 Q10 0 20 9 T40 9" fill="none" stroke="#2b2b2b" stroke-width="4.5"/></pattern>
+        <linearGradient id="latao" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f6df9a"/><stop offset="0.5" stop-color="#c39a43"/><stop offset="1" stop-color="#8a6a28"/></linearGradient>
+        <linearGradient id="vidro" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#cfe6ea"/><stop offset="1" stop-color="#8fb9c2"/></linearGradient>`;
+    for (const id in janelaPos) s += `<clipPath id="c-${id}"><rect x="${janelaPos[id].x}" y="${janelaPos[id].y}" width="120" height="70"/></clipPath>`;
+    s += `<clipPath id="c-ze"><rect x="52" y="571" width="90" height="46"/></clipPath></defs>`;
+    // telhado
+    s += `<line x1="322" y1="34" x2="322" y2="96" stroke="#7d7466" stroke-width="2.5"/><path d="M308 44 H336 M312 54 H332 M315 64 H329" stroke="#7d7466" stroke-width="2"/>`;
+    s += `<rect x="148" y="44" width="104" height="52" fill="#ddd4c2" stroke="#9c8f78" stroke-width="2"/><rect x="148" y="44" width="104" height="8" fill="#c9bea8"/>`;
+    s += `<path d="M258 50 V96 M266 50 V96 M258 60 H266 M258 70 H266 M258 80 H266 M258 90 H266" stroke="#8a7f6c" stroke-width="1.6"/>`;
+    s += `<rect x="24" y="94" width="352" height="12" fill="#cbb48d"/>`;
+    s += `<g fill="#9a9a9a"><ellipse cx="72" cy="91" rx="7" ry="4.5"/><circle cx="77" cy="87" r="3"/><ellipse cx="92" cy="91" rx="7" ry="4.5"/><circle cx="87" cy="87" r="3"/></g><path d="M79 87 l3 1 M85 87 l-3 1" stroke="#e0a21c" stroke-width="1.4"/>`;
+    // fachada
+    s += `<rect x="28" y="106" width="344" height="420" fill="var(--reboco)"/>`;
+    s += `<rect x="28" y="106" width="30" height="420" fill="url(#pastilha)"/><rect x="342" y="106" width="30" height="420" fill="url(#pastilha)"/>`;
+    ANDARES.forEach((par, i) => {
+      const y0 = TOPO + i * ALT;
+      s += `<rect x="28" y="${y0 + 98}" width="344" height="7" fill="#d6c3a0"/>`;
+      par.forEach((id) => {
+        const { x, y } = janelaPos[id];
+        const a = Math.round(st.aprov[id]);
+        s += `<g class="apto anima" id="apto-${id}" data-id="${id}" tabindex="0" role="button" aria-label="${M[id].nome}, apartamento ${M[id].apto}, aprovação ${a}%">`;
+        s += `<g clip-path="url(#c-${id})"><g transform="translate(${x} ${y})">${retrato(id, a)}</g></g>`;
+        s += `<rect class="moldura" x="${x}" y="${y}" width="120" height="70" fill="none" stroke="var(--esquadria)" stroke-width="5"/>`;
+        s += `<rect x="${x}" y="${y + 13}" width="120" height="3" fill="var(--esquadria)" opacity="0.9"/>`;
+        // grade da sacada
+        s += `<rect x="${x - 5}" y="${y + 52}" width="130" height="3.5" fill="var(--esquadria)"/>`;
+        for (let k = 0; k <= 16; k++) s += `<rect x="${x - 4 + k * 8}" y="${y + 55}" width="2" height="17" fill="var(--esquadria)"/>`;
+        s += `<rect x="${x - 5}" y="${y + 71}" width="130" height="3" fill="var(--esquadria)"/>`;
+        // número do apartamento e nota
+        s += `<text x="${x + 60}" y="${y0 + 104}" text-anchor="middle" font-family="Courier Prime, monospace" font-size="7" font-weight="700" fill="#8a7350">${M[id].apto}</text>`;
+        s += `<circle cx="${x + 112}" cy="${y + 7}" r="11" fill="${corNota(a)}" stroke="#fff" stroke-width="2"/><text x="${x + 112}" y="${y + 11}" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="10.5" fill="#fff">${a}</text>`;
+        s += `</g>`;
+      });
+    });
+    // térreo
+    s += `<rect x="28" y="526" width="344" height="100" fill="#e7d4b0"/>`;
+    s += `<text x="200" y="552" text-anchor="middle" font-family="Yellowtail, cursive" font-size="25" fill="url(#latao)" stroke="#6e5218" stroke-width="0.5">Edifício Primavera</text>`;
+    s += `<rect x="136" y="558" width="128" height="9" rx="2" fill="var(--esquadria)"/>`;
+    s += `<rect x="172" y="567" width="56" height="59" fill="url(#vidro)" stroke="var(--esquadria)" stroke-width="3"/><path d="M200 567 V626" stroke="var(--esquadria)" stroke-width="2.5"/><path d="M180 576 l10 -6 M206 584 l12 -8" stroke="#fff" stroke-opacity="0.6" stroke-width="2"/>`;
+    // guarita do Zé
+    s += `<g clip-path="url(#c-ze)"><g transform="translate(52 571) scale(0.75)">${retrato("ze", 60)}</g></g><rect x="52" y="571" width="90" height="46" fill="url(#vidro)" fill-opacity="0.25" stroke="var(--esquadria)" stroke-width="4"/><rect x="48" y="615" width="98" height="6" fill="#b49a73"/>`;
+    s += `<text x="97" y="567" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="7" letter-spacing="1.5" fill="#6a4630">PORTARIA</text>`;
+    // portão da garagem
+    s += `<rect x="256" y="569" width="96" height="57" fill="#8f8a80"/>`;
+    for (let k = 0; k < 9; k++) s += `<rect x="256" y="${572 + k * 6}" width="96" height="3" fill="#a9a398"/>`;
+    s += `<rect x="285" y="560" width="38" height="8" fill="#f2d24a"/><text x="304" y="566.5" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="5.6" fill="#2a2420">GARAGEM</text>`;
+    // comigo-ninguém-pode nos vasos
+    for (const vx of [156, 244]) s += `<path d="M${vx - 7} 626 L${vx - 5} 612 H${vx + 5} L${vx + 7} 626 Z" fill="#b5653a"/><path d="M${vx} 612 Q${vx - 12} 596 ${vx - 8} 588 Q${vx - 2} 598 ${vx} 612 M${vx} 612 Q${vx + 12} 594 ${vx + 7} 586 Q${vx + 1} 598 ${vx} 612 M${vx} 612 Q${vx - 1} 592 ${vx + 1} 582" fill="#3f8a4f" stroke="#2f6b3c" stroke-width="1"/>`;
+    // calçada de ondas
+    s += `<rect x="0" y="626" width="400" height="36" fill="url(#ondas)"/><rect x="0" y="626" width="400" height="3" fill="#b9b2a3"/>`;
+    s += `</svg>`;
+    return s;
+  }
+
+  // ---------------- HUD ----------------
+  const brl = (v) => (v < 0 ? "−" : "") + "R$ " + Math.abs(Math.round(v)).toLocaleString("pt-BR");
+  function desenhaHud() {
+    document.getElementById("hud-mes").textContent = `MÊS ${st.mes} DE 6`;
+    document.getElementById("hud-semana").textContent = st.semana;
+    const cx = document.getElementById("hud-caixa");
+    cx.textContent = brl(st.caixa);
+    cx.classList.toggle("negativo", st.caixa < 0);
+    document.getElementById("hud-cons").style.left = st.cons + "%";
+    document.getElementById("hud-cons-n").textContent = st.cons + "%";
+    document.getElementById("hud-horas").innerHTML = [0, 1, 2].map((i) => `<span class="relogio ${i < st.horas ? "" : "gasto"}" title="${i < st.horas ? "hora livre" : "hora usada"}"></span>`).join("") + `<span class="sr-only" style="position:absolute;left:-9999px">${st.horas} de 3 horas livres</span>`;
+    const votos = Object.values(st.aprov).filter((a) => a >= 50).length;
+    document.getElementById("hud-urna").innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < votos ? "voto" : ""}"></i>`).join("");
+    const t = document.getElementById("hud-urna-txt");
+    t.textContent = `${votos} de 8 votos`;
+    t.style.color = votos >= 5 ? "var(--bom)" : votos === 4 ? "var(--atencao)" : "var(--carimbo)";
+  }
+
+  // ---------------- quadro ----------------
+  function nomeDe(b) { return b.de === "prefeitura" ? "Prefeitura" : `${M[b.de].nome}, ${M[b.de].apto}`; }
+  function desenhaQuadro() {
+    const el = document.getElementById("bilhetes");
+    document.getElementById("contador").textContent = quadro.length === 1 ? "1 pendência" : `${quadro.length} pendências`;
+    if (!quadro.length) {
+      el.innerHTML = `<p class="vazio">Quadro vazio! No jogo de verdade, chegam pendências novas toda semana.</p>`;
+      return;
+    }
+    el.innerHTML = quadro.map((id) => {
+      const b = BILHETES.find((x) => x.id === id);
+      return `<button class="bilhete ${b.estilo}" style="--giro:${b.giro}deg;--pino:${b.pino}" data-bilhete="${b.id}">
+        <span class="alfinete" aria-hidden="true"></span>
+        ${b.timbre ? `<span class="timbre">${b.timbre}</span>` : ""}
+        <span class="titulo">${b.titulo}</span>
+        <span class="de">— ${nomeDe(b)}</span>
+        <span class="texto">${b.texto}</span>
+        <span class="prazo ${b.prazo <= 1 ? "urgente" : "folga"}">${b.prazo <= 1 ? "VENCE ESTA SEMANA" : `${b.prazo} SEMANAS`}</span>
+      </button>`;
+    }).join("");
+  }
+  function desenhaTarefas() {
+    document.getElementById("tarefas").innerHTML = TAREFAS.map((t) => {
+      const feita = !!st.feitas[t.id];
+      const semHora = !feita && t.h > st.horas;
+      return `<button class="tarefa ${feita ? "feita" : ""}" data-tarefa="${t.id}" ${feita || semHora ? "disabled" : ""}>
+        <span class="caixinha" aria-hidden="true"></span><span class="nome">${t.t}</span><span class="meta">${feita ? "feito esta semana" : semHora ? "sem horas livres" : t.meta}</span></button>`;
+    }).join("");
+  }
+
+  // ---------------- grupo ----------------
+  const conversa = document.getElementById("conversa");
+  let relogio = 19 * 60 + 12;
+  const hora = () => { relogio += 3; return `${String(Math.floor(relogio / 60) % 24).padStart(2, "0")}:${String(relogio % 60).padStart(2, "0")}`; };
+  function msg(de, html, extra = "") {
+    const d = document.createElement("div");
+    if (de === "sistema") { d.className = "msg sistema"; d.innerHTML = html; }
+    else if (de === "voce") { d.className = "msg meu"; d.innerHTML = `<span class="txt">${html}</span><span class="hora">${hora()} ✓✓</span>`; }
+    else {
+      d.className = "msg" + extra;
+      const nome = de === "ze" ? "Zé (portaria)" : `${M[de].nome} (${M[de].apto})`;
+      d.innerHTML = `<div class="quem" style="color:${NOMES_GRUPO[de]}">${nome}</div><div class="txt">${html}</div><span class="hora">${hora()}</span>`;
+    }
+    conversa.appendChild(d);
+    conversa.scrollTop = conversa.scrollHeight;
+  }
+  function digitando(de, ms) {
+    return new Promise((ok) => {
+      const d = document.createElement("div");
+      d.className = "digitando";
+      d.innerHTML = "<i></i><i></i><i></i>";
+      conversa.appendChild(d);
+      conversa.scrollTop = conversa.scrollHeight;
+      const cab = document.getElementById("digitando-cab");
+      const antes = cab.textContent;
+      cab.textContent = `${de === "ze" ? "Zé" : M[de].nome.replace("Dr. ", "Dr. ")} está digitando...`;
+      setTimeout(() => { d.remove(); cab.textContent = antes; ok(); }, ms);
+    });
+  }
+  function onda() {
+    const alturas = [6, 12, 18, 9, 14, 20, 7, 16, 11, 19, 8, 13, 17, 6, 12, 15, 9, 18, 10, 7, 14, 11];
+    return alturas.map((h) => `<i style="height:${h}px"></i>`).join("");
+  }
+  function grupoInicial() {
+    const chip = document.createElement("div");
+    chip.className = "dia-chip"; chip.textContent = "Hoje";
+    conversa.appendChild(chip);
+    relogio = 7 * 60 + 2;
+    msg("neide", `<div class="figurinha">Bom dia!<br>Deus abençoe sua quarta 🌸</div>`);
+    relogio = 9 * 60 + 40;
+    msg("marcao", "alguém viu minha baqueta? deixei no salão ontem 🥁");
+    msg("valdemar", "Lembro a todos o Art. 12 do Regimento Interno. Baquetas não são permitidas no salão.");
+    relogio = 13 * 60 + 15;
+    msg("neide", `<div class="audio"><span class="play"></span><span class="onda">${onda()}</span><small>2:47</small></div>`);
+    msg("kelly", "gente quem tá cozinhando feijão?? tá cheirando até no 2º andar 😍");
+    relogio = 19 * 60 + 12;
+    msg("rafael", "o bebê dormiu. POR FAVOR silêncio hoje 🙏");
+  }
+
+  // ---------------- efeitos visuais ----------------
+  function animaPredio(deltas) {
+    const caixa = document.getElementById("predio");
+    for (const [id, d] of Object.entries(deltas)) {
+      if (!d) continue;
+      const g = document.getElementById("apto-" + id);
+      const efeito = d <= -4 ? "treme" : d >= 4 ? "brilha" : null;
+      if (g && efeito) { g.classList.remove("treme", "brilha"); void g.getBBox(); g.classList.add(efeito); }
+      const p = janelaPos[id];
+      const f = document.createElement("span");
+      f.className = "flutua";
+      f.style.background = d > 0 ? "var(--bom)" : "var(--carimbo)";
+      f.textContent = (d > 0 ? "+" : "−") + Math.abs(d);
+      const svg = caixa.querySelector("svg");
+      const r = svg.getBoundingClientRect(), rc = caixa.getBoundingClientRect();
+      f.style.left = (r.left - rc.left + ((p.x + 60) / 400) * r.width) + "px";
+      f.style.top = (r.top - rc.top + ((p.y + 8) / 662) * r.height) + "px";
+      caixa.appendChild(f);
+      setTimeout(() => f.remove(), 1800);
+    }
+  }
+  let reciboTimer;
+  function mostraRecibo(titulo, texto, caixa, cons, deltas) {
+    const linhas = [];
+    if (caixa) linhas.push(`<div class="linha"><span>Caixa</span><span class="${caixa > 0 ? "mais" : "menos"}">${caixa > 0 ? "+" : ""}${brl(caixa)}</span></div>`);
+    if (cons) linhas.push(`<div class="linha"><span>Conservação</span><span class="${cons > 0 ? "mais" : "menos"}">${cons > 0 ? "+" : ""}${cons}%</span></div>`);
+    for (const [id, d] of Object.entries(deltas).sort((a, b) => b[1] - a[1])) if (d) linhas.push(`<div class="linha"><span>${M[id].nome}</span><span class="${d > 0 ? "mais" : "menos"}">${d > 0 ? "+" : "−"}${Math.abs(d)}</span></div>`);
+    const el = document.getElementById("recibo");
+    el.innerHTML = `<div class="recibo" role="status"><h4>${titulo}</h4><p>${texto}</p>${linhas.join("")}</div>`;
+    clearTimeout(reciboTimer);
+    reciboTimer = setTimeout(() => (el.innerHTML = ""), 4200);
+  }
+
+  function aplica(deltas, caixa = 0, cons = 0) {
+    const reais = {};
+    for (const [id, d] of Object.entries(deltas)) {
+      const antes = st.aprov[id];
+      st.aprov[id] = Math.max(0, Math.min(100, antes + d));
+      reais[id] = st.aprov[id] - antes;
+    }
+    st.caixa += caixa;
+    st.cons = Math.max(0, Math.min(100, st.cons + cons));
+    return reais;
+  }
+
+  function redesenha() {
+    document.getElementById("predio").innerHTML = desenhaPredio();
+    desenhaHud(); desenhaQuadro(); desenhaTarefas();
+  }
+
+  // ---------------- decisões ----------------
+  const modal = document.getElementById("modal");
+  let focoAntes = null;
+  function fechaModal() { modal.innerHTML = ""; if (focoAntes) focoAntes.focus(); }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.innerHTML) fechaModal(); });
+
+  function abreBilhete(id) {
+    const b = BILHETES.find((x) => x.id === id);
+    focoAntes = document.activeElement;
+    modal.innerHTML = `<div class="fundo" data-fecha>
+      <div class="prancheta" role="dialog" aria-modal="true" aria-label="${b.titulo}">
+        <div class="prendedor" aria-hidden="true"></div>
+        <div class="folha">
+          ${b.timbre ? `<span class="timbre">${b.timbre}</span>` : ""}
+          <h2>${b.titulo}</h2>
+          <div class="de">— ${nomeDe(b)}</div>
+          <p class="corpo">${b.texto}</p>
+          <p class="pergunta">O que você faz? · ${st.horas} ${st.horas === 1 ? "hora livre" : "horas livres"}</p>
+          ${b.opcoes.map((o, i) => `<button class="opcao" data-op="${i}" ${o.h > st.horas ? "disabled" : ""}>
+              <span class="caixinha" aria-hidden="true"></span>
+              <span><span class="rotulo-op">${o.t}</span><span class="custo">${o.h ? o.h + "h" : "sem gastar tempo"}${o.caixa ? " · " + (o.caixa > 0 ? "+" : "") + brl(o.caixa) : ""}${o.h > st.horas ? " · sem horas livres" : ""}</span></span>
+            </button>`).join("")}
+          <span class="carimbo-ok" aria-hidden="true">RESOLVIDO</span>
+        </div>
+        <button class="depois" data-fecha>Deixar pra depois</button>
+      </div></div>`;
+    modal.querySelector(".opcao:not([disabled])")?.focus();
+    modal.querySelectorAll("[data-fecha]").forEach((n) => n.addEventListener("click", (e) => { if (e.target === n) fechaModal(); }));
+    modal.querySelectorAll(".opcao").forEach((btn) => btn.addEventListener("click", () => decide(b, b.opcoes[+btn.dataset.op], btn)));
+  }
+
+  async function decide(b, o, btn) {
+    btn.classList.add("marcada");
+    modal.querySelectorAll(".opcao").forEach((x) => (x.disabled = true));
+    modal.querySelector(".carimbo-ok").classList.add("bate");
+    await new Promise((ok) => setTimeout(ok, 700));
+    fechaModal();
+    st.horas -= o.h;
+    quadro = quadro.filter((x) => x !== b.id);
+    const reais = aplica(o.d, o.caixa || 0, o.cons || 0);
+    redesenha();
+    animaPredio(reais);
+    mostraRecibo(b.titulo, o.r, o.caixa || 0, o.cons || 0, reais);
+    msg("sistema", `📌 <b>${b.titulo}</b>: ${o.r}`);
+    for (const [de, fala] of o.fala || []) { await digitando(de, 900); msg(de, fala); }
+  }
+
+  function abreFicha(id) {
+    const p = M[id];
+    const a = Math.round(st.aprov[id]);
+    focoAntes = document.activeElement;
+    modal.innerHTML = `<div class="fundo" data-fecha>
+      <div class="ficha" role="dialog" aria-modal="true" aria-label="Ficha de ${p.nome}">
+        <div class="ficha-topo">
+          <svg viewBox="0 0 120 70" aria-hidden="true">${retrato(id, a)}</svg>
+          <div><h2>${p.nome}</h2><div class="apto-n">APTO ${p.apto} · MORA AQUI DESDE ${p.desde}</div></div>
+        </div>
+        <div class="ficha-corpo">
+          <p class="bio">${p.bio}</p>
+          <div>APROVAÇÃO: <b style="color:${corNota(a)}">${a}%</b> · ${a >= 50 ? "votaria em você hoje" : a >= 40 ? "não votaria em você hoje" : "votaria pela sua saída"}</div>
+          <div>GOSTA DE:</div><div class="selos">${p.gosta.map((g) => `<span class="selo gosta">${g.toUpperCase()}</span>`).join("")}</div>
+          <div>NÃO SUPORTA:</div><div class="selos">${p.odeia.map((g) => `<span class="selo odeia">${g.toUpperCase()}</span>`).join("")}</div>
+          <button class="fechar" data-fecha>Fechar ficha</button>
+        </div>
+      </div></div>`;
+    modal.querySelector(".fechar").focus();
+    modal.querySelectorAll("[data-fecha]").forEach((n) => n.addEventListener("click", (e) => { if (e.target === n) fechaModal(); }));
+  }
+
+  // ---------------- eventos da página ----------------
+  document.getElementById("bilhetes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-bilhete]");
+    if (b) abreBilhete(b.dataset.bilhete);
+  });
+  const predioEl = document.getElementById("predio");
+  predioEl.addEventListener("click", (e) => { const g = e.target.closest("[data-id]"); if (g) abreFicha(g.dataset.id); });
+  predioEl.addEventListener("keydown", (e) => {
+    const g = e.target.closest("[data-id]");
+    if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); abreFicha(g.dataset.id); }
+  });
+  document.getElementById("tarefas").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tarefa]");
+    if (!b || b.disabled) return;
+    const t = TAREFAS.find((x) => x.id === b.dataset.tarefa);
+    st.horas -= t.h;
+    st.feitas[t.id] = true;
+    aplica({}, t.caixa || 0, t.cons || 0);
+    redesenha();
+    mostraRecibo(t.t, t.r, t.caixa || 0, t.cons || 0, {});
+    msg("sistema", `📝 <b>${t.t}</b>: ${t.r}`);
+  });
+  document.getElementById("fechar-semana").addEventListener("click", async () => {
+    const venceram = quadro.map((id) => BILHETES.find((b) => b.id === id)).filter((b) => b.prazo <= 1);
+    const todos = {};
+    let caixa = 0;
+    for (const b of venceram) {
+      const r = aplica(b.vence.d, b.vence.caixa || 0);
+      caixa += b.vence.caixa || 0;
+      for (const [k, v] of Object.entries(r)) todos[k] = (todos[k] || 0) + v;
+      msg("sistema", `⏰ <b>${b.titulo}</b>: ${b.vence.r}`);
+    }
+    quadro = quadro.filter((id) => !venceram.some((b) => b.id === id));
+    for (const id of quadro) { const b = BILHETES.find((x) => x.id === id); b.prazo -= 1; }
+    st.semana += 1;
+    if (st.semana > 4) { st.semana = 1; st.mes = Math.min(6, st.mes + 1); }
+    st.horas = 3; st.feitas = {};
+    redesenha();
+    animaPredio(todos);
+    mostraRecibo(`Semana ${st.semana} começou`, venceram.length ? `${venceram.length} pendência(s) venceram e explodiram.` : "Nenhuma pendência explodiu. Bom trabalho.", caixa, 0, todos);
+    await digitando("neide", 800);
+    msg("neide", venceram.length ? "Gente... vocês também tão achando estranho esse síndico? 👀" : "Semana tranquila hein! Parabéns síndico 👏");
+  });
+
+  redesenha();
+  grupoInicial();
+})();
+</script>
