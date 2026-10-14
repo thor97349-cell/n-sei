@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import ActionsPanel from "@/components/sindico/ActionsPanel";
 import AssemblyScreen from "@/components/sindico/AssemblyScreen";
 import Building from "@/components/sindico/Building";
@@ -11,6 +11,8 @@ import PendingList from "@/components/sindico/PendingList";
 import { EndScreen, StartScreen } from "@/components/sindico/Screens";
 import {
   buyUpgrade,
+  currentMonth,
+  weekOfMonth,
   chooseOption,
   closeAssembly,
   createGame,
@@ -56,6 +58,13 @@ export default function SindicoPage() {
   // Quando a assembleia termina em destituição, mostra o resultado da votação
   // antes da tela final.
   const [endAcknowledged, setEndAcknowledged] = useState(false);
+
+  // Ao trocar de tela (menu, semana nova, assembleia, fim), volta pro topo.
+  // Sem isso, no celular a tela nova abre no meio, onde estava o botão tocado.
+  const screenKey = !state ? "menu" : `${state.phase}-${state.week}-${state.assembly ? "a" : ""}-${endAcknowledged ? "e" : ""}`;
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [screenKey]);
 
   if (isClient && !loaded) {
     setLoaded(true);
@@ -116,6 +125,15 @@ export default function SindicoPage() {
     commit(next);
   }
 
+  function handleEndWeek() {
+    if (!state) return;
+    setOpenEvent(null);
+    const next = endWeek(state);
+    if (next.phase === "assembly") play("vote");
+    else if (next.pending.length > 0) play("notify");
+    commit(next);
+  }
+
   if (!isClient) return <div className="min-h-screen" />;
 
   if (!state) {
@@ -169,28 +187,49 @@ export default function SindicoPage() {
   return (
     <>
       <Hud state={state} muted={muted} onToggleMute={toggleMute} onQuit={goToMenu} />
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="order-2 lg:order-1">
-          <Building state={state} onSelectResident={setOpenResident} />
+      {/* A key muda a cada semana: a tela entra de novo com animação e mostra o aviso da semana. */}
+      <div key={state.week} className="relative">
+        <p
+          aria-hidden="true"
+          className="sindico-banner pointer-events-none fixed left-1/2 top-24 z-30 rounded-full bg-stone-800 px-4 py-2 text-sm font-black text-white shadow-lg"
+        >
+          📅 Semana {weekOfMonth(state)} · Mês {currentMonth(state)}
+        </p>
+        <main className="sindico-enter mx-auto grid max-w-7xl gap-6 px-4 pb-28 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)] lg:pb-6">
+          <div className="order-2 lg:order-1">
+            <Building state={state} onSelectResident={setOpenResident} />
+          </div>
+          <div className="order-1 flex flex-col gap-6 lg:order-2">
+            <PendingList state={state} onOpen={setOpenEvent} onEndWeek={handleEndWeek} />
+            <ActionsPanel state={state} onAction={(id) => commitWithOutcome(doAction(state, id))} onOpenUpgrades={() => setOpenUpgrades(true)} />
+          </div>
+          <div className="order-3">
+            <GroupChat messages={state.chat} />
+          </div>
+        </main>
+      </div>
+
+      {/* Celular: barra fixa com as horas e o botão de encerrar a semana sempre à mão. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-amber-200 bg-amber-50/95 backdrop-blur lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <div className="mx-auto flex max-w-xl items-center gap-3 px-4 py-2.5">
+          <span className="flex flex-col leading-tight">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">⏱️ Horas</span>
+            <span className="text-sm font-bold tracking-widest text-stone-800">
+              {"●".repeat(state.hours)}
+              <span className="text-stone-300">{"●".repeat(Math.max(0, state.config.hoursPerWeek - state.hours))}</span>
+            </span>
+          </span>
+          <button
+            onClick={handleEndWeek}
+            className="flex-1 rounded-xl bg-amber-600 py-3 font-black text-white shadow transition hover:bg-amber-700 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-900"
+          >
+            Encerrar semana ➜
+          </button>
         </div>
-        <div className="order-1 flex flex-col gap-6 lg:order-2">
-          <PendingList
-            state={state}
-            onOpen={setOpenEvent}
-            onEndWeek={() => {
-              setOpenEvent(null);
-              const next = endWeek(state);
-              if (next.phase === "assembly") play("vote");
-              else if (next.pending.length > 0) play("notify");
-              commit(next);
-            }}
-          />
-          <ActionsPanel state={state} onAction={(id) => commitWithOutcome(doAction(state, id))} onOpenUpgrades={() => setOpenUpgrades(true)} />
-        </div>
-        <div className="order-3">
-          <GroupChat messages={state.chat} />
-        </div>
-      </main>
+      </div>
 
       {openEvent !== null && (
         <EventModal

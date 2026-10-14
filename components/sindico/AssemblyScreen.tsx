@@ -5,7 +5,23 @@ import { brl, moodEmoji, signedBrl } from "@/lib/sindico/format";
 import { GameState, ResidentId, Votes } from "@/lib/sindico/types";
 
 // goodWhenYes=false inverte as cores (na destituição, "sim" é ruim pro síndico).
-function VoteGrid({ votes, yesLabel, noLabel, goodWhenYes = true }: { votes: Votes; yesLabel: string; noLabel: string; goodWhenYes?: boolean }) {
+// Os votos aparecem um por um (startMs + i * VOTE_STEP_MS), pra criar suspense.
+const VOTE_STEP_MS = 320;
+const VOTES_DONE_MS = RESIDENTS.length * VOTE_STEP_MS;
+
+function VoteGrid({
+  votes,
+  yesLabel,
+  noLabel,
+  goodWhenYes = true,
+  startMs = 0,
+}: {
+  votes: Votes;
+  yesLabel: string;
+  noLabel: string;
+  goodWhenYes?: boolean;
+  startMs?: number;
+}) {
   return (
     <ul className="grid grid-cols-4 gap-2">
       {RESIDENTS.map((r, i) => {
@@ -14,8 +30,8 @@ function VoteGrid({ votes, yesLabel, noLabel, goodWhenYes = true }: { votes: Vot
         return (
           <li
             key={r.id}
-            style={{ animationDelay: `${i * 120}ms` }}
-            className={`sindico-pop flex flex-col items-center rounded-lg p-2 text-center ${good ? "bg-emerald-100" : "bg-rose-100"}`}
+            style={{ animationDelay: `${startMs + i * VOTE_STEP_MS}ms` }}
+            className={`sindico-pop flex flex-col items-center rounded-xl p-2 text-center ${good ? "bg-emerald-100" : "bg-rose-100"}`}
           >
             <span className="text-2xl">{r.avatar}</span>
             <span className="line-clamp-1 text-[11px] font-semibold text-stone-700">{r.name}</span>
@@ -152,35 +168,60 @@ export default function AssemblyScreen({
         </section>
 
         {a.result ? (
-          <section className="mt-6 space-y-4">
-            {a.result.pautaId && (
-              <div>
-                <div className={`sindico-pop rounded-xl p-4 text-center ${a.result.passed ? "bg-emerald-600" : "bg-rose-700"}`}>
-                  <p className="text-sm font-semibold opacity-90">{PAUTAS_BY_ID[a.result.pautaId].title}</p>
-                  <p className="text-2xl font-black">{a.result.passed ? "APROVADA" : "REJEITADA"}</p>
-                  {a.result.minerva && <p className="text-sm">Empate 4 x 4: você desempatou com o voto de minerva.</p>}
-                </div>
-                <div className="mt-3">
-                  <VoteGrid votes={a.result.votes} yesLabel="SIM" noLabel="NÃO" />
-                </div>
-              </div>
-            )}
-            <p className="rounded-lg bg-stone-700/60 p-3 text-center">{a.result.text}</p>
+          (() => {
+            const r = a.result;
+            // Linha do tempo: votos um por um, depois o resultado, depois o resto.
+            const bannerAt = r.pautaId ? VOTES_DONE_MS + 250 : 0;
+            const textAt = bannerAt + 500;
+            const removalAt = textAt + 400;
+            const removalResultAt = removalAt + 600 + VOTES_DONE_MS;
+            const buttonAt = a.removal ? removalResultAt + 400 : textAt + 300;
+            return (
+              <section className="mt-6 space-y-4">
+                {r.pautaId && (
+                  <div>
+                    <h2 className="mb-2 text-center text-sm font-bold uppercase tracking-wide text-stone-300">
+                      Votação: {PAUTAS_BY_ID[r.pautaId].title}
+                    </h2>
+                    <VoteGrid votes={r.votes} yesLabel="SIM" noLabel="NÃO" />
+                    <div
+                      style={{ animationDelay: `${bannerAt}ms` }}
+                      className={`sindico-pop mt-3 rounded-xl p-4 text-center shadow-lg ${r.passed ? "bg-emerald-600" : "bg-rose-700"}`}
+                    >
+                      <p className="text-3xl font-black tracking-wide">{r.passed ? "✅ APROVADA" : "❌ REJEITADA"}</p>
+                      <p className="text-sm font-semibold tabular-nums opacity-90">
+                        {Object.values(r.votes).filter(Boolean).length} x {Object.values(r.votes).filter((v) => !v).length}
+                        {r.minerva && " · empate desfeito pelo seu voto de minerva"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <p style={{ animationDelay: `${textAt}ms` }} className="sindico-enter rounded-xl bg-stone-700/60 p-3 text-center">
+                  {r.text}
+                </p>
 
-            {a.removal && (
-              <div className="rounded-xl border-2 border-rose-500 p-4">
-                <p className="text-center font-black text-rose-300">⚠️ O Dr. Valdemar pediu a palavra: proposta de destituição do síndico!</p>
-                <div className="mt-3">
-                  <VoteGrid votes={a.removal.votes} yesLabel="FORA" noLabel="FICA" goodWhenYes={false} />
-                </div>
-                <p className="mt-2 text-center font-bold">{a.removal.removed ? "Você foi destituído." : "Você sobreviveu. Por enquanto."}</p>
-              </div>
-            )}
+                {a.removal && (
+                  <div style={{ animationDelay: `${removalAt}ms` }} className="sindico-enter rounded-xl border-2 border-rose-500 p-4">
+                    <p className="text-center font-black text-rose-300">⚠️ O Dr. Valdemar pediu a palavra: proposta de destituição do síndico!</p>
+                    <div className="mt-3">
+                      <VoteGrid votes={a.removal.votes} yesLabel="FORA" noLabel="FICA" goodWhenYes={false} startMs={removalAt + 600} />
+                    </div>
+                    <p style={{ animationDelay: `${removalResultAt}ms` }} className="sindico-pop mt-2 text-center text-lg font-black">
+                      {a.removal.removed ? "🚪 Você foi destituído." : "😮‍💨 Você sobreviveu. Por enquanto."}
+                    </p>
+                  </div>
+                )}
 
-            <button onClick={onContinue} className="w-full rounded-lg bg-amber-500 py-3 font-black text-stone-900 hover:bg-amber-400">
-              {state.phase === "ended" ? "Ver o fim da história" : "Voltar ao trabalho ➜"}
-            </button>
-          </section>
+                <button
+                  onClick={onContinue}
+                  style={{ animationDelay: `${buttonAt}ms` }}
+                  className="sindico-enter w-full rounded-xl bg-amber-500 py-3 font-black text-stone-900 transition hover:bg-amber-400 active:scale-[0.98]"
+                >
+                  {state.phase === "ended" ? "Ver o fim da história" : "Voltar ao trabalho ➜"}
+                </button>
+              </section>
+            );
+          })()
         ) : a.selected ? (
           <Lobby state={state} pautaId={a.selected} onLobby={onLobby} onVote={onVote} />
         ) : (

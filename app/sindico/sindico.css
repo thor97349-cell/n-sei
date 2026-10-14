@@ -87,3 +87,146 @@
     opacity: 0;
   }
 }
+
+/* ---------- acabamento: entradas, suspense e comemoração ---------- */
+
+@keyframes sindico-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* pendência nova "caindo" na lista */
+@keyframes sindico-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) rotate(-1.5deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(2px) rotate(0.3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* andares do prédio subindo na tela inicial */
+@keyframes sindico-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scaleY(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sindico-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-14deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(14deg) scale(1.1);
+  }
+}
+
+@keyframes sindico-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(225 29 72 / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgb(225 29 72 / 0);
+  }
+}
+
+/* aviso "Semana X" que aparece e some sozinho */
+@keyframes sindico-banner {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.95);
+  }
+  12%,
+  75% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+    visibility: hidden;
+  }
+}
+
+@keyframes sindico-confetti {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(540deg);
+    opacity: 0.8;
+  }
+}
+
+.sindico-enter {
+  animation: sindico-enter 0.35s ease-out both;
+}
+
+.sindico-drop {
+  animation: sindico-drop 0.45s ease-out both;
+}
+
+.sindico-rise {
+  animation: sindico-rise 0.5s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+.sindico-wave-hover:hover .sindico-wave-target,
+.sindico-wave-hover:focus-visible .sindico-wave-target {
+  display: inline-block;
+  animation: sindico-wave 0.6s ease-in-out;
+}
+
+.sindico-pulse {
+  animation: sindico-pulse 1.6s ease-in-out infinite;
+}
+
+.sindico-banner {
+  animation: sindico-banner 2.2s ease-out forwards;
+}
+
+.sindico-confetti {
+  position: fixed;
+  top: 0;
+  z-index: 50;
+  pointer-events: none;
+  animation-name: sindico-confetti;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sindico-enter,
+  .sindico-drop,
+  .sindico-rise,
+  .sindico-pulse,
+  .sindico-wave-hover:hover .sindico-wave-target {
+    animation: none;
+  }
+  .sindico-banner,
+  .sindico-confetti {
+    display: none;
+  }
+}

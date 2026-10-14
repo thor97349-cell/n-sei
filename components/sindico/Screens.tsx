@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from "@/lib/sindico/data/achievements";
 import { DIFFICULTIES, PROFILES } from "@/lib/sindico/data/profiles";
 import { RESIDENTS } from "@/lib/sindico/data/residents";
@@ -26,11 +26,13 @@ function Choice({
     <button
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex items-start gap-2 rounded-lg p-2.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 ${
-        selected ? "bg-amber-600 text-white shadow" : "bg-white/80 text-stone-800 ring-1 ring-stone-200 hover:ring-amber-400"
+      className={`flex items-start gap-2.5 rounded-xl p-2.5 text-left transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 ${
+        selected ? "bg-amber-600 text-white shadow-md" : "bg-white text-stone-800 shadow-sm ring-1 ring-stone-200/80 hover:ring-amber-400"
       }`}
     >
-      <span className="text-xl leading-none">{icon}</span>
+      <span aria-hidden="true" className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xl ${selected ? "bg-white/25" : "bg-amber-100"}`}>
+        {icon}
+      </span>
       <span className="min-w-0">
         <span className="block text-sm font-bold">{name}</span>
         <span className={`block text-xs ${selected ? "text-amber-50" : "text-stone-500"}`}>{text}</span>
@@ -64,6 +66,44 @@ export function AchievementGrid({ unlocked, highlight = [] }: { unlocked: string
   );
 }
 
+// Prédio de emojis da tela inicial: sobe andar por andar, do térreo ao telhado.
+function MiniBuilding() {
+  const floors: (typeof RESIDENTS)[] = [];
+  for (let i = 0; i < RESIDENTS.length; i += 2) floors.push(RESIDENTS.slice(i, i + 2));
+  const step = 130;
+  return (
+    <div className="mx-auto mt-6 w-60" aria-label="Os moradores do Edifício Primavera">
+      <div className="sindico-rise flex items-end justify-between px-6" style={{ animationDelay: `${(floors.length + 1) * step}ms` }}>
+        <span aria-hidden="true" className="text-lg">🐦</span>
+        <span aria-hidden="true" className="rounded-t-md bg-stone-300 px-3 py-0.5 text-[9px] font-bold tracking-wide text-stone-600">CAIXA D&apos;ÁGUA</span>
+        <span aria-hidden="true" className="text-lg">📡</span>
+      </div>
+      <div className="overflow-hidden rounded-t-xl border-4 border-amber-900/30 bg-orange-300 shadow-lg">
+        {floors.map((pair, i) => (
+          <div
+            key={i}
+            className="sindico-rise grid grid-cols-2 gap-1.5 border-b-4 border-amber-900/15 px-2 py-1.5"
+            style={{ animationDelay: `${(floors.length - i) * step}ms` }}
+          >
+            {pair.map((r) => (
+              <span key={r.id} title={`${r.name} · ${r.apt}`} className="sindico-wave-hover grid h-12 place-items-center rounded-lg bg-sky-100 text-3xl shadow-inner">
+                <span className="sindico-wave-target">{r.avatar}</span>
+              </span>
+            ))}
+          </div>
+        ))}
+        <div className="sindico-rise grid grid-cols-2 gap-1.5 bg-orange-200 px-2 py-1.5" style={{ animationDelay: "0ms" }}>
+          <span title="Zé, o porteiro" className="sindico-wave-hover grid h-12 place-items-center rounded-lg bg-amber-100 text-3xl">
+            <span className="sindico-wave-target">👨🏽‍✈️</span>
+          </span>
+          <span aria-hidden="true" className="grid h-12 place-items-center rounded-lg bg-stone-600 text-2xl">🚪</span>
+        </div>
+      </div>
+      <div className="h-2.5 rounded-sm bg-stone-500" />
+    </div>
+  );
+}
+
 export function StartScreen({
   saved,
   records,
@@ -83,19 +123,12 @@ export function StartScreen({
     <div className="min-h-screen bg-gradient-to-b from-sky-200 via-amber-50 to-orange-100 px-4 py-10">
       <div className="mx-auto max-w-2xl">
         <div className="text-center">
-          <p className="text-6xl">🏢</p>
-          <h1 className="mt-2 text-5xl font-black tracking-tight text-stone-800">Síndico</h1>
+          <h1 className="sindico-enter text-5xl font-black tracking-tight text-stone-800 sm:text-6xl">Síndico</h1>
           <p className="mt-1 font-semibold text-amber-800">Edifício Primavera · protótipo</p>
           <p className="mx-auto mt-5 max-w-lg text-lg text-stone-700">
             Você ganhou a eleição pra síndico por <strong>1 voto</strong>. O antigo síndico sumiu sem avisar ninguém. Agora aguenta.
           </p>
-          <div className="mx-auto mt-4 flex max-w-sm justify-center gap-1 text-3xl">
-            {RESIDENTS.map((r) => (
-              <span key={r.id} title={r.name}>
-                {r.avatar}
-              </span>
-            ))}
-          </div>
+          <MiniBuilding />
         </div>
 
         {saved && (
@@ -111,7 +144,7 @@ export function StartScreen({
           </button>
         )}
 
-        <section className="mt-8 rounded-2xl bg-white/50 p-4 shadow-sm ring-1 ring-amber-200">
+        <section className="mt-8 rounded-2xl bg-white/60 p-4 shadow-sm ring-1 ring-amber-200">
           <h2 className="font-black text-stone-800">{saved ? "Ou comece um mandato novo" : "Novo mandato"}</h2>
           <h3 className="mt-3 text-xs font-bold uppercase tracking-wide text-stone-500">Quem é você?</h3>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -170,6 +203,48 @@ const ENDING_STYLE = {
   falido: { emoji: "💸", bg: "from-rose-300 to-stone-100" },
 } as const;
 
+const CONFETTI = ["🎉", "🎊", "✨", "🌸", "🏆", "🥳"];
+
+// Posições "aleatórias" mas fixas (pelo índice), pra não mudar a cada render.
+function Confetti() {
+  return (
+    <div aria-hidden="true">
+      {Array.from({ length: 36 }, (_, i) => {
+        const left = (i * 37) % 100;
+        const delay = (i * 173) % 1800;
+        const duration = 2600 + ((i * 97) % 1800);
+        const size = 18 + ((i * 7) % 16);
+        return (
+          <span
+            key={i}
+            className="sindico-confetti"
+            style={{ left: `${left}%`, fontSize: size, animationDelay: `${delay}ms`, animationDuration: `${duration}ms` }}
+          >
+            {CONFETTI[i % CONFETTI.length]}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+// Pontuação subindo de 0 até o valor final.
+function useCountUp(target: number, ms = 1400) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      setValue(Math.round(target * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, ms]);
+  return value;
+}
+
 export function EndScreen({
   state,
   records,
@@ -186,7 +261,37 @@ export function EndScreen({
   const style = ENDING_STYLE[ending.kind];
   const isRecord = ending.score >= records.bestScore;
   return (
+    <EndScreenBody
+      state={state}
+      records={records}
+      newAchievements={newAchievements}
+      onRestart={onRestart}
+      isRecord={isRecord}
+      style={style}
+    />
+  );
+}
+
+function EndScreenBody({
+  state,
+  records,
+  newAchievements,
+  onRestart,
+  isRecord,
+  style,
+}: {
+  state: GameState;
+  records: Records;
+  newAchievements: string[];
+  onRestart: () => void;
+  isRecord: boolean;
+  style: (typeof ENDING_STYLE)[keyof typeof ENDING_STYLE];
+}) {
+  const ending = state.ending!;
+  const shownScore = useCountUp(ending.score);
+  return (
     <div className={`min-h-screen bg-gradient-to-b ${style.bg} px-4 py-10`}>
+      {ending.kind === "reeleito" && <Confetti />}
       <div className="mx-auto w-full max-w-lg text-center">
         <p className="sindico-pop text-6xl">{style.emoji}</p>
         <h1 className="mt-2 text-4xl font-black text-stone-800">{ending.title}</h1>
@@ -197,8 +302,8 @@ export function EndScreen({
             {RESIDENTS.map((r, i) => (
               <li
                 key={r.id}
-                style={{ animationDelay: `${i * 120}ms` }}
-                className={`sindico-pop rounded-lg p-2 ${ending.votes?.[r.id] ? "bg-emerald-100" : "bg-rose-100"}`}
+                style={{ animationDelay: `${300 + i * 250}ms` }}
+                className={`sindico-pop rounded-xl p-2 ${ending.votes?.[r.id] ? "bg-emerald-100" : "bg-rose-100"}`}
               >
                 <span className="block text-2xl">{r.avatar}</span>
                 <span className="block truncate text-[11px] font-semibold text-stone-700">{r.name}</span>
@@ -207,9 +312,11 @@ export function EndScreen({
           </ul>
         )}
 
-        <div className="mt-6 rounded-2xl bg-white/80 p-4 shadow-sm">
+        <div className="mt-6 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-stone-200/80">
           <p className="text-xs font-bold uppercase tracking-wide text-stone-500">Pontuação</p>
-          <p className="text-4xl font-black tabular-nums text-stone-800">{ending.score.toLocaleString("pt-BR")}</p>
+          <p className="text-4xl font-black tabular-nums text-stone-800" aria-label={`${ending.score} pontos`}>
+            {shownScore.toLocaleString("pt-BR")}
+          </p>
           <p className="text-sm text-stone-500">{isRecord ? "🎉 Novo recorde!" : `Recorde: ${records.bestScore.toLocaleString("pt-BR")}`}</p>
           <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <div className="rounded-lg bg-amber-50 p-2">

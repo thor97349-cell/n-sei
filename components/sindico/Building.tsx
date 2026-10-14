@@ -27,7 +27,7 @@ function Apartment({
     <button
       key={delta ? fxKey : resident.id}
       onClick={onClick}
-      className={`group relative flex flex-col items-center rounded-md border-2 border-amber-900/20 bg-sky-100 px-1.5 py-2 text-center shadow-inner transition hover:-translate-y-0.5 hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 ${anim}`}
+      className={`sindico-wave-hover group relative flex flex-col items-center rounded-lg border-2 border-amber-900/15 bg-sky-100 px-1.5 py-2 text-center shadow-inner transition hover:-translate-y-0.5 hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 ${anim}`}
     >
       <span className="absolute left-1 top-0.5 text-[10px] font-bold text-stone-500">{resident.apt}</span>
       {hasMessage && <span className="absolute right-1 top-0.5 animate-bounce text-sm">📩</span>}
@@ -43,7 +43,9 @@ function Apartment({
           {delta}
         </span>
       )}
-      <span className="text-3xl leading-none">{resident.avatar}</span>
+      <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-full bg-white/80 text-3xl leading-none shadow-sm">
+        <span className="sindico-wave-target">{resident.avatar}</span>
+      </span>
       <span className="mt-1 line-clamp-1 text-xs font-semibold text-stone-800">{resident.name}</span>
       <span className="mt-0.5 flex w-full items-center gap-1">
         <span className="text-sm">{moodEmoji(approval)}</span>
