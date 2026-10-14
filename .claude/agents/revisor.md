@@ -1,5 +1,5 @@
 ---
-name: copy-ptbr
+name: revisor
 description: Revisa os textos em português visíveis ao usuário (landing, FAQ, formulários, admin e o jogo Vértice em /nexus) atrás de erros de português, tom inconsistente e textos confusos. Use quando o usuário pedir revisão de texto/copy ou depois de mudanças grandes de conteúdo.
 tools: Read, Grep, Glob
 model: haiku

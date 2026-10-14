@@ -1,5 +1,5 @@
 ---
-name: next16-docs
+name: docs
 description: Consulta a documentação do Next.js 16 instalada no projeto e devolve só a API correta para a tarefa. Use PROATIVAMENTE antes de escrever ou alterar código que use APIs do Next (rotas, server actions, cache, proxy/middleware, metadata, config, imagens, fontes etc.), já que esta versão tem mudanças que quebram o que se conhece de versões anteriores.
 tools: Read, Grep, Glob, Bash
 model: haiku

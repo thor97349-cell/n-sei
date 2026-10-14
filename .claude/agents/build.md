@@ -1,5 +1,5 @@
 ---
-name: build-check
+name: build
 description: Roda lint e build de produção do projeto e devolve só os erros, resumidos. Use PROATIVAMENTE depois de editar código e antes de commitar ou fazer push.
 tools: Bash, Read
 model: haiku
