@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FoodCreator Editor</title>
+  <meta name="description" content="Edição automática de vídeos de culinária para YouTube e Shorts, direto no navegador.">
+  <style>
+    :root {
+      --bg: #f6f7f9; --card: #ffffff; --text: #1f2328; --muted: #57606a; --border: #e3e6ea;
+      --accent: #e8590c; --accent-hover: #d9480f; --accent-soft: #fff1e8;
+      --ok: #1a7f37; --warn: #9a6700; --warn-bg: #fff8c5; --err: #cf222e; --err-bg: #ffebe9;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1115; --card: #171a21; --text: #e6e8eb; --muted: #9aa4af; --border: #2a2f38;
+        --accent: #ff7a2f; --accent-hover: #ff8f50; --accent-soft: #2b1a10;
+        --ok: #3fb950; --warn: #d29922; --warn-bg: #2b2410; --err: #f85149; --err-bg: #2d1416;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { margin: 0; font-size: 1.8rem; color: var(--accent); }
+    .lead { margin: 4px 0 20px; color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+    .card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+    label { display: block; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 10px 0; }
+    .hint { color: var(--muted); font-size: 0.9rem; margin: 6px 0 0; }
+    select, input[type="range"] { font: inherit; }
+    select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); max-width: 100%; }
+    .drop { border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; transition: border-color .15s; }
+    .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+    .drop input { display: none; }
+    .drop strong { color: var(--accent); }
+    .file-info { margin-top: 10px; font-size: 0.95rem; }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .choice { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+    .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .choice input { margin-right: 6px; }
+    .choice small { display: block; color: var(--muted); }
+    button { font: inherit; border-radius: 10px; padding: 12px 22px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+    button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+    progress { width: 100%; height: 14px; accent-color: var(--accent); }
+    .stage { margin: 8px 0 0; font-weight: 600; }
+    .msgs { list-style: none; padding: 0; margin: 12px 0 0; }
+    .msgs li { padding: 10px 12px; border-radius: 8px; margin-top: 8px; font-size: 0.95rem; }
+    .msgs .warn { background: var(--warn-bg); color: var(--warn); }
+    .msgs .error { background: var(--err-bg); color: var(--err); }
+    .msgs .ok { color: var(--ok); padding-left: 0; }
+    video { width: 100%; max-height: 70vh; border-radius: 10px; background: #000; margin-top: 10px; }
+    a.download { display: inline-block; margin-top: 12px; padding: 12px 22px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+    .notice { font-size: 0.9rem; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } button { width: 100%; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>FoodCreator Editor</h1>
+  <p class="lead">Edição automática de vídeos de culinária para YouTube e Shorts. Tudo acontece no seu navegador: o vídeo não é enviado para nenhum servidor.</p>
+
+  <section class="card">
+    <h2>1. Vídeo</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="video-input" accept="video/*,.mp4,.mov,.mkv,.webm,.m4v">
+      <span id="drop-text"><strong>Escolha um vídeo</strong> ou arraste para cá</span>
+    </label>
+    <div class="file-info" id="file-info" hidden></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Formato e estilo</h2>
+    <div class="choices" role="radiogroup" aria-label="Formato">
+      <label class="choice"><input type="radio" name="format" value="horizontal" checked>YouTube (16:9)<small>vídeo deitado</small></label>
+      <label class="choice"><input type="radio" name="format" value="vertical">Shorts (9:16)<small>vídeo em pé</small></label>
+    </div>
+    <div id="vertical-options" hidden>
+      <div class="row">
+        <label>Vídeo deitado vira Shorts:
+          <select id="vertical-mode">
+            <option value="crop">Recortar o meio</option>
+            <option value="blur">Encaixar sem cortar (fundo desfocado)</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" id="offset-row">
+        <label for="offset">Posição do recorte:</label>
+        <input type="range" id="offset" min="0" max="100" value="50">
+        <span id="offset-label">centro</span>
+      </div>
+    </div>
+    <div class="row">
+      <label>Tipo de vídeo:
+        <select id="profile"></select>
+      </label>
+    </div>
+    <p class="hint" id="profile-desc"></p>
+    <div class="row">
+      <label><input type="checkbox" id="cut" checked> Cortar silêncios</label>
+      <label>Intensidade:
+        <select id="aggr">
+          <option value="leve">Leve</option>
+          <option value="medio" selected>Média</option>
+          <option value="forte">Forte</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="zoom" checked> Zooms discretos nos cortes</label>
+    </div>
+    <div class="row">
+      <label>Qualidade:
+        <select id="quality">
+          <option value="720" selected>Rápida (até 720p)</option>
+          <option value="1080">Máxima (até 1080p, bem mais lenta)</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. Música de fundo (opcional)</h2>
+    <div class="row">
+      <label><input type="checkbox" id="music-on"> Adicionar música</label>
+    </div>
+    <div id="music-options" hidden>
+      <div class="row"><input type="file" id="music-input" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac"></div>
+      <div class="row">
+        <label for="music-vol">Volume:</label>
+        <input type="range" id="music-vol" min="-40" max="-6" value="-24">
+        <span id="music-vol-label">-24 dB</span>
+      </div>
+      <div class="row"><label><input type="checkbox" id="ducking" checked> Abaixar a música quando houver fala</label></div>
+      <div class="row"><label><input type="checkbox" id="license"> Confirmo que tenho direito de usar esta música</label></div>
+      <p class="hint">Use só músicas suas, livres de direitos ou licenciadas.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>4. Gerar</h2>
+    <div class="row">
+      <button class="primary" id="generate" disabled>Gerar edição</button>
+      <button id="cancel" hidden>Cancelar</button>
+    </div>
+    <div id="progress-box" hidden>
+      <progress id="progress" max="1000" value="0"></progress>
+      <p class="stage" id="stage"></p>
+      <p class="hint" id="eta"></p>
+    </div>
+    <ul class="msgs" id="msgs"></ul>
+    <div id="result" hidden>
+      <video id="result-video" controls playsinline></video>
+      <a class="download" id="download">Baixar vídeo editado</a>
+      <p class="hint" id="result-summary"></p>
+    </div>
+    <p class="notice">Funciona melhor no Chrome ou no Edge, no computador. A edição roda no seu aparelho e é bem mais lenta que um programa instalado: deixe esta aba aberta até terminar. Legendas automáticas ainda não estão disponíveis no site.</p>
+  </section>
+</main>
+<script type="module" src="/editor/app.js"></script>
+</body>
+</html>

@@ -104,3 +104,77 @@ cada lead no painel `/admin` tem um campo de **status de pagamento**
 (pendente / cobrado / pago), hoje atualizado manualmente. Nenhum pagamento
 é processado pelo app ainda; é só a estrutura de dados já pronta para
 quando a cobrança da comissão for automatizada.
+
+## FoodCreator Editor (editor de vídeos no site)
+
+Página **`/editor`** (por exemplo, https://n-sei-red.vercel.app/editor depois do deploy):
+edição automática de vídeos de culinária para YouTube (16:9) e Shorts (9:16), feita
+**inteiramente no navegador** com [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
+O vídeo não é enviado a nenhum servidor e não há custo de processamento.
+
+O que ela faz:
+
+- corta silêncios, mantendo uma margem perto da fala e encurtando (sem eliminar)
+  pausas longas de degustação;
+- três estilos de edição (avaliação, receita e desafio), que mudam os cortes e os zooms;
+- zooms discretos nos cortes para disfarçar as emendas;
+- Shorts a partir de vídeo deitado: recorte com posição ajustável ou encaixe com fundo
+  desfocado;
+- música de fundo opcional (exige confirmar a licença), que abaixa quando há fala;
+- exporta MP4 H.264 + AAC, confere o arquivo final e mostra a prévia e o botão de download;
+- cancelamento a qualquer momento.
+
+### Como funciona
+
+São arquivos estáticos em `public/editor/`, servidos pelo próprio Next.js (o
+`next.config.ts` faz `/editor` abrir `/editor/index.html`):
+
+| Arquivo | Papel |
+|---|---|
+| `pipeline.js` | regras de edição (cortes, enquadramento, zoom, áudio), funções puras |
+| `editor.js` | orquestra uma edição: analisar → detectar pausas → renderizar → conferir |
+| `ffmpeg-worker.js` | Web Worker que roda o ffmpeg.wasm sem travar a página |
+| `ffmpeg-client.js` | conversa com o worker; cancelar = encerrar o worker |
+| `app.js` / `index.html` | a tela |
+
+O ffmpeg.wasm (pacote `@ffmpeg/core`, versão travada no `package.json`) é copiado
+para `public/editor/vendor/` por `scripts/copy-ffmpeg-core.mjs` no `npm install` e no
+`npm run build`. Assim o site não depende de CDN. A pasta não vai para o git.
+
+### Rodar localmente
+
+```bash
+npm install          # também copia o ffmpeg.wasm
+npm run dev          # abra http://localhost:3000/editor
+```
+
+### Testes
+
+```bash
+npm run test:editor  # regras de edição + edição real com ffmpeg.wasm no Node
+```
+
+O teste com ffmpeg.wasm precisa do `ffmpeg` do sistema só para gerar o vídeo de teste;
+sem ele, o teste é pulado e o motivo aparece na saída. O teste no navegador (Chromium
+via Playwright) está em `tests/editor/e2e-browser.mjs`, com instruções no topo do arquivo.
+
+### Limitações conhecidas
+
+- **Velocidade:** é bem mais lento que um programa instalado. Medido em Chromium: um
+  vídeo de 12 s em 720p levou cerca de 26–30 s (Shorts e YouTube). Em 1080p, cada segundo
+  de vídeo levou ~7 s nos testes. Vídeos longos podem levar muito tempo, e a aba precisa
+  ficar aberta.
+- **Memória:** o navegador tem limite de memória para o ffmpeg.wasm. O vídeo de entrada é
+  lido aos pedaços, mas o arquivo final fica na memória até o download.
+- **Sem legendas automáticas** no site (por enquanto).
+- **Sem detecção de rosto ou de comida:** o recorte vertical é central (ou na posição
+  escolhida), e a página avisa para conferir.
+- Testado em Chromium no Linux. Ainda não foi testado em Chrome/Edge no Windows,
+  no Safari ou no celular.
+
+## Outros projetos neste repositório
+
+
+- [`foodcreator-editor/`](foodcreator-editor/README.md): primeira versão do editor, como
+  aplicativo desktop (Python + PySide6 + FFmpeg). Foi substituída pelo editor no site
+  (`/editor`), que usa as mesmas regras de edição; fica no repositório como referência.

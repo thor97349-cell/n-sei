@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foodcreator-editor"
+version = "0.1.0"
+description = "Editor desktop que automatiza a edição de vídeos de culinária para YouTube e Shorts."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = ["PySide6-Essentials>=6.8,<6.13"]
+
+[project.optional-dependencies]
+transcricao = ["faster-whisper>=1.1,<1.3"]
+dev = ["pytest>=8"]
+
+[project.gui-scripts]
+foodcreator-editor = "foodcreator.app.main:main"
+
+[tool.setuptools.packages.find]
+include = ["foodcreator*"]
+
+[tool.setuptools.package-data]
+"foodcreator.profiles" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
