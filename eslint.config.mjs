@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // ffmpeg.wasm gerado pelo Emscripten, copiado de node_modules no install/build.
+    "public/editor/vendor/**",
   ]),
 ]);
 
