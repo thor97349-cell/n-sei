@@ -17,3 +17,6 @@ bin/
 
 # Arquivos temporários de exportação interrompida
 *.parcial.mp4
+
+# Cache do ruff
+.ruff_cache/

@@ -63,6 +63,20 @@ py -3.11 -m venv .venv
 ```
 </details>
 
+### 4. Conferir a instalação (autoteste)
+
+Dê dois cliques em **`autoteste.bat`** (ou rode `.venv\Scripts\python -m foodcreator --autoteste`).
+Ele não abre a interface e não usa a internet. Ele:
+
+1. confere Python, PySide6, faster-whisper (opcional) e FFmpeg;
+2. confere se o FFmpeg tem o codificador H.264 (libx264), o AAC e os filtros usados;
+3. gera um vídeo de teste de 12 s (com nome acentuado), passa pelo pipeline real e
+   valida o MP4 final em três casos: cópia simples, YouTube 16:9 com cortes e Shorts 9:16.
+
+Cada item aparece como `[OK]` ou `[FALHOU]`, e o resultado final só diz “tudo certo” se
+nada falhou. Os vídeos ficam em `output\autoteste`, sem sobrescrever os de execuções
+anteriores. Para usar outra pasta: `--saida=C:\caminho`.
+
 ## Como iniciar
 
 Dê dois cliques em **`iniciar.bat`**. Pelo terminal:
@@ -70,6 +84,21 @@ Dê dois cliques em **`iniciar.bat`**. Pelo terminal:
 ```powershell
 .venv\Scripts\python -m foodcreator
 ```
+
+## Verificações pendentes no Windows
+
+Até agora, o código foi executado e testado só em Linux (Python 3.11, FFmpeg 6.1 e 7.0;
+a interface rodou em modo sem tela). Precisam ser confirmados num Windows real:
+
+- [ ] `instalar.bat` cria o `.venv` e instala as dependências.
+- [ ] `autoteste.bat` termina com “RESULTADO: tudo certo”.
+- [ ] `iniciar.bat` abre a janela sem console preto atrás.
+- [ ] Importar um vídeo real do celular (de preferência com nome acentuado), gerar a edição
+      e assistir ao resultado.
+- [ ] Cancelar uma exportação no meio e conferir que nenhum arquivo `.parcial.mp4` sobra.
+- [ ] Legendas: ativar, aceitar o download do modelo `small` e conferir a sincronia
+      (o download do modelo nunca foi testado: a rede do ambiente de desenvolvimento
+      bloqueia o site dos modelos).
 
 ## Como usar
 
@@ -177,6 +206,7 @@ foodcreator/
               montagem da renderização e validação do arquivo final
   subtitles/  transcrição (faster-whisper) e geração das legendas ASS/SRT
   profiles/   perfis de edição (JSON) e sua aplicação
+  selftest.py autoteste da instalação (`--autoteste`)
 tests/        testes automatizados (pytest)
 output/       exportações locais (fora do controle de versão)
 ```
@@ -192,7 +222,7 @@ legendas e mixagem de áudio). O vídeo vai primeiro para um arquivo `.parcial.m
 .venv\Scripts\python -m pytest
 ```
 
-Os testes geram vídeos curtos com o próprio FFmpeg (com nomes acentuados e com espaços) e
+O mesmo conjunto inclui o autoteste. Os testes geram vídeos curtos com o próprio FFmpeg (com nomes acentuados e com espaços) e
 cobrem importação, análise de mídia, cortes, enquadramento, zoom, legendas, perfis,
 exportação real nos dois formatos (incluindo vídeo sem áudio e com música), proteção
 contra sobrescrita, cancelamento, retomada pelo cache e a interface em modo sem tela.
