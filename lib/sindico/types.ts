@@ -202,13 +202,62 @@ export interface AssemblyState {
 
 export type EndingKind = "reeleito" | "derrotado" | "destituido" | "falido";
 
+// Condição pra um final especial ou um epílogo valer (todas as partes informadas precisam bater).
+export interface EndCondition {
+  kinds?: EndingKind[];
+  flags?: string[];
+  anyFlags?: string[];
+  notFlags?: string[];
+  minApproval?: Partial<Record<ResidentId, number>>;
+  maxApproval?: Partial<Record<ResidentId, number>>;
+  minCondition?: number;
+  maxCondition?: number;
+  minUpgrades?: number;
+  minVotes?: number;
+}
+
+// Final especial: troca o título e o texto do final básico quando a condição bate.
+export interface SpecialEndingDef {
+  id: string;
+  icon: string;
+  title: string;
+  text: string;
+  when: EndCondition;
+}
+
+export type EpilogueSubject = ResidentId | "ze" | "predio" | "voce";
+
+// "O que aconteceu com cada um": a primeira variante cuja condição bate é a usada.
+export interface EpilogueDef {
+  who: EpilogueSubject;
+  when?: EndCondition;
+  text: string;
+}
+
+export interface EpilogueLine {
+  who: EpilogueSubject;
+  text: string;
+}
+
+// Decisão marcante, pro resumo do mandato no final.
+export interface DecisionRecord {
+  week: number;
+  title: string;
+  choice: string;
+  impact: number;
+}
+
 export interface Ending {
   kind: EndingKind;
+  // Id do final alcançado: o do final especial, ou o próprio kind se nenhum especial bateu.
+  endingId: string;
+  icon?: string;
   title: string;
   text: string;
   votes?: Votes;
   score: number;
   achievements: string[];
+  epilogue: EpilogueLine[];
 }
 
 export interface GameState {
@@ -239,4 +288,5 @@ export interface GameState {
   stats: GameStats;
   // Pra animar o prédio: muda a cada decisão, com as variações de aprovação.
   fx: { tick: number; deltas: Deltas };
+  decisions: DecisionRecord[];
 }

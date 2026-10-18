@@ -108,11 +108,11 @@ export const LATE_EVENTS: EventDef[] = [
       {
         label: "Dizer que é 'reembolso de uma reforma'",
         hours: 0,
-        effects: { all: -14, residents: { neide: -10, valdemar: -10 }, clearFlags: ["gilberto_propina"] },
+        effects: { all: -14, residents: { neide: -10, valdemar: -10 }, clearFlags: ["gilberto_propina"], setFlags: ["propina_mentiu"] },
         result: "Ninguém acreditou. O Dr. Valdemar já está redigindo alguma coisa.",
       },
     ],
-    expire: { effects: { all: -14, clearFlags: ["gilberto_propina"] }, result: "Seu silêncio foi a confissão." },
+    expire: { effects: { all: -14, clearFlags: ["gilberto_propina"], setFlags: ["propina_mentiu"] }, result: "Seu silêncio foi a confissão." },
   },
   {
     id: "gilberto_sem_provas",
@@ -231,13 +231,13 @@ export const LATE_EVENTS: EventDef[] = [
       {
         label: "Ficar do lado da Kelly",
         hours: 0,
-        effects: { residents: { kelly: 12, marcao: -15 }, clearFlags: ["romance_2"] },
+        effects: { residents: { kelly: 12, marcao: -15 }, clearFlags: ["romance_2"], setFlags: ["lado_kelly"] },
         result: "O Marcão compôs uma música chamada 'Síndico Traíra'.",
       },
       {
         label: "Ficar do lado do Marcão",
         hours: 0,
-        effects: { residents: { marcao: 12, kelly: -15 }, clearFlags: ["romance_2"] },
+        effects: { residents: { marcao: 12, kelly: -15 }, clearFlags: ["romance_2"], setFlags: ["lado_marcao"] },
         result: "A Kelly fez um vídeo: 'quando o síndico é machista 🙄'.",
       },
       {
@@ -633,7 +633,7 @@ export const LATE_EVENTS: EventDef[] = [
       {
         label: "Pode!",
         hours: 0,
-        effects: { tags: { estetica: 4, tradicao: -6 }, residents: { kelly: 10, valdemar: -6 } },
+        effects: { tags: { estetica: 4, tradicao: -6 }, residents: { kelly: 10, valdemar: -6 }, setFlags: ["hall_rosa"] },
         result: "Hall rosa. Metade ama, metade odeia. Todo mundo tira foto.",
       },
       {

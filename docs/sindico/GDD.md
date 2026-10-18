@@ -209,6 +209,30 @@ aparecem com metade da chance, pra não tomar o lugar das histórias.
 | 🚪 **Destituído** | Perder a votação de destituição numa assembleia |
 | 💸 **Falido** | Fechar 2 meses seguidos com caixa negativo |
 
+**Finais especiais (12) e finais básicos (4):** quando o jogo termina, o primeiro final
+especial cuja condição bate substitui o final básico. Exemplos:
+
+| Final | Como chegar |
+|---|---|
+| 🦸 O Herói do Primavera | Reeleito depois de fazer o Gilberto ser condenado |
+| 💍 Padrinho e Síndico | Reeleito depois de casar o Marcão com a Kelly |
+| 🤝 Chapa da União | Reeleito com o Dr. Valdemar de subsíndico |
+| 💅 A Nova Síndica | Perder a eleição com a Kelly gostando de você |
+| 📵 Derrubado pelo Grupo Paralelo | Cair depois de remover a Neide do grupo |
+| 🚔 Investigado! | Aceitar a propina do Gilberto e mentir quando vazar |
+| 🌳 Falido, mas Lindo | Falir depois de fazer obras no prédio |
+
+A tela inicial mostra quantos finais o jogador já descobriu (os que faltam aparecem com cadeado).
+Todos os 16 foram alcançados em simulação.
+
+**Epílogo:** no fim, cada morador, o Zé, o prédio e o próprio síndico ganham uma frase
+dizendo o que aconteceu com eles, escolhida pelas decisões da partida (51 variações). Ex: se
+você construiu o estúdio, o Marcão "gravou o primeiro disco; a faixa 3 se chama 'Síndico Gente
+Fina'"; se removeu a Neide do grupo, "o grupo paralelo dela tem 47 membros".
+
+**Resumo do mandato:** as 3 decisões que mais mexeram com o prédio, mais pendências resolvidas,
+explodidas, pautas aprovadas e melhorias feitas.
+
 **Pontuação:** aprovação média, caixa, conservação, votos, semanas sobrevividas e um
 bônus grande pela reeleição, multiplicados pela dificuldade. O recorde fica salvo.
 
@@ -272,7 +296,8 @@ Loop semanal com horas livres, 66 pendências com 10 cadeias de consequência e 
 histórias longas, 8 moradores com interesses e mecânicas próprias, ações por conta
 própria, visitas, 9 melhorias, assembleia com política de corredor e minerva,
 destituição, falência, eleição final, grupo do WhatsApp, 5 perfis de síndico, 3
-dificuldades, pontuação, 15 conquistas, salvamento automático, sons e animações.
+dificuldades, pontuação, 15 conquistas, 16 finais (12 especiais), epílogo de cada
+personagem, resumo do mandato, salvamento automático, sons e animações.
 
 ### O que falta pro jogo completo
 | Área | Ideias |

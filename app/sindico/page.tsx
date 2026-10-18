@@ -25,7 +25,7 @@ import {
   visitResident,
 } from "@/lib/sindico/engine";
 import { play, setMuted as setSfxMuted } from "@/lib/sindico/sfx";
-import { loadGame, loadMuted, loadRecords, recordEnding, Records, saveGame, saveMuted } from "@/lib/sindico/storage";
+import { EMPTY_RECORDS, loadGame, loadMuted, loadRecords, recordEnding, Records, saveGame, saveMuted } from "@/lib/sindico/storage";
 import { DifficultyId, GameState, ProfileId, ResidentId } from "@/lib/sindico/types";
 
 const noopSubscribe = () => () => {};
@@ -49,8 +49,9 @@ export default function SindicoPage() {
   const [loaded, setLoaded] = useState(false);
   const [state, setState] = useState<GameState | null>(null);
   const [saved, setSaved] = useState<GameState | null>(null);
-  const [records, setRecords] = useState<Records>({ bestScore: 0, games: 0, wins: 0, achievements: [] });
+  const [records, setRecords] = useState<Records>(EMPTY_RECORDS);
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
+  const [newEnding, setNewEnding] = useState(false);
   const [muted, setMuted] = useState(false);
   const [openEvent, setOpenEvent] = useState<number | null>(null);
   const [openResident, setOpenResident] = useState<ResidentId | null>(null);
@@ -82,6 +83,7 @@ export default function SindicoPage() {
       const result = recordEnding(next);
       setRecords(result.records);
       setNewAchievements(result.newAchievements);
+      setNewEnding(result.newEnding);
       saveGame(null);
       setSaved(null);
       play("end");
@@ -99,6 +101,7 @@ export default function SindicoPage() {
     setOpenUpgrades(false);
     setEndAcknowledged(false);
     setNewAchievements([]);
+    setNewEnding(false);
     play("notify");
     commit(game);
   }
@@ -152,7 +155,7 @@ export default function SindicoPage() {
   }
 
   if (state.phase === "ended" && (!state.assembly || endAcknowledged)) {
-    return <EndScreen state={state} records={records} newAchievements={newAchievements} onRestart={() => setState(null)} />;
+    return <EndScreen state={state} records={records} newAchievements={newAchievements} newEnding={newEnding} onRestart={() => setState(null)} />;
   }
 
   if (state.assembly) {

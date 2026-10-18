@@ -1,5 +1,6 @@
 import { ACHIEVEMENTS } from "./data/achievements";
 import { ACTIONS_BY_ID, UPGRADES_BY_ID } from "./data/actions";
+import { EPILOGUES, EPILOGUE_ORDER, SPECIAL_ENDINGS } from "./data/endings";
 import { EVENTS, EVENTS_BY_ID } from "./data/events";
 import { PAUTAS, PAUTAS_BY_ID } from "./data/pautas";
 import { DIFFICULTIES_BY_ID, PROFILES_BY_ID } from "./data/profiles";
@@ -8,8 +9,10 @@ import {
   AssemblyState,
   Deltas,
   DifficultyId,
+  EndCondition,
   Effects,
   Ending,
+  EpilogueLine,
   GameState,
   MonthReport,
   ProfileId,
@@ -20,7 +23,7 @@ import {
   Votes,
 } from "./types";
 
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 export const WEEKS_PER_MONTH = 4;
 export const MONTHS = 6;
 export const TOTAL_WEEKS = WEEKS_PER_MONTH * MONTHS;
@@ -267,6 +270,7 @@ export function createGame(seed: number, profileId: ProfileId = "novato", diffic
     visitedMonth: {},
     stats: { resolved: 0, expired: 0, lobbied: 0, upgrades: 0, passedPautas: 0 },
     fx: { tick: 0, deltas: {} },
+    decisions: [],
   };
   for (const id of RESIDENT_IDS) bump(s, id, (profile.approval?.[id] ?? 0) + (profile.all ?? 0));
 
@@ -301,8 +305,22 @@ export function chooseOption(state: GameState, uid: number, choiceIndex: number)
   pushChat(s, "sistema", `✅ ${ev.title}: ${choice.result}`);
   react(s, applied.deltas);
   setOutcome(s, ev.title, choice.result, moneyBefore, conditionBefore, applied);
+  recordDecision(s, ev.title, choice.label, applied.deltas, s.money - moneyBefore);
   recordFx(s, before);
   return s;
+}
+
+// Guarda a decisão com um "peso" (quanto mexeu com o prédio), pro resumo do mandato.
+function recordDecision(s: GameState, title: string, choice: string, deltas: Deltas, money: number) {
+  const impact = Object.values(deltas).reduce((sum, d) => sum + Math.abs(d ?? 0), 0) + Math.abs(money) / 250;
+  s.decisions.push({ week: s.week, title, choice, impact: Math.round(impact) });
+}
+
+// Partida salva numa versão anterior: completa os campos novos.
+export function migrateState(raw: GameState): GameState | null {
+  if (!raw || typeof raw.version !== "number") return null;
+  if (raw.version === 2) return { ...raw, version: STATE_VERSION, decisions: [] };
+  return raw.version === STATE_VERSION ? raw : null;
 }
 
 function periodKey(s: GameState, limit: "week" | "month") {
@@ -594,6 +612,7 @@ export function holdAssembly(state: GameState): GameState {
     }
     pushChat(s, "sistema", `🗳️ Assembleia: "${p.title}" ${passed ? "APROVADA" : "REJEITADA"} (${yes} x ${RESIDENT_IDS.length - yes}).`);
     react(s, applied.deltas);
+    recordDecision(s, `Assembleia do mês ${a.month}`, `${p.title}: ${passed ? "aprovada" : "rejeitada"}`, applied.deltas, outcome.effects.money ?? 0);
     a.result = { pautaId, votes, passed, minerva, text: outcome.result };
   } else {
     applyEffects(s, { all: 1 });
@@ -654,9 +673,40 @@ export function computeScore(s: GameState) {
   return Math.round(raw * DIFFICULTY_MULTIPLIER[s.config.difficulty]);
 }
 
-function endGame(s: GameState, ending: Omit<Ending, "score" | "achievements">) {
+export function matchesEnd(s: GameState, kind: Ending["kind"], votes: number, c?: EndCondition) {
+  if (!c) return true;
+  if (c.kinds && !c.kinds.includes(kind)) return false;
+  if (c.flags && !c.flags.every((f) => hasFlag(s, f))) return false;
+  if (c.anyFlags && !c.anyFlags.some((f) => hasFlag(s, f))) return false;
+  if (c.notFlags && c.notFlags.some((f) => hasFlag(s, f))) return false;
+  for (const [id, v] of Object.entries(c.minApproval ?? {})) if (s.approval[id as ResidentId] < (v ?? 0)) return false;
+  for (const [id, v] of Object.entries(c.maxApproval ?? {})) if (s.approval[id as ResidentId] > (v ?? 100)) return false;
+  if (c.minCondition !== undefined && s.condition < c.minCondition) return false;
+  if (c.maxCondition !== undefined && s.condition > c.maxCondition) return false;
+  if (c.minUpgrades !== undefined && s.stats.upgrades < c.minUpgrades) return false;
+  if (c.minVotes !== undefined && votes < c.minVotes) return false;
+  return true;
+}
+
+function buildEpilogue(s: GameState, kind: Ending["kind"], votes: number): EpilogueLine[] {
+  return EPILOGUE_ORDER.map((who) => {
+    const variant = EPILOGUES.find((e) => e.who === who && matchesEnd(s, kind, votes, e.when));
+    return { who, text: variant?.text ?? "" };
+  }).filter((l) => l.text);
+}
+
+function endGame(s: GameState, ending: Omit<Ending, "score" | "achievements" | "endingId" | "epilogue">) {
   s.phase = "ended";
-  s.ending = { ...ending, score: 0, achievements: [] };
+  const votes = Object.values(ending.votes ?? {}).filter(Boolean).length;
+  s.ending = { ...ending, endingId: ending.kind, score: 0, achievements: [], epilogue: [] };
+  const special = SPECIAL_ENDINGS.find((e) => matchesEnd(s, ending.kind, votes, e.when));
+  if (special) {
+    s.ending.endingId = special.id;
+    s.ending.icon = special.icon;
+    s.ending.title = special.title;
+    s.ending.text = special.text;
+  }
+  s.ending.epilogue = buildEpilogue(s, ending.kind, votes);
   s.ending.score = computeScore(s);
   s.ending.achievements = ACHIEVEMENTS.filter((a) => a.check(s)).map((a) => a.id);
 }

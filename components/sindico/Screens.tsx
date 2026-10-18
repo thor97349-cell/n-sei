@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID } from "@/lib/sindico/data/achievements";
+import { ALL_ENDING_IDS, ENDING_INFO } from "@/lib/sindico/data/endings";
 import { DIFFICULTIES, PROFILES } from "@/lib/sindico/data/profiles";
 import { RESIDENTS } from "@/lib/sindico/data/residents";
 import { averageApproval, currentMonth } from "@/lib/sindico/engine";
 import { brl } from "@/lib/sindico/format";
 import { Records } from "@/lib/sindico/storage";
-import { DifficultyId, GameState, ProfileId } from "@/lib/sindico/types";
+import { DifficultyId, EpilogueSubject, GameState, ProfileId } from "@/lib/sindico/types";
 
 function Choice({
   selected,
@@ -117,7 +118,7 @@ export function StartScreen({
 }) {
   const [profile, setProfile] = useState<ProfileId>("novato");
   const [difficulty, setDifficulty] = useState<DifficultyId>("normal");
-  const [showAchievements, setShowAchievements] = useState(false);
+  const [showAchievements, setShowAchievements] = useState<"conquistas" | "finais" | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-200 via-amber-50 to-orange-100 px-4 py-10">
@@ -182,13 +183,45 @@ export function StartScreen({
           ) : (
             <p>Seu primeiro mandato. Boa sorte.</p>
           )}
-          <button onClick={() => setShowAchievements((v) => !v)} className="mt-2 font-semibold text-amber-800 underline-offset-2 hover:underline">
-            {showAchievements ? "Esconder conquistas" : `Conquistas (${records.achievements.length}/${ACHIEVEMENTS.length})`}
-          </button>
-          {showAchievements && (
+          <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <button
+              onClick={() => setShowAchievements((v) => (v === "conquistas" ? null : "conquistas"))}
+              aria-expanded={showAchievements === "conquistas"}
+              className="font-semibold text-amber-800 underline-offset-2 hover:underline"
+            >
+              🏅 Conquistas ({records.achievements.length}/{ACHIEVEMENTS.length})
+            </button>
+            <button
+              onClick={() => setShowAchievements((v) => (v === "finais" ? null : "finais"))}
+              aria-expanded={showAchievements === "finais"}
+              className="font-semibold text-amber-800 underline-offset-2 hover:underline"
+            >
+              🎬 Finais ({records.endings.length}/{ALL_ENDING_IDS.length})
+            </button>
+          </div>
+          {showAchievements === "conquistas" && (
             <div className="mt-3">
               <AchievementGrid unlocked={records.achievements} />
             </div>
+          )}
+          {showAchievements === "finais" && (
+            <ul className="mt-3 grid grid-cols-1 gap-1.5 text-left sm:grid-cols-2">
+              {ALL_ENDING_IDS.map((id) => {
+                const got = records.endings.includes(id);
+                const info = ENDING_INFO[id];
+                return (
+                  <li
+                    key={id}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${got ? "bg-white/90 text-stone-800 shadow-sm" : "bg-stone-200/60 text-stone-400"}`}
+                  >
+                    <span className="text-lg" aria-hidden="true">
+                      {got ? info.icon : "🔒"}
+                    </span>
+                    <span className="font-bold">{got ? info.title : "Final ainda não descoberto"}</span>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
       </div>
@@ -249,52 +282,60 @@ export function EndScreen({
   state,
   records,
   newAchievements,
+  newEnding,
   onRestart,
 }: {
   state: GameState;
   records: Records;
   newAchievements: string[];
+  newEnding: boolean;
   onRestart: () => void;
 }) {
   const ending = state.ending;
   if (!ending) return null;
-  const style = ENDING_STYLE[ending.kind];
-  const isRecord = ending.score >= records.bestScore;
-  return (
-    <EndScreenBody
-      state={state}
-      records={records}
-      newAchievements={newAchievements}
-      onRestart={onRestart}
-      isRecord={isRecord}
-      style={style}
-    />
-  );
+  return <EndScreenBody state={state} records={records} newAchievements={newAchievements} newEnding={newEnding} onRestart={onRestart} />;
+}
+
+function epilogueWho(who: EpilogueSubject): { name: string; avatar: string } {
+  if (who === "predio") return { name: "O Edifício Primavera", avatar: "🏢" };
+  if (who === "voce") return { name: "Você", avatar: "🫵" };
+  if (who === "ze") return { name: "Zé, o porteiro", avatar: "👨🏽‍✈️" };
+  const r = RESIDENTS.find((x) => x.id === who)!;
+  return { name: r.name, avatar: r.avatar };
 }
 
 function EndScreenBody({
   state,
   records,
   newAchievements,
+  newEnding,
   onRestart,
-  isRecord,
-  style,
 }: {
   state: GameState;
   records: Records;
   newAchievements: string[];
+  newEnding: boolean;
   onRestart: () => void;
-  isRecord: boolean;
-  style: (typeof ENDING_STYLE)[keyof typeof ENDING_STYLE];
 }) {
   const ending = state.ending!;
+  const style = ENDING_STYLE[ending.kind];
+  const isRecord = ending.score >= records.bestScore;
   const shownScore = useCountUp(ending.score);
+  const highlights = [...state.decisions].sort((a, b) => b.impact - a.impact).slice(0, 3);
+  // Linha do tempo: votos, depois o epílogo um por um.
+  const epilogueStart = ending.votes ? 300 + RESIDENTS.length * 250 + 300 : 600;
+
   return (
     <div className={`min-h-screen bg-gradient-to-b ${style.bg} px-4 py-10`}>
       {ending.kind === "reeleito" && <Confetti />}
-      <div className="mx-auto w-full max-w-lg text-center">
-        <p className="sindico-pop text-6xl">{style.emoji}</p>
-        <h1 className="mt-2 text-4xl font-black text-stone-800">{ending.title}</h1>
+      <div className="mx-auto w-full max-w-xl text-center">
+        <p className="sindico-pop text-6xl">{ending.icon ?? style.emoji}</p>
+        <h1 className="mt-2 text-4xl font-black text-balance text-stone-800">{ending.title}</h1>
+        {newEnding && (
+          <p className="sindico-pop mt-2 inline-block rounded-full bg-amber-500 px-3 py-1 text-xs font-black text-white" style={{ animationDelay: "400ms" }}>
+            🆕 Final inédito! {records.endings.length}/{ALL_ENDING_IDS.length} descobertos
+          </p>
+        )}
         <p className="mt-4 text-lg text-stone-700">{ending.text}</p>
 
         {ending.votes && (
@@ -310,6 +351,68 @@ function EndScreenBody({
               </li>
             ))}
           </ul>
+        )}
+
+        <section className="mt-8 text-left" aria-label="Epílogo">
+          <h2 className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-stone-600">E o que aconteceu com cada um...</h2>
+          <ul className="flex flex-col gap-2">
+            {ending.epilogue.map((line, i) => {
+              const who = epilogueWho(line.who);
+              return (
+                <li
+                  key={line.who}
+                  style={{ animationDelay: `${epilogueStart + i * 260}ms` }}
+                  className="sindico-enter flex items-start gap-3 rounded-xl bg-white/90 p-3 shadow-sm ring-1 ring-stone-200/80"
+                >
+                  <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-50 text-2xl ring-1 ring-amber-100">
+                    {who.avatar}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-stone-800">{who.name}</span>
+                    <span className="block text-sm text-stone-600">{line.text}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {highlights.length > 0 && (
+          <section className="mt-8 rounded-2xl bg-white/90 p-4 text-left shadow-sm ring-1 ring-stone-200/80" aria-label="Resumo do mandato">
+            <h2 className="mb-2 text-center text-sm font-bold uppercase tracking-wide text-stone-600">📒 Resumo do mandato</h2>
+            <p className="mb-2 text-center text-xs text-stone-500">As decisões que mais mexeram com o prédio</p>
+            <ol className="flex flex-col gap-2">
+              {highlights.map((d, i) => (
+                <li key={i} className="flex gap-3 rounded-xl bg-amber-50 p-2.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-500 text-xs font-black text-white">{i + 1}</span>
+                  <span className="min-w-0 text-sm">
+                    <span className="block font-bold text-stone-800">
+                      {d.title} <span className="font-normal text-stone-500">· semana {d.week}</span>
+                    </span>
+                    <span className="block text-stone-600">Você escolheu: {d.choice}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
+              <div className="rounded-lg bg-stone-50 p-2">
+                <dt className="text-stone-500">Resolvidas</dt>
+                <dd className="text-base font-black text-stone-800">{state.stats.resolved}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-2">
+                <dt className="text-stone-500">Explodiram</dt>
+                <dd className="text-base font-black text-stone-800">{state.stats.expired}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-2">
+                <dt className="text-stone-500">Pautas aprovadas</dt>
+                <dd className="text-base font-black text-stone-800">{state.stats.passedPautas}</dd>
+              </div>
+              <div className="rounded-lg bg-stone-50 p-2">
+                <dt className="text-stone-500">Melhorias</dt>
+                <dd className="text-base font-black text-stone-800">{state.stats.upgrades}</dd>
+              </div>
+            </dl>
+          </section>
         )}
 
         <div className="mt-6 rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-stone-200/80">
@@ -364,11 +467,11 @@ function EndScreenBody({
             </ul>
           )}
           <p className="mt-2 text-center text-xs text-stone-500">
-            Total desbloqueado: {records.achievements.length}/{ACHIEVEMENTS.length}
+            Conquistas: {records.achievements.length}/{ACHIEVEMENTS.length} · Finais descobertos: {records.endings.length}/{ALL_ENDING_IDS.length}
           </p>
         </section>
 
-        <button onClick={onRestart} className="mt-8 rounded-xl bg-amber-600 px-8 py-3 font-black text-white shadow hover:bg-amber-700">
+        <button onClick={onRestart} className="mt-8 rounded-xl bg-amber-600 px-8 py-3 font-black text-white shadow transition hover:bg-amber-700 active:scale-[0.98]">
           Jogar de novo
         </button>
       </div>
