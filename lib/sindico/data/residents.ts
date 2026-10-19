@@ -112,7 +112,7 @@ export const RESIDENTS: Resident[] = [
   },
   {
     id: "rafael",
-    name: "Rafael e Bia",
+    name: "Rafael e Núbia",
     apt: "102",
     avatar: "👨🏻‍🍼",
     bio: "Casal com um bebê de 4 meses. Dormem 3 horas por noite. Paciência zero.",

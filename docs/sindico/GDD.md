@@ -98,7 +98,7 @@ os números** antes de decidir. Ler as pessoas é a habilidade do jogo.
 | 201 | Dr. Valdemar | Regras, Economia | Festa, Pets | Perdeu a eleição pra você por 1 voto |
 | 202 | Kelly | Estética, Festa | Regras | Influencer, grava tudo |
 | 101 | Dona Cida | Silêncio, Tradição | Festa | 78 anos, faz bolo pra todo mundo |
-| 102 | Rafael e Bia | Silêncio, Segurança | Festa | Bebê de 4 meses, paciência zero |
+| 102 | Rafael e Núbia | Silêncio, Segurança | Festa | Bebê de 4 meses, paciência zero |
 
 **Regras especiais:**
 - **Protesto:** morador com aprovação abaixo de 20 **para de pagar** o condomínio.

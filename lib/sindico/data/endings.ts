@@ -156,8 +156,8 @@ export const EPILOGUES: EpilogueDef[] = [
   { who: "cida", when: { maxApproval: { cida: 25 } }, text: "Se mudou pra casa da filha em Campinas. Diz que o prédio 'não é mais o mesmo' desde que você chegou." },
   { who: "cida", text: "Segue no 101, na janela, sabendo de tudo antes de todo mundo. O bolo de domingo continua sagrado." },
 
-  // ---------- Rafael e Bia ----------
-  { who: "rafael", when: { anyFlags: ["lei_silencio", "melhoria_estudio"], minApproval: { rafael: 60 } }, text: "O bebê dorme a noite inteira. Rafael e Bia voltaram a ter vida e já estão pensando no segundo filho." },
+  // ---------- Rafael e Núbia ----------
+  { who: "rafael", when: { anyFlags: ["lei_silencio", "melhoria_estudio"], minApproval: { rafael: 60 } }, text: "O bebê dorme a noite inteira. Rafael e Núbia voltaram a ter vida e já estão pensando no segundo filho." },
   { who: "rafael", when: { maxApproval: { rafael: 25 } }, text: "Se mudaram pra uma casa no interior, atrás de silêncio. Mandaram foto: tudo calmo, menos o galo, que canta às 4h." },
   { who: "rafael", text: "O bebê deu os primeiros passos no hall. A primeira palavra foi 'Marcão'." },
 
