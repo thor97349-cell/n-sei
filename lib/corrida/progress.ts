@@ -21,6 +21,7 @@ export interface Progress {
   musicVol: number;
   sfxVol: number;
   crt: boolean;
+  graphics3d: boolean;
 }
 
 export const MAX_RUNS = 10;
@@ -42,6 +43,7 @@ function fresh(): Progress {
     musicVol: 0.8,
     sfxVol: 0.9,
     crt: true,
+    graphics3d: true,
   };
 }
 

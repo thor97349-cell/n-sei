@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { carById } from "@/lib/corrida/cars";
 import { Game, Phase, RunResult } from "@/lib/corrida/engine";
 import { loadProgress, Progress, updateProgress } from "@/lib/corrida/progress";
+import { Renderer3D } from "@/lib/corrida/render3d";
 import { TitleScene } from "@/lib/corrida/title";
 import Garage from "./Garage";
 import "./corrida.css";
@@ -32,6 +33,8 @@ const fmt = (n: number) => n.toLocaleString("pt-BR");
 export default function CorridaGame({ footer, titleTrack }: { footer?: React.ReactNode; titleTrack?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const glRef = useRef<HTMLCanvasElement>(null);
+  const fontRef = useRef('"Racing Sans One", system-ui, sans-serif');
   const titleCanvasRef = useRef<HTMLCanvasElement>(null);
   const menuRef = useRef<HTMLElement>(null);
   const againRef = useRef<HTMLButtonElement>(null);
@@ -44,6 +47,13 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
   const [touch] = useState(() => window.matchMedia("(pointer: coarse)").matches);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pressed, setPressed] = useState<Record<Key, boolean>>({ left: false, right: false, drift: false });
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(id);
+  }, [notice]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,6 +67,15 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
       onGameOver: (r) => {
         setResult(r);
         setProgress(loadProgress());
+      },
+      onSlow3D: () => {
+        game.setRenderer3D(null);
+        setProgress(
+          updateProgress((p) => {
+            p.graphics3d = false;
+          }),
+        );
+        setNotice("Gráficos 3D desligados pra rodar liso. Dá pra religar em Opções.");
       },
     });
     game.setIdle(true);
@@ -74,7 +93,17 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
 
     // A fonte de display vem do CSS (next/font no site, Google Fonts no artefato).
     const family = getComputedStyle(root).getPropertyValue("--font-drfl").trim() || '"Racing Sans One"';
-    game.setFont(`${family}, system-ui, sans-serif`);
+    fontRef.current = `${family}, system-ui, sans-serif`;
+    game.setFont(fontRef.current);
+    const gl = glRef.current;
+    if (saved.graphics3d && gl) {
+      try {
+        const coarse = window.matchMedia("(pointer: coarse)").matches;
+        game.setRenderer3D(new Renderer3D(gl, fontRef.current, !coarse));
+      } catch {
+        // Sem WebGL: fica no 2D clássico.
+      }
+    }
     void document.fonts?.load(`40px ${family}`).catch(() => undefined);
 
     const fit = () => {
@@ -197,12 +226,29 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
     setScreen("menu");
   }
 
+  // Liga o 3D se o aparelho tiver WebGL; senão fica no 2D clássico.
+  function apply3D(on: boolean) {
+    const game = gameRef.current;
+    const gl = glRef.current;
+    if (!game || !gl) return;
+    if (!on) {
+      game.setRenderer3D(null);
+      return;
+    }
+    try {
+      game.setRenderer3D(new Renderer3D(gl, fontRef.current, !touch));
+    } catch {
+      game.setRenderer3D(null);
+    }
+  }
+
   function saveSettings(change: (p: Progress) => void) {
     const next = updateProgress(change);
     const game = gameRef.current;
     game?.sound.setMuted(next.muted);
     game?.sound.setVolumes(next.musicVol, next.sfxVol);
     game?.setCrt(next.crt);
+    if (next.graphics3d !== progress.graphics3d) apply3D(next.graphics3d);
     titleRef.current?.setCrt(next.crt);
     setProgress(next);
   }
@@ -260,6 +306,7 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
   return (
     <div ref={rootRef} className="drfl-root">
       <div className="drfl-stage" style={{ width: size.w, height: size.h }} hidden={!race}>
+        <canvas ref={glRef} hidden={!progress.graphics3d} />
         <canvas ref={canvasRef} />
         {driving && (
           <div className="drfl-chips" style={{ left: 18 * hudScale, top: 114 * hudScale }}>
@@ -426,6 +473,20 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
               />
               <b>{Math.round(progress.sfxVol * 100)}</b>
             </label>
+            <label className="drfl-opt drfl-check" htmlFor="drfl-3d">
+              <span>Gráficos 3D (desligue se o celular travar)</span>
+              <input
+                id="drfl-3d"
+                type="checkbox"
+                checked={progress.graphics3d}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  saveSettings((p) => {
+                    p.graphics3d = on;
+                  });
+                }}
+              />
+            </label>
             <label className="drfl-opt drfl-check" htmlFor="drfl-crt">
               <span>Efeito de TV antiga</span>
               <input
@@ -518,6 +579,12 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
             </button>
           </div>
         </div>
+      )}
+
+      {notice && (
+        <p className="drfl-notice" role="status">
+          {notice}
+        </p>
       )}
 
       {touch && driving && (

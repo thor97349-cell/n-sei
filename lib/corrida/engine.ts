@@ -21,6 +21,7 @@ import {
 } from "./draw";
 import { loadProgress, recordRun, updateProgress } from "./progress";
 import { Stage, stageAt } from "./stages";
+import { PlayerScreen, RaceRenderer, RaceView } from "./view";
 import {
   buildTrack,
   Car,
@@ -61,6 +62,8 @@ export interface RunResult {
 export interface GameCallbacks {
   onPhase: (phase: Phase) => void;
   onGameOver: (result: RunResult) => void;
+  // O 3D ficou abaixo de ~22 quadros por segundo por alguns segundos seguidos.
+  onSlow3D?: () => void;
 }
 
 const STEP = 1 / 60;
@@ -162,6 +165,7 @@ export class Game {
   private scanlines: HTMLCanvasElement | null = null;
   private crt = true;
   private idle = false;
+  private renderer3d: RaceRenderer | null = null;
   private segments: Segment[];
   private trackLength: number;
   private cars: Car[] = [];
@@ -223,7 +227,9 @@ export class Game {
   private shake = 0;
   private skyOffset = 0;
   private cityOffset = 0;
-  private playerScreen = { x: 0, y: 0, w: 0 };
+  private playerScreen: PlayerScreen = { x: 0, y: 0, w: 0, top: 0 };
+  private slowTime = 0;
+  checkSpeed = true;
   private t = 0;
   private acc = 0;
   private last = 0;
@@ -265,6 +271,7 @@ export class Game {
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     document.removeEventListener("visibilitychange", this.onVisibility);
+    this.renderer3d?.dispose();
     this.sound.dispose();
   }
 
@@ -273,6 +280,7 @@ export class Game {
     this.height = this.canvas.height = Math.max(1, Math.round(height));
     this.backdrop.resize(this.width, this.height);
     this.scanlines = makeScanlines(this.width, this.height);
+    this.renderer3d?.resize(this.width, this.height);
   }
 
   // Parado atrás da tela inicial: não simula nem desenha.
@@ -284,6 +292,14 @@ export class Game {
 
   setCrt(on: boolean) {
     this.crt = on;
+  }
+
+  // Liga (ou desliga, com null) o desenho em 3D. O canvas 2D vira só a camada
+  // de HUD e efeitos por cima.
+  setRenderer3D(renderer: RaceRenderer | null) {
+    if (this.renderer3d && this.renderer3d !== renderer) this.renderer3d.dispose();
+    this.renderer3d = renderer;
+    renderer?.resize(this.width, this.height);
   }
 
   // Família da fonte de display (vinda do CSS), usada no HUD e nos letreiros.
@@ -493,6 +509,13 @@ export class Game {
     }
     const dt = Math.min(0.1, (now - this.last) / 1000);
     this.last = now;
+    if (this.renderer3d && this.checkSpeed && this.phase === "playing") {
+      this.slowTime = dt > 1 / 22 ? this.slowTime + dt : Math.max(0, this.slowTime - dt * 2);
+      if (this.slowTime > 4) {
+        this.slowTime = 0;
+        this.callbacks.onSlow3D?.();
+      }
+    }
     if (this.phase !== "paused") {
       this.acc += dt;
       while (this.acc > STEP) {
@@ -947,7 +970,78 @@ export class Game {
     return this.font ? `${Math.round(size)}px ${this.font}` : `italic 900 ${Math.round(size)}px system-ui, sans-serif`;
   }
 
+  private spriteVisibleFn = (kind: string, offset: number) => this.spriteVisible(kind, offset);
+
+  private view(): RaceView {
+    const nine = this.nineTime > 0;
+    const playing = this.phase === "playing";
+    return {
+      segments: this.segments,
+      trackLength: this.trackLength,
+      position: this.position,
+      playerX: this.playerX,
+      playerZ: PLAYER_Z,
+      speedPercent: this.speed / MAX_SPEED,
+      t: this.t,
+      lap: this.lap,
+      collected: this.collected,
+      stage: this.stage,
+      palette: nine ? GOLD : this.palette,
+      nine,
+      fogDensity: this.fogDensity,
+      car: this.car,
+      carColor: nine ? "#ffb627" : this.car.color,
+      drifting: this.drifting,
+      driftDir: this.driftDir,
+      boostTime: this.boostTime,
+      steer: playing && this.speed > 0 ? (this.keys.left ? -1 : this.keys.right ? 1 : 0) : 0,
+      braking: playing && (this.keys.down || (this.keys.drift && !this.drifting)),
+      hidden: this.invuln > 0 && Math.floor(this.t * 12) % 2 === 0,
+      shake: this.shake,
+      lightning: this.lightning,
+      skyOffset: this.skyOffset,
+      cityOffset: this.cityOffset,
+      spriteVisible: this.spriteVisibleFn,
+    };
+  }
+
+  private render3d(renderer: RaceRenderer) {
+    const { ctx, width, height } = this;
+    ctx.clearRect(0, 0, width, height);
+    this.playerScreen = renderer.render(this.view());
+    if (this.stage.sirens && this.nineTime <= 0) this.drawSirens();
+    const ps = this.playerScreen;
+    if (this.boostTime > 0) drawFlames(ctx, ps.x, ps.y, ps.w, this.t, DRIFT_COLORS[this.boostLevel]);
+    this.drawEffects();
+    if (this.crt && this.scanlines) ctx.drawImage(this.scanlines, 0, 0);
+    if (this.phase !== "attract") this.drawHud();
+  }
+
+  // Partículas, chuva, linhas de velocidade e brilhos de tela cheia.
+  private drawEffects() {
+    const { ctx, width, height } = this;
+    this.drawParticles();
+    this.drawRain();
+    if (this.boostTime > 0) this.drawSpeedLines();
+    if (this.nineTime > 0) {
+      const pulse = 0.12 + 0.06 * Math.sin(this.t * 8);
+      const g = ctx.createRadialGradient(width / 2, height / 2, height * 0.3, width / 2, height / 2, width * 0.7);
+      g.addColorStop(0, "rgba(255,209,102,0)");
+      g.addColorStop(1, `rgba(255,170,80,${pulse})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, width, height);
+    }
+    if (this.lightning > 0) {
+      ctx.fillStyle = `rgba(230,220,255,${this.lightning * 0.45})`;
+      ctx.fillRect(0, 0, width, height);
+    }
+  }
+
   private render() {
+    if (this.renderer3d) {
+      this.render3d(this.renderer3d);
+      return;
+    }
     const { ctx, width, height } = this;
     const nine = this.nineTime > 0;
     const pal = nine ? GOLD : this.palette;
@@ -1053,22 +1147,7 @@ export class Game {
       if (segment === playerSegment) this.drawPlayer(playerSegment, playerPercent);
     }
 
-    this.drawParticles();
-    this.drawRain();
-    if (this.boostTime > 0) this.drawSpeedLines();
-
-    if (nine) {
-      const pulse = 0.12 + 0.06 * Math.sin(this.t * 8);
-      const g = ctx.createRadialGradient(width / 2, height / 2, height * 0.3, width / 2, height / 2, width * 0.7);
-      g.addColorStop(0, "rgba(255,209,102,0)");
-      g.addColorStop(1, `rgba(255,170,80,${pulse})`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, width, height);
-    }
-    if (this.lightning > 0) {
-      ctx.fillStyle = `rgba(230,220,255,${this.lightning * 0.45})`;
-      ctx.fillRect(0, 0, width, height);
-    }
+    this.drawEffects();
 
     ctx.restore();
 
@@ -1105,7 +1184,7 @@ export class Game {
     const w = CAR_WIDTH * ROAD_WIDTH * k;
     const yaw = this.drifting ? this.driftDir * (0.1 + 0.02 * Math.sin(this.t * 30)) : 0;
     const cx = width / 2 + (this.drifting ? -this.driftDir * w * 0.06 : 0);
-    this.playerScreen = { x: cx, y: y + bounce, w };
+    this.playerScreen = { x: cx, y: y + bounce, w, top: y + bounce - w * 0.55 };
 
     if (this.boostTime > 0) drawFlames(ctx, cx, y + bounce, w, this.t, DRIFT_COLORS[this.boostLevel]);
     if (this.invuln > 0 && Math.floor(this.t * 12) % 2 === 0) ctx.globalAlpha = 0.35;
@@ -1274,7 +1353,7 @@ export class Game {
       const mw = 22 * u;
       const gap = 5 * u;
       const mx = this.playerScreen.x - (3 * mw + 2 * gap) / 2;
-      const my = this.playerScreen.y - this.playerScreen.w * 0.64;
+      const my = this.playerScreen.top - 16 * u;
       ctx.shadowBlur = 0;
       for (let i = 0; i < 3; i++) {
         const from = i === 0 ? 0 : DRIFT_LEVELS[i - 1];

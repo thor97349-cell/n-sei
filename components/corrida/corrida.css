@@ -50,6 +50,8 @@
   position: relative;
 }
 .drfl-stage canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -494,6 +496,22 @@
   font-family: var(--drfl-display);
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.85);
+}
+
+.drfl-notice {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: max(110px, calc(env(safe-area-inset-bottom, 0px) + 110px));
+  translate: -50% 0;
+  margin: 0;
+  max-width: min(90vw, 460px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(12, 6, 24, 0.9);
+  font-size: 14px;
+  text-align: center;
 }
 
 /* Recordes e opções */
