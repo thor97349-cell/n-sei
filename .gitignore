@@ -45,3 +45,4 @@ next-env.d.ts
 
 # música da tela inicial do jogo /corrida (arquivo pessoal, não versionado)
 /public/corrida/*.mp3
+/public/corrida/*.glb

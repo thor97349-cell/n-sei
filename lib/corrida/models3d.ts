@@ -245,6 +245,7 @@ export function buildCar(look: CarLook3D, detailed: boolean): CarParts {
     ]),
   );
   const tail = new THREE.Mesh(tails, brake);
+  tail.name = "tails";
   tail.position.set(0, CAR_LEN * 0.165, REAR);
   group.add(tail);
   if (detailed) {
@@ -255,6 +256,7 @@ export function buildCar(look: CarLook3D, detailed: boolean): CarParts {
       ]),
     );
     const head = new THREE.Mesh(heads, glow("#fff6d8", 2));
+    head.name = "heads";
     head.position.set(0, CAR_LEN * 0.145, -REAR);
     group.add(head);
   }

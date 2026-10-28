@@ -6,6 +6,10 @@ import { Game, Phase, RunResult } from "@/lib/corrida/engine";
 import { loadProgress, Progress, updateProgress } from "@/lib/corrida/progress";
 import { Renderer3D } from "@/lib/corrida/render3d";
 import { TitleScene } from "@/lib/corrida/title";
+import type { Title3D } from "@/lib/corrida/title3d";
+
+// O que as duas versões da tela inicial (2D desenhada e 3D com o modelo) têm em comum.
+type TitleView = Pick<TitleScene, "setCar" | "setCrt" | "setDim" | "playIntro" | "skipIntro" | "reset" | "destroy">;
 import Garage from "./Garage";
 import "./corrida.css";
 
@@ -30,16 +34,29 @@ const fmt = (n: number) => n.toLocaleString("pt-BR");
 
 // Este componente só roda no cliente (carregado com ssr: false), então
 // pode ler localStorage e matchMedia direto nos inicializadores de estado.
-export default function CorridaGame({ footer, titleTrack }: { footer?: React.ReactNode; titleTrack?: string }) {
+export default function CorridaGame({
+  footer,
+  titleTrack,
+  juiceModel,
+}: {
+  footer?: React.ReactNode;
+  titleTrack?: string;
+  // Modelo 3D (.glb) do personagem. Sem ele (ou sem WebGL), a tela inicial fica em 2D.
+  juiceModel?: string;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<HTMLCanvasElement>(null);
   const fontRef = useRef('"Racing Sans One", system-ui, sans-serif');
   const titleCanvasRef = useRef<HTMLCanvasElement>(null);
+  const title3dRef = useRef<HTMLCanvasElement>(null);
+  const titleOverlayRef = useRef<HTMLCanvasElement>(null);
+  const screenRef = useRef<Screen>("splash");
+  const [title3d, setTitle3d] = useState(false);
   const menuRef = useRef<HTMLElement>(null);
   const againRef = useRef<HTMLButtonElement>(null);
   const gameRef = useRef<Game | null>(null);
-  const titleRef = useRef<TitleScene | null>(null);
+  const titleRef = useRef<TitleView | null>(null);
   const [screen, setScreen] = useState<Screen>("splash");
   const [phase, setPhase] = useState<Phase>("attract");
   const [result, setResult] = useState<RunResult | null>(null);
@@ -90,6 +107,7 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
     });
     title.setCrt(saved.crt);
     titleRef.current = title;
+    let disposed = false;
 
     // A fonte de display vem do CSS (next/font no site, Google Fonts no artefato).
     const family = getComputedStyle(root).getPropertyValue("--font-drfl").trim() || '"Racing Sans One"';
@@ -105,6 +123,37 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
       }
     }
     void document.fonts?.load(`40px ${family}`).catch(() => undefined);
+
+    // Tela inicial 3D: carrega o modelo em segundo plano e troca quando estiver pronto.
+    const gl3 = title3dRef.current;
+    const overlay = titleOverlayRef.current;
+    if (juiceModel && saved.graphics3d && gl3 && overlay) {
+      void import("@/lib/corrida/title3d")
+        .then(async ({ Title3D }) => {
+          const model = await Title3D.load(juiceModel);
+          if (disposed) return;
+          const coarse = window.matchMedia("(pointer: coarse)").matches;
+          const p = loadProgress();
+          const t3: Title3D = new Title3D(
+            gl3,
+            overlay,
+            model,
+            carById(p.car),
+            { door: () => game.sound.door(), rev: () => game.sound.rev() },
+            fontRef.current,
+            coarse,
+          );
+          t3.setCrt(p.crt);
+          t3.setDim(DIM[screenRef.current]);
+          if (screenRef.current === "intro") return t3.destroy();
+          titleRef.current?.destroy();
+          titleRef.current = t3;
+          setTitle3d(true);
+        })
+        .catch(() => {
+          // Sem o arquivo do modelo ou sem WebGL: continua a tela 2D.
+        });
+    }
 
     const fit = () => {
       const W = root.clientWidth;
@@ -122,15 +171,19 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
     fit();
 
     return () => {
+      disposed = true;
       ro.disconnect();
-      title.destroy();
+      titleRef.current?.destroy();
       game.destroy();
       titleRef.current = null;
       gameRef.current = null;
     };
+    // juiceModel é fixo durante a vida do componente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    screenRef.current = screen;
     titleRef.current?.setDim(DIM[screen]);
     if (screen === "menu") menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
   }, [screen]);
@@ -323,7 +376,9 @@ export default function CorridaGame({ footer, titleTrack }: { footer?: React.Rea
         )}
       </div>
 
-      <canvas ref={titleCanvasRef} className="drfl-title-canvas" hidden={race} aria-hidden="true" />
+      <canvas ref={titleCanvasRef} className="drfl-title-canvas" hidden={race || title3d} aria-hidden="true" />
+      <canvas ref={title3dRef} className="drfl-title-canvas" hidden={race || !title3d} aria-hidden="true" />
+      <canvas ref={titleOverlayRef} className="drfl-title-canvas" hidden={race || !title3d} aria-hidden="true" />
 
       {!race && screen !== "intro" && (
         <div className="drfl-corner" hidden={screen === "splash"}>

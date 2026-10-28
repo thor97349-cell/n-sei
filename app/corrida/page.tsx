@@ -11,7 +11,14 @@ const CorridaGame = dynamic(() => import("@/components/corrida/CorridaGame"), {
 });
 
 export default function CorridaPage() {
-  // A música da tela inicial é opcional: coloque o arquivo em public/corrida/menu.mp3
-  // (fica fora do git). Sem ele, a tela inicial toca a batida do próprio jogo.
-  return <CorridaGame titleTrack="/corrida/menu.mp3" footer={<Link href="/">← voltar ao site</Link>} />;
+  // Arquivos opcionais, fora do git: public/corrida/menu.mp3 (música da tela inicial)
+  // e public/corrida/juice.glb (personagem 3D). Sem eles, o jogo usa a batida
+  // própria e a tela inicial desenhada em 2D.
+  return (
+    <CorridaGame
+      titleTrack="/corrida/menu.mp3"
+      juiceModel="/corrida/juice.glb"
+      footer={<Link href="/">← voltar ao site</Link>}
+    />
+  );
 }
