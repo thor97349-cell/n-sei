@@ -1,9 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Racing_Sans_One } from "next/font/google";
+
+const racing = Racing_Sans_One({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-drfl",
+});
 
 export const metadata: Metadata = {
-  title: "999 — Corrida Noturna",
+  title: "Death Race for Love — 999",
   description:
-    "Corrida arcade noturna em pseudo-3D: atravesse a cidade antes do tempo acabar e pegue 9 corações seguidos pra ativar o modo 999.",
+    "Fan game de corrida arcade em homenagem a Juice WRLD: nove etapas pela Chicago de madrugada, drift com turbo, garagem e o modo 999.",
 };
 
 export const viewport: Viewport = {
@@ -11,5 +18,5 @@ export const viewport: Viewport = {
 };
 
 export default function CorridaLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-black">{children}</div>;
+  return <div className={`${racing.variable} min-h-screen bg-black`}>{children}</div>;
 }

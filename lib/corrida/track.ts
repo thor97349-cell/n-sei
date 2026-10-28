@@ -8,13 +8,12 @@ export const ROAD_WIDTH = 2000; // meia-largura, em unidades de mundo
 export const LANES = 3;
 export const CHECKPOINT_SEGMENTS = 1000;
 
-export type SpriteKind = "lamp" | "billboard" | "tree" | "pole" | "heart" | "gate";
+export type SpriteKind = "lamp" | "billboard" | "tree" | "pole" | "heart" | "gate" | "overpass";
 
 export interface RoadSprite {
   kind: SpriteKind;
   offset: number; // -1..1 é a estrada; além disso é acostamento
   id: number;
-  text?: string;
   hue?: string;
 }
 
@@ -25,6 +24,7 @@ export interface Car {
   percent: number;
   color: string;
   truck: boolean;
+  near: boolean; // passou de raspão do jogador e ainda não pagou o bônus
 }
 
 interface Vec3 {
@@ -57,24 +57,30 @@ export interface Segment {
 export const CAR_WIDTH = 0.3;
 export const HEART_WIDTH = 0.28;
 
-// Caixa de colisão de um objeto de beira de estrada, casando com o desenho
+export const OVERPASS_PILLAR = 1.35;
+
+// Caixas de colisão de um objeto de beira de estrada, casando com o desenho
 // em draw.ts (placas crescem para fora da pista, árvores têm o tronco deslocado).
-export function spriteHitbox(sprite: RoadSprite): { x: number; w: number } | null {
+export function spriteHitboxes(sprite: RoadSprite): { x: number; w: number }[] {
   const side = sprite.offset < 0 ? -1 : 1;
   switch (sprite.kind) {
     case "lamp":
     case "pole":
-      return { x: sprite.offset, w: 0.08 };
+      return [{ x: sprite.offset, w: 0.08 }];
     case "tree":
-      return { x: sprite.offset + side * 0.175, w: 0.1 };
+      return [{ x: sprite.offset + side * 0.175, w: 0.1 }];
     case "billboard":
-      return { x: sprite.offset + side * 0.425, w: 0.85 };
+      return [{ x: sprite.offset + side * 0.425, w: 0.85 }];
+    case "overpass":
+      return [
+        { x: -OVERPASS_PILLAR, w: 0.12 },
+        { x: OVERPASS_PILLAR, w: 0.12 },
+      ];
     default:
-      return null;
+      return [];
   }
 }
 
-export const BILLBOARD_TEXTS = ["999", "LUCID", "♥ 24H", "MOTEL", "NO VACANCY", "LEGENDS", "OPEN", "GOODBYE", "♥"];
 export const NEON_HUES = ["#ff2d95", "#b26bff", "#3df2ff", "#ff4d4d", "#ffd166"];
 
 export function mulberry32(seed: number) {
@@ -257,9 +263,14 @@ export function buildTrack(seed = 999): Track {
     add(i, {
       kind: "billboard",
       offset: side * (1.6 + rand() * 0.6),
-      text: BILLBOARD_TEXTS[Math.floor(rand() * BILLBOARD_TEXTS.length)],
       hue: NEON_HUES[Math.floor(rand() * NEON_HUES.length)],
     });
+  }
+
+  // Viadutos do trem elevado de Chicago (o "L"). Só aparecem nas etapas com trem.
+  for (let i = 150; i < segments.length; i += 260 + Math.floor(rand() * 120)) {
+    if (i % CHECKPOINT_SEGMENTS < 30 || i % CHECKPOINT_SEGMENTS > CHECKPOINT_SEGMENTS - 30) continue;
+    add(i, { kind: "overpass", offset: 0 });
   }
 
   for (let i = 30; i < segments.length; i += 4 + Math.floor(rand() * 8)) {

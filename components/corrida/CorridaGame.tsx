@@ -1,49 +1,57 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { Game, Phase, RunResult } from "@/lib/corrida/engine";
-import { loadBest, loadMuted, saveMuted } from "@/lib/corrida/storage";
+import { loadProgress, Progress, updateProgress } from "@/lib/corrida/progress";
+import Garage from "./Garage";
+import "./corrida.css";
 
 const MIN_ASPECT = 4 / 3;
 const MAX_ASPECT = 2.2;
 const MAX_INTERNAL_WIDTH = 1600;
 
-const neon = (color: string) => ({ textShadow: `0 0 8px ${color}, 0 0 24px ${color}` });
-
-type Key = "left" | "right" | "down";
+type Key = "left" | "right" | "drift";
 
 // Este componente só roda no cliente (carregado com ssr: false), então
 // pode ler localStorage e matchMedia direto nos inicializadores de estado.
-export default function CorridaGame() {
-  const wrapRef = useRef<HTMLDivElement>(null);
+export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
   const [phase, setPhase] = useState<Phase>("attract");
   const [result, setResult] = useState<RunResult | null>(null);
-  const [best, setBest] = useState(() => loadBest());
-  const [muted, setMuted] = useState(() => loadMuted());
+  const [progress, setProgress] = useState<Progress>(() => loadProgress());
+  const [garage, setGarage] = useState(false);
   const [touch] = useState(() => window.matchMedia("(pointer: coarse)").matches);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const [pressed, setPressed] = useState<Record<Key, boolean>>({ left: false, right: false, drift: false });
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
+    const root = rootRef.current;
+    if (!canvas || !root) return;
 
     const game = new Game(canvas, {
-      onPhase: setPhase,
+      onPhase: (p) => {
+        setPhase(p);
+        if (p === "attract") setProgress(loadProgress());
+      },
       onGameOver: (r) => {
         setResult(r);
-        setBest(r.best);
+        setProgress(loadProgress());
       },
     });
-    game.sound.setMuted(loadMuted());
+    game.sound.setMuted(loadProgress().muted);
     gameRef.current = game;
 
+    // A fonte de display vem do CSS (next/font no site, Google Fonts no artefato).
+    const family = getComputedStyle(root).getPropertyValue("--font-drfl").trim() || '"Racing Sans One"';
+    game.setFont(`${family}, system-ui, sans-serif`);
+    void document.fonts?.load(`40px ${family}`).catch(() => undefined);
+
     const fit = () => {
-      const W = wrap.clientWidth;
-      const H = wrap.clientHeight;
+      const W = root.clientWidth;
+      const H = root.clientHeight;
       if (!W || !H) return;
       const aspect = Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, W / H));
       const w = W / H > aspect ? H * aspect : W;
@@ -53,7 +61,7 @@ export default function CorridaGame() {
       setSize({ w, h });
     };
     const ro = new ResizeObserver(fit);
-    ro.observe(wrap);
+    ro.observe(root);
     fit();
 
     return () => {
@@ -67,10 +75,9 @@ export default function CorridaGame() {
     const onKey = (e: KeyboardEvent) => {
       const game = gameRef.current;
       if (!game || e.repeat) return;
-      if (e.code === "Enter") {
-        const p = game.getPhase();
-        if (p === "attract" || p === "over") start();
-      }
+      const p = game.getPhase();
+      if (e.code === "Enter" && !garage && (p === "attract" || p === "over")) start();
+      if (e.code === "Escape" && garage) setGarage(false);
       if (e.code === "KeyM") toggleMute();
     };
     window.addEventListener("keydown", onKey);
@@ -81,28 +88,44 @@ export default function CorridaGame() {
     const game = gameRef.current;
     if (!game) return;
     setResult(null);
+    setGarage(false);
     game.autoGas = touch;
     game.start();
   }
 
   function toggleMute() {
-    setMuted((m) => {
-      const next = !m;
-      gameRef.current?.sound.setMuted(next);
-      saveMuted(next);
-      return next;
+    const next = updateProgress((p) => {
+      p.muted = !p.muted;
     });
+    gameRef.current?.sound.setMuted(next.muted);
+    setProgress(next);
+  }
+
+  function openGarage() {
+    setProgress(loadProgress());
+    setGarage(true);
+  }
+
+  function closeGarage() {
+    gameRef.current?.refreshCar();
+    setGarage(false);
+  }
+
+  function quitToMenu() {
+    gameRef.current?.quitToMenu();
+    setResult(null);
   }
 
   function press(key: Key, down: boolean) {
     gameRef.current?.setKey(key, down);
+    setPressed((s) => (s[key] === down ? s : { ...s, [key]: down }));
   }
 
-  const touchButton = (key: Key, label: string, className: string) => (
+  const touchButton = (key: Key, label: string, className: string, aria: string) => (
     <button
       type="button"
-      aria-label={label}
-      className={`pointer-events-auto select-none touch-none rounded-2xl border border-white/20 bg-white/10 font-black text-white/80 backdrop-blur-sm active:bg-white/25 ${className}`}
+      aria-label={aria}
+      className={`drfl-tb ${className} ${pressed[key] ? "on" : ""}`}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         press(key, true);
@@ -117,22 +140,24 @@ export default function CorridaGame() {
 
   const driving = phase === "playing" || phase === "countdown";
   const hudScale = Math.min(size.h / 540, size.w / 760);
+  const fmt = (n: number) => n.toLocaleString("pt-BR");
 
   return (
-    <div ref={wrapRef} className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
-      <div className="relative" style={{ width: size.w, height: size.h }}>
-        <canvas ref={canvasRef} className="block h-full w-full" />
+    <div ref={rootRef} className="drfl-root">
+      <div className="drfl-stage" style={{ width: size.w, height: size.h }}>
+        <canvas ref={canvasRef} />
 
         {/* Dirigindo, os botões ficam embaixo dos corações do HUD (mesma escala do canvas). */}
         <div
-          className={`absolute z-20 flex gap-2 ${driving ? "" : "right-3 top-3"}`}
-          style={driving ? { left: 18 * hudScale, top: 114 * hudScale } : undefined}
+          className="drfl-chips"
+          style={driving ? { left: 18 * hudScale, top: 114 * hudScale } : { right: 12, top: 12 }}
+          hidden={garage}
         >
           {driving && (
             <button
               type="button"
+              className="drfl-chip"
               onClick={() => gameRef.current?.togglePause()}
-              className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-sm text-white/80 hover:bg-black/60"
               aria-label="Pausar"
             >
               ❚❚
@@ -140,131 +165,121 @@ export default function CorridaGame() {
           )}
           <button
             type="button"
+            className="drfl-chip"
             onClick={toggleMute}
-            className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-sm text-white/80 hover:bg-black/60"
-            aria-label={muted ? "Ligar som" : "Desligar som"}
+            aria-label={progress.muted ? "Ligar som" : "Desligar som"}
           >
-            {muted ? "🔇" : "🔊"}
+            {progress.muted ? "🔇" : "🔊"}
           </button>
         </div>
       </div>
 
-      {phase === "attract" && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gradient-to-b from-black/60 via-black/30 to-black/70 px-6 text-center">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.4em] text-violet-300/80">corrida noturna</p>
-          <h1
-            className="mb-3 text-6xl font-black italic tracking-tight text-[#ff2d95] sm:text-8xl"
-            style={neon("#ff2d95")}
-          >
-            999
+      {phase === "attract" && !garage && (
+        <div className="drfl-overlay drfl-menu">
+          <div className="drfl-topbar">
+            <span className="drfl-1p">1P</span>
+            <span className="drfl-heartcount">♥ {fmt(progress.hearts)}</span>
+          </div>
+          <p className="drfl-eyebrow">999 apresenta</p>
+          <h1 className="drfl-logo">
+            <span className="drfl-logo-line">DEATH RACE</span>
+            <span className="drfl-logo-for">FOR</span>
+            <span className="drfl-logo-line">LOVE</span>
           </h1>
-          <p className="mb-6 max-w-md text-sm text-violet-100/80 sm:text-base">
-            Atravesse a cidade antes do tempo acabar. Cada checkpoint dá mais segundos. Pegue{" "}
-            <span className="font-bold text-[#ff2d95]">9 corações seguidos</span> e o negativo vira positivo: modo 999,
-            mais rápido, e quem bater em você é que voa.
+          <span className="drfl-plate">999</span>
+          <p className="drfl-lede">
+            Chicago de madrugada, uma etapa pra cada faixa do álbum. Drift nas curvas carrega o turbo, passar raspando
+            nos carros sobe o multiplicador e <b>9 corações seguidos</b> transformam o negativo em positivo.
           </p>
-          <button
-            type="button"
-            onClick={start}
-            className="mb-5 rounded-full bg-[#ff2d95] px-10 py-3 text-lg font-black italic tracking-wide text-white shadow-[0_0_30px_rgba(255,45,149,0.6)] transition hover:scale-105 hover:bg-[#ff4da6]"
-          >
-            CORRER
+          <button type="button" className="drfl-go" onClick={start}>
+            <span className="drfl-blink">APERTE START</span>
           </button>
-          {best > 0 && <p className="mb-4 text-sm text-violet-200/70">Recorde: {best.toLocaleString("pt-BR")}</p>}
-          <p className="max-w-md text-xs text-violet-200/50">
-            {touch
-              ? "Acelera sozinho. Segure ◀ ▶ pra virar e FREIO pra frear."
-              : "← → ou A D: direção · ↑ ou W: acelerar · ↓ ou espaço: frear · P: pausa · M: som · Enter: correr"}
+          <div className="drfl-row">
+            <button type="button" className="drfl-ghost" onClick={openGarage}>
+              GARAGEM
+            </button>
+            {progress.best > 0 && <span className="drfl-best">Recorde: {fmt(progress.best)}</span>}
+          </div>
+          <p className="drfl-help">
+            {touch ? (
+              <>Acelera sozinho. ◀ ▶ vira. Segure DRIFT virando pra derrapar e solte pro turbo.</>
+            ) : (
+              <>
+                <kbd>← →</kbd> direção · <kbd>↑</kbd> acelerar · <kbd>↓</kbd> frear · segure <kbd>ESPAÇO</kbd> virando
+                pra derrapar, solte pro turbo · <kbd>P</kbd> pausa · <kbd>M</kbd> som
+              </>
+            )}
           </p>
-          <Link
-            href="/"
-            className="mt-6 text-xs text-violet-300/50 underline-offset-4 hover:text-violet-200 hover:underline"
-          >
-            ← voltar ao site
-          </Link>
+          <p className="drfl-tribute">fan game em homenagem a Juice WRLD (1998–2019) · 999</p>
+          {footer && <div className="drfl-footer">{footer}</div>}
         </div>
       )}
+
+      {garage && <Garage progress={progress} onChange={setProgress} onClose={closeGarage} />}
 
       {phase === "paused" && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-sm">
-          <h2 className="mb-4 text-4xl font-black italic text-white" style={neon("#b26bff")}>
-            PAUSADO
-          </h2>
-          <button
-            type="button"
-            onClick={() => gameRef.current?.togglePause()}
-            className="w-48 rounded-full bg-[#b26bff] py-2.5 font-black italic text-white hover:bg-[#c28aff]"
-          >
+        <div className="drfl-overlay drfl-pause">
+          <h2 className="drfl-h2">PAUSADO</h2>
+          <button type="button" className="drfl-go" onClick={() => gameRef.current?.togglePause()}>
             CONTINUAR
           </button>
-          <button
-            type="button"
-            onClick={start}
-            className="w-48 rounded-full border border-white/25 py-2.5 font-bold text-white/85 hover:bg-white/10"
-          >
+          <button type="button" className="drfl-ghost" onClick={start}>
             Recomeçar
           </button>
-          <button
-            type="button"
-            onClick={() => gameRef.current?.quitToMenu()}
-            className="w-48 rounded-full py-2 text-sm text-white/60 hover:text-white"
-          >
+          <button type="button" className="drfl-link" onClick={quitToMenu}>
             Menu
           </button>
         </div>
       )}
 
-      {phase === "over" && result && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/65 px-6 text-center backdrop-blur-[2px]">
-          <p className="mb-1 text-sm uppercase tracking-[0.3em] text-violet-300/80">
-            {result.reason === "time" ? "o tempo acabou" : "seus corações acabaram"}
-          </p>
-          <h2 className="mb-4 text-5xl font-black italic text-[#ff2d55]" style={neon("#ff2d55")}>
-            FIM DA LINHA
-          </h2>
-          <p className="text-5xl font-black italic text-white">{result.score.toLocaleString("pt-BR")}</p>
+      {phase === "over" && result && !garage && (
+        <div className="drfl-overlay drfl-over">
+          <p className="drfl-eyebrow">{result.reason === "time" ? "o tempo acabou" : "seu coração não aguentou"}</p>
+          <h2 className="drfl-h2">LEGENDS NEVER DIE</h2>
+          <p className="drfl-score">{fmt(result.score)}</p>
           {result.newBest ? (
-            <p className="mt-2 text-sm font-bold text-[#ffd166]" style={neon("#ffb627")}>
-              NOVO RECORDE
-            </p>
+            <p className="drfl-newbest">NOVO RECORDE</p>
           ) : (
-            <p className="mt-2 text-sm text-violet-200/60">Recorde: {result.best.toLocaleString("pt-BR")}</p>
+            <p className="drfl-best">Recorde: {fmt(result.best)}</p>
           )}
-          <div className="mb-6 mt-5 flex gap-6 text-sm text-violet-100/80">
+          <div className="drfl-stats">
             <span>
-              Etapa <b className="text-white">{result.stage}</b>
+              <b>{result.stageName}</b>etapa {result.stage}
             </span>
             <span>
-              <b className="text-white">{result.distanceKm.toFixed(1)}</b> km
+              <b>{result.distanceKm.toFixed(1)}</b>km
             </span>
             <span>
-              <b className="text-[#ff2d95]">♥</b> <b className="text-white">{result.hearts}</b>
+              <b>x{result.maxMult}</b>maior multiplicador
+            </span>
+            <span>
+              <b>{result.nearMisses}</b>raspões
             </span>
           </div>
-          <button
-            type="button"
-            onClick={start}
-            className="mb-3 rounded-full bg-[#ff2d95] px-8 py-3 font-black italic text-white shadow-[0_0_30px_rgba(255,45,149,0.6)] transition hover:scale-105 hover:bg-[#ff4da6]"
-          >
+          <p className="drfl-earned">
+            <b>+{result.earned} ♥</b> pra garagem · total {fmt(result.wallet)}
+          </p>
+          <button type="button" className="drfl-go" onClick={start}>
             CORRER DE NOVO
           </button>
-          <button
-            type="button"
-            onClick={() => gameRef.current?.quitToMenu()}
-            className="text-sm text-white/60 hover:text-white"
-          >
-            Menu
-          </button>
+          <div className="drfl-row">
+            <button type="button" className="drfl-ghost" onClick={openGarage}>
+              GARAGEM
+            </button>
+            <button type="button" className="drfl-link" onClick={quitToMenu}>
+              Menu
+            </button>
+          </div>
         </div>
       )}
 
       {touch && driving && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between p-3">
-          <div className="flex gap-3">
-            {touchButton("left", "◀", "h-20 w-20 text-3xl")}
-            {touchButton("right", "▶", "h-20 w-20 text-3xl")}
+        <div className="drfl-touch">
+          <div className="drfl-pad">
+            {touchButton("left", "◀", "drfl-arrow", "Virar à esquerda")}
+            {touchButton("right", "▶", "drfl-arrow", "Virar à direita")}
           </div>
-          {touchButton("down", "FREIO", "mb-12 h-16 w-24 text-sm tracking-widest")}
+          {touchButton("drift", "DRIFT", "drfl-drift", "Drift (sem virar, freia)")}
         </div>
       )}
     </div>
