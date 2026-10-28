@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { carById } from "@/lib/corrida/cars";
 import { Game, Phase, RunResult } from "@/lib/corrida/engine";
 import { loadProgress, Progress, updateProgress } from "@/lib/corrida/progress";
+import { TitleScene } from "@/lib/corrida/title";
 import Garage from "./Garage";
 import "./corrida.css";
 
@@ -11,38 +13,64 @@ const MAX_ASPECT = 2.2;
 const MAX_INTERNAL_WIDTH = 1600;
 
 type Key = "left" | "right" | "drift";
+type Screen = "splash" | "menu" | "garage" | "records" | "options" | "intro" | "race";
+
+const DIM: Record<Screen, number> = {
+  splash: 0.45,
+  menu: 0,
+  garage: 0.7,
+  records: 0.7,
+  options: 0.7,
+  intro: 0,
+  race: 0,
+};
+
+const fmt = (n: number) => n.toLocaleString("pt-BR");
 
 // Este componente só roda no cliente (carregado com ssr: false), então
 // pode ler localStorage e matchMedia direto nos inicializadores de estado.
-export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
+export default function CorridaGame({ footer, titleTrack }: { footer?: React.ReactNode; titleTrack?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const titleCanvasRef = useRef<HTMLCanvasElement>(null);
+  const menuRef = useRef<HTMLElement>(null);
+  const againRef = useRef<HTMLButtonElement>(null);
   const gameRef = useRef<Game | null>(null);
+  const titleRef = useRef<TitleScene | null>(null);
+  const [screen, setScreen] = useState<Screen>("splash");
   const [phase, setPhase] = useState<Phase>("attract");
   const [result, setResult] = useState<RunResult | null>(null);
   const [progress, setProgress] = useState<Progress>(() => loadProgress());
-  const [garage, setGarage] = useState(false);
   const [touch] = useState(() => window.matchMedia("(pointer: coarse)").matches);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pressed, setPressed] = useState<Record<Key, boolean>>({ left: false, right: false, drift: false });
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const titleCanvas = titleCanvasRef.current;
     const root = rootRef.current;
-    if (!canvas || !root) return;
+    if (!canvas || !titleCanvas || !root) return;
 
+    const saved = loadProgress();
     const game = new Game(canvas, {
-      onPhase: (p) => {
-        setPhase(p);
-        if (p === "attract") setProgress(loadProgress());
-      },
+      onPhase: setPhase,
       onGameOver: (r) => {
         setResult(r);
         setProgress(loadProgress());
       },
     });
-    game.sound.setMuted(loadProgress().muted);
+    game.setIdle(true);
+    game.setCrt(saved.crt);
+    game.sound.setMuted(saved.muted);
+    game.sound.setVolumes(saved.musicVol, saved.sfxVol);
     gameRef.current = game;
+
+    const title = new TitleScene(titleCanvas, carById(saved.car), {
+      door: () => game.sound.door(),
+      rev: () => game.sound.rev(),
+    });
+    title.setCrt(saved.crt);
+    titleRef.current = title;
 
     // A fonte de display vem do CSS (next/font no site, Google Fonts no artefato).
     const family = getComputedStyle(root).getPropertyValue("--font-drfl").trim() || '"Racing Sans One"';
@@ -66,54 +94,123 @@ export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
 
     return () => {
       ro.disconnect();
+      title.destroy();
       game.destroy();
+      titleRef.current = null;
       gameRef.current = null;
     };
   }, []);
 
   useEffect(() => {
+    titleRef.current?.setDim(DIM[screen]);
+    if (screen === "menu") menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [screen]);
+
+  useEffect(() => {
+    if (phase === "over" && result) againRef.current?.focus();
+  }, [phase, result]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const game = gameRef.current;
-      if (!game || e.repeat) return;
-      const p = game.getPhase();
-      if (e.code === "Enter" && !garage && (p === "attract" || p === "over")) start();
-      if (e.code === "Escape" && garage) setGarage(false);
-      if (e.code === "KeyM") toggleMute();
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.code === "KeyM") {
+        toggleMute();
+        return;
+      }
+      if (screen === "splash") {
+        e.preventDefault();
+        enterMenu();
+      } else if (screen === "intro") {
+        titleRef.current?.skipIntro();
+      } else if (screen === "menu" && (e.code === "ArrowDown" || e.code === "ArrowUp")) {
+        e.preventDefault();
+        const buttons = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+        const i = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const next = buttons[(i + (e.code === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length];
+        next?.focus();
+        gameRef.current?.sound.tick();
+      } else if (e.code === "Escape" && (screen === "garage" || screen === "records" || screen === "options")) {
+        backToMenu();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  function start() {
+  function enterMenu() {
+    const game = gameRef.current;
+    if (!game) return;
+    game.sound.init();
+    game.sound.setVolumes(progress.musicVol, progress.sfxVol);
+    game.sound.playTitle(titleTrack ?? null);
+    setScreen("menu");
+  }
+
+  function play() {
+    const game = gameRef.current;
+    const title = titleRef.current;
+    if (!game || !title) return;
+    game.sound.stopTitle(3);
+    setScreen("intro");
+    title.playIntro(startRace);
+  }
+
+  function startRace() {
     const game = gameRef.current;
     if (!game) return;
     setResult(null);
-    setGarage(false);
+    setScreen("race");
+    game.setIdle(false);
     game.autoGas = touch;
     game.start();
   }
 
-  function toggleMute() {
-    const next = updateProgress((p) => {
-      p.muted = !p.muted;
-    });
-    gameRef.current?.sound.setMuted(next.muted);
+  function retry() {
+    const game = gameRef.current;
+    if (!game) return;
+    setResult(null);
+    game.autoGas = touch;
+    game.start();
+  }
+
+  function toMenu(next: Screen = "menu") {
+    const game = gameRef.current;
+    const title = titleRef.current;
+    if (!game || !title) return;
+    game.quitToMenu();
+    game.setIdle(true);
+    game.sound.stopMusic();
+    game.sound.playTitle(titleTrack ?? null);
+    const p = loadProgress();
+    setProgress(p);
+    title.reset();
+    title.setCar(carById(p.car));
+    setResult(null);
+    setScreen(next);
+  }
+
+  function backToMenu() {
+    const p = loadProgress();
+    setProgress(p);
+    titleRef.current?.setCar(carById(p.car));
+    gameRef.current?.refreshCar();
+    setScreen("menu");
+  }
+
+  function saveSettings(change: (p: Progress) => void) {
+    const next = updateProgress(change);
+    const game = gameRef.current;
+    game?.sound.setMuted(next.muted);
+    game?.sound.setVolumes(next.musicVol, next.sfxVol);
+    game?.setCrt(next.crt);
+    titleRef.current?.setCrt(next.crt);
     setProgress(next);
   }
 
-  function openGarage() {
-    setProgress(loadProgress());
-    setGarage(true);
-  }
-
-  function closeGarage() {
-    gameRef.current?.refreshCar();
-    setGarage(false);
-  }
-
-  function quitToMenu() {
-    gameRef.current?.quitToMenu();
-    setResult(null);
+  function toggleMute() {
+    saveSettings((p) => {
+      p.muted = !p.muted;
+    });
   }
 
   function press(key: Key, down: boolean) {
@@ -138,22 +235,34 @@ export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
     </button>
   );
 
-  const driving = phase === "playing" || phase === "countdown";
+  const race = screen === "race";
+  const driving = race && (phase === "playing" || phase === "countdown");
   const hudScale = Math.min(size.h / 540, size.w / 760);
-  const fmt = (n: number) => n.toLocaleString("pt-BR");
+  const muteButton = (
+    <button
+      type="button"
+      className="drfl-chip"
+      onClick={toggleMute}
+      aria-label={progress.muted ? "Ligar som" : "Desligar som"}
+    >
+      {progress.muted ? "🔇" : "🔊"}
+    </button>
+  );
+
+  const logo = (
+    <h1 className="drfl-logo">
+      <span className="drfl-logo-line">DEATH RACE</span>
+      <span className="drfl-logo-for">FOR</span>
+      <span className="drfl-logo-line">LOVE</span>
+    </h1>
+  );
 
   return (
     <div ref={rootRef} className="drfl-root">
-      <div className="drfl-stage" style={{ width: size.w, height: size.h }}>
+      <div className="drfl-stage" style={{ width: size.w, height: size.h }} hidden={!race}>
         <canvas ref={canvasRef} />
-
-        {/* Dirigindo, os botões ficam embaixo dos corações do HUD (mesma escala do canvas). */}
-        <div
-          className="drfl-chips"
-          style={driving ? { left: 18 * hudScale, top: 114 * hudScale } : { right: 12, top: 12 }}
-          hidden={garage}
-        >
-          {driving && (
+        {driving && (
+          <div className="drfl-chips" style={{ left: 18 * hudScale, top: 114 * hudScale }}>
             <button
               type="button"
               className="drfl-chip"
@@ -162,77 +271,215 @@ export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
             >
               ❚❚
             </button>
-          )}
-          <button
-            type="button"
-            className="drfl-chip"
-            onClick={toggleMute}
-            aria-label={progress.muted ? "Ligar som" : "Desligar som"}
-          >
-            {progress.muted ? "🔇" : "🔊"}
-          </button>
-        </div>
+            {muteButton}
+          </div>
+        )}
       </div>
 
-      {phase === "attract" && !garage && (
-        <div className="drfl-overlay drfl-menu">
+      <canvas ref={titleCanvasRef} className="drfl-title-canvas" hidden={race} aria-hidden="true" />
+
+      {!race && screen !== "intro" && (
+        <div className="drfl-corner" hidden={screen === "splash"}>
+          {muteButton}
+        </div>
+      )}
+
+      {screen === "splash" && (
+        <div className="drfl-overlay drfl-splash" onPointerDown={enterMenu}>
+          <p className="drfl-eyebrow">999 apresenta</p>
+          {logo}
+          <span className="drfl-plate">999</span>
+          <button type="button" className="drfl-go" onClick={enterMenu}>
+            <span className="drfl-blink">APERTE START</span>
+          </button>
+          <p className="drfl-help">{touch ? "Toque na tela" : "Clique ou aperte qualquer tecla"}</p>
+          <p className="drfl-tribute">fan game em homenagem a Juice WRLD (1998–2019) · 999</p>
+        </div>
+      )}
+
+      {screen === "menu" && (
+        <div className="drfl-title">
           <div className="drfl-topbar">
             <span className="drfl-1p">1P</span>
             <span className="drfl-heartcount">♥ {fmt(progress.hearts)}</span>
           </div>
-          <p className="drfl-eyebrow">999 apresenta</p>
-          <h1 className="drfl-logo">
-            <span className="drfl-logo-line">DEATH RACE</span>
-            <span className="drfl-logo-for">FOR</span>
-            <span className="drfl-logo-line">LOVE</span>
-          </h1>
-          <span className="drfl-plate">999</span>
-          <p className="drfl-lede">
-            Chicago de madrugada, uma etapa pra cada faixa do álbum. Drift nas curvas carrega o turbo, passar raspando
-            nos carros sobe o multiplicador e <b>9 corações seguidos</b> transformam o negativo em positivo.
-          </p>
-          <button type="button" className="drfl-go" onClick={start}>
-            <span className="drfl-blink">APERTE START</span>
-          </button>
-          <div className="drfl-row">
-            <button type="button" className="drfl-ghost" onClick={openGarage}>
-              GARAGEM
-            </button>
-            {progress.best > 0 && <span className="drfl-best">Recorde: {fmt(progress.best)}</span>}
-          </div>
-          <p className="drfl-help">
-            {touch ? (
-              <>Acelera sozinho. ◀ ▶ vira. Segure DRIFT virando pra derrapar e solte pro turbo.</>
-            ) : (
-              <>
-                <kbd>← →</kbd> direção · <kbd>↑</kbd> acelerar · <kbd>↓</kbd> frear · segure <kbd>ESPAÇO</kbd> virando
-                pra derrapar, solte pro turbo · <kbd>P</kbd> pausa · <kbd>M</kbd> som
-              </>
-            )}
-          </p>
-          <p className="drfl-tribute">fan game em homenagem a Juice WRLD (1998–2019) · 999</p>
-          {footer && <div className="drfl-footer">{footer}</div>}
+          <header className="drfl-title-logo">{logo}</header>
+          <nav ref={menuRef} className="drfl-mainmenu" aria-label="Menu principal">
+            {(
+              [
+                ["JOGAR", play],
+                ["GARAGEM", () => setScreen("garage")],
+                ["RECORDES", () => setScreen("records")],
+                ["OPÇÕES", () => setScreen("options")],
+              ] as const
+            ).map(([label, action], i) => (
+              <button
+                key={label}
+                type="button"
+                className="drfl-menu-btn"
+                style={{ animationDelay: `${i * 70}ms` }}
+                onClick={action}
+                onMouseEnter={(e) => {
+                  e.currentTarget.focus();
+                  gameRef.current?.sound.tick();
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <footer className="drfl-title-foot">
+            {progress.best > 0 && <span>Recorde: {fmt(progress.best)}</span>}
+            <span className="drfl-tribute">fan game em homenagem a Juice WRLD (1998–2019) · 999</span>
+            {footer && <span className="drfl-footer">{footer}</span>}
+          </footer>
         </div>
       )}
 
-      {garage && <Garage progress={progress} onChange={setProgress} onClose={closeGarage} />}
+      {screen === "intro" && (
+        <button type="button" className="drfl-skip" onClick={() => titleRef.current?.skipIntro()}>
+          PULAR ▸
+        </button>
+      )}
 
-      {phase === "paused" && (
+      {screen === "garage" && <Garage progress={progress} onChange={setProgress} onClose={backToMenu} />}
+
+      {screen === "records" && (
+        <div className="drfl-overlay drfl-sub">
+          <div className="drfl-sub-head">
+            <h2 className="drfl-h2">RECORDES</h2>
+            <span className="drfl-wallet">♥ {fmt(progress.hearts)}</span>
+          </div>
+          <section className="drfl-panel drfl-records">
+            {progress.runs.length === 0 ? (
+              <p className="drfl-empty">Nenhuma corrida ainda. Seus 10 melhores resultados aparecem aqui.</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Pontos</th>
+                    <th>Etapa</th>
+                    <th>Carro</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {progress.runs.map((r, i) => (
+                    <tr key={`${r.date}-${i}`} className={i === 0 ? "drfl-top" : ""}>
+                      <td>{i + 1}</td>
+                      <td className="drfl-num">{fmt(r.score)}</td>
+                      <td>
+                        {r.stage} · {r.stageName}
+                      </td>
+                      <td>{carById(r.car).name}</td>
+                      <td>{new Date(r.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+          <button type="button" className="drfl-ghost drfl-back" onClick={backToMenu}>
+            VOLTAR
+          </button>
+        </div>
+      )}
+
+      {screen === "options" && (
+        <div className="drfl-overlay drfl-sub">
+          <div className="drfl-sub-head">
+            <h2 className="drfl-h2">OPÇÕES</h2>
+          </div>
+          <section className="drfl-panel drfl-options">
+            <label className="drfl-opt" htmlFor="drfl-music">
+              <span>Música</span>
+              <input
+                id="drfl-music"
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(progress.musicVol * 100)}
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100;
+                  saveSettings((p) => {
+                    p.musicVol = v;
+                  });
+                }}
+              />
+              <b>{Math.round(progress.musicVol * 100)}</b>
+            </label>
+            <label className="drfl-opt" htmlFor="drfl-sfx">
+              <span>Efeitos</span>
+              <input
+                id="drfl-sfx"
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(progress.sfxVol * 100)}
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100;
+                  saveSettings((p) => {
+                    p.sfxVol = v;
+                  });
+                }}
+              />
+              <b>{Math.round(progress.sfxVol * 100)}</b>
+            </label>
+            <label className="drfl-opt drfl-check" htmlFor="drfl-crt">
+              <span>Efeito de TV antiga</span>
+              <input
+                id="drfl-crt"
+                type="checkbox"
+                checked={progress.crt}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  saveSettings((p) => {
+                    p.crt = on;
+                  });
+                }}
+              />
+            </label>
+            <h3>Controles</h3>
+            <dl className="drfl-controls">
+              <dt>← → ou A D</dt>
+              <dd>Virar</dd>
+              <dt>↑ ou W</dt>
+              <dd>Acelerar</dd>
+              <dt>↓ ou S</dt>
+              <dd>Frear</dd>
+              <dt>Espaço (segurando e virando)</dt>
+              <dd>Drift. Solte pra soltar o turbo</dd>
+              <dt>P ou Esc</dt>
+              <dd>Pausar</dd>
+              <dt>M</dt>
+              <dd>Ligar e desligar o som</dd>
+              <dt>No celular</dt>
+              <dd>Acelera sozinho. ◀ ▶ viram e DRIFT derrapa (sem virar, freia)</dd>
+            </dl>
+          </section>
+          <button type="button" className="drfl-ghost drfl-back" onClick={backToMenu}>
+            VOLTAR
+          </button>
+        </div>
+      )}
+
+      {race && phase === "paused" && (
         <div className="drfl-overlay drfl-pause">
           <h2 className="drfl-h2">PAUSADO</h2>
           <button type="button" className="drfl-go" onClick={() => gameRef.current?.togglePause()}>
             CONTINUAR
           </button>
-          <button type="button" className="drfl-ghost" onClick={start}>
+          <button type="button" className="drfl-ghost" onClick={retry}>
             Recomeçar
           </button>
-          <button type="button" className="drfl-link" onClick={quitToMenu}>
+          <button type="button" className="drfl-link" onClick={() => toMenu()}>
             Menu
           </button>
         </div>
       )}
 
-      {phase === "over" && result && !garage && (
+      {race && phase === "over" && result && (
         <div className="drfl-overlay drfl-over">
           <p className="drfl-eyebrow">{result.reason === "time" ? "o tempo acabou" : "seu coração não aguentou"}</p>
           <h2 className="drfl-h2">LEGENDS NEVER DIE</h2>
@@ -259,14 +506,14 @@ export default function CorridaGame({ footer }: { footer?: React.ReactNode }) {
           <p className="drfl-earned">
             <b>+{result.earned} ♥</b> pra garagem · total {fmt(result.wallet)}
           </p>
-          <button type="button" className="drfl-go" onClick={start}>
+          <button ref={againRef} type="button" className="drfl-go" onClick={retry}>
             CORRER DE NOVO
           </button>
           <div className="drfl-row">
-            <button type="button" className="drfl-ghost" onClick={openGarage}>
+            <button type="button" className="drfl-ghost" onClick={() => toMenu("garage")}>
               GARAGEM
             </button>
-            <button type="button" className="drfl-link" onClick={quitToMenu}>
+            <button type="button" className="drfl-link" onClick={() => toMenu()}>
               Menu
             </button>
           </div>

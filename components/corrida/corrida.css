@@ -94,9 +94,6 @@
   content: "";
   flex: 1 0 0;
 }
-.drfl-menu {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.75));
-}
 .drfl-pause {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
@@ -107,7 +104,7 @@
   backdrop-filter: blur(2px);
 }
 .drfl-garage {
-  background: rgba(6, 2, 14, 0.92);
+  background: rgba(6, 2, 14, 0.55);
   justify-content: flex-start;
 }
 
@@ -366,6 +363,242 @@
   font-size: 16px;
 }
 
+/* Tela inicial: a cena (canvas) ocupa tudo e o menu fica por cima. */
+.drfl-title-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+.drfl-corner {
+  position: absolute;
+  z-index: 20;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+}
+.drfl-splash {
+  cursor: pointer;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.6));
+}
+.drfl-splash .drfl-help {
+  margin-top: 14px;
+}
+.drfl-title {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: linear-gradient(90deg, rgba(4, 2, 10, 0.78) 0%, rgba(4, 2, 10, 0.4) 32%, rgba(4, 2, 10, 0) 52%);
+}
+.drfl-title-logo {
+  position: absolute;
+  top: max(18px, 4vh);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.drfl-title-logo .drfl-logo {
+  margin: 0;
+}
+.drfl-title-logo .drfl-logo-line {
+  font-size: clamp(40px, min(8.5vw, 11vh), 96px);
+}
+.drfl-mainmenu {
+  position: absolute;
+  left: max(28px, 5vw, env(safe-area-inset-left, 0px));
+  top: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: clamp(220px, 27vw, 340px);
+}
+.drfl-menu-btn {
+  position: relative;
+  text-align: left;
+  padding: 12px 22px 12px 44px;
+  border: 2px solid rgba(255, 45, 149, 0.55);
+  border-radius: 10px;
+  background: rgba(12, 6, 24, 0.72);
+  font-family: var(--drfl-display);
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: 0.05em;
+  color: var(--drfl-ink);
+  transform: skewX(-9deg);
+  box-shadow:
+    0 0 18px rgba(255, 45, 149, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.12s,
+    background 0.12s,
+    box-shadow 0.12s,
+    color 0.12s;
+  animation: drfl-slide-in 0.45s both cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.drfl-menu-btn::before {
+  content: "▶";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 0.6em;
+  color: var(--drfl-pink);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.drfl-menu-btn:hover,
+.drfl-menu-btn:focus-visible {
+  background: var(--drfl-pink);
+  color: #fff;
+  border-color: #ffd0e8;
+  transform: skewX(-9deg) translateX(10px);
+  box-shadow: 0 0 30px rgba(255, 45, 149, 0.7);
+  outline: none;
+}
+.drfl-menu-btn:hover::before,
+.drfl-menu-btn:focus-visible::before {
+  opacity: 1;
+  color: #fff;
+}
+@keyframes drfl-slide-in {
+  from {
+    opacity: 0;
+    transform: skewX(-9deg) translateX(-40px);
+  }
+}
+.drfl-title-foot {
+  position: absolute;
+  left: max(28px, 5vw, env(safe-area-inset-left, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--drfl-muted);
+}
+.drfl-title-foot .drfl-tribute,
+.drfl-title-foot .drfl-footer {
+  margin: 0;
+}
+.drfl-skip {
+  position: absolute;
+  z-index: 20;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-family: var(--drfl-display);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Recordes e opções */
+.drfl-sub {
+  background: rgba(6, 2, 14, 0.5);
+}
+.drfl-sub-head {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.drfl-sub-head .drfl-h2 {
+  font-size: 36px;
+  margin: 0;
+  text-shadow: 0 0 14px rgba(255, 45, 149, 0.6);
+}
+.drfl-sub .drfl-panel {
+  width: 100%;
+  max-width: 720px;
+  text-align: left;
+}
+.drfl-records {
+  overflow-x: auto;
+}
+.drfl-records table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.drfl-records th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--drfl-muted);
+  padding: 0 10px 8px;
+}
+.drfl-records td {
+  padding: 9px 10px;
+  border-top: 1px solid var(--drfl-line);
+  white-space: nowrap;
+}
+.drfl-records .drfl-num {
+  font-family: var(--drfl-display);
+  font-size: 18px;
+}
+.drfl-records .drfl-top td {
+  color: var(--drfl-gold);
+}
+.drfl-empty {
+  margin: 8px 0;
+  color: var(--drfl-muted);
+}
+.drfl-options h3 {
+  font-family: var(--drfl-display);
+  font-weight: 400;
+  font-size: 22px;
+  margin: 18px 0 8px;
+}
+.drfl-opt {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--drfl-line);
+  font-size: 15px;
+}
+.drfl-opt b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.drfl-opt input[type="range"] {
+  width: 100%;
+  accent-color: var(--drfl-pink);
+}
+.drfl-check {
+  grid-template-columns: 1fr auto;
+}
+.drfl-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--drfl-pink);
+}
+.drfl-controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+.drfl-controls dt {
+  font-weight: 700;
+  color: var(--drfl-ink);
+  white-space: nowrap;
+}
+.drfl-controls dd {
+  margin: 0;
+  color: var(--drfl-muted);
+}
+
 /* Garagem */
 .drfl-garage-head {
   width: 100%;
@@ -617,7 +850,62 @@
     margin-top: 8px;
   }
 }
+/* Celular deitado: botões menores pra caber os quatro. */
+@media (max-height: 520px) {
+  .drfl-mainmenu {
+    top: 30%;
+    gap: 8px;
+    width: clamp(200px, 30vw, 300px);
+  }
+  .drfl-menu-btn {
+    padding: 7px 18px 7px 38px;
+    font-size: 19px;
+  }
+  .drfl-title-foot {
+    font-size: 11px;
+  }
+}
+/* Celular em pé: logo em cima, cena no meio, botões embaixo. */
+@media (max-aspect-ratio: 11/10) {
+  .drfl-title {
+    background: linear-gradient(
+      180deg,
+      rgba(4, 2, 10, 0.55) 0%,
+      rgba(4, 2, 10, 0) 30%,
+      rgba(4, 2, 10, 0) 58%,
+      rgba(4, 2, 10, 0.85) 72%
+    );
+  }
+  .drfl-mainmenu {
+    left: 50%;
+    top: auto;
+    bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 64px);
+    translate: -50% 0;
+    width: min(82vw, 340px);
+    gap: 10px;
+  }
+  .drfl-menu-btn {
+    padding: 10px 20px 10px 40px;
+    font-size: 22px;
+  }
+  .drfl-title-foot {
+    left: 0;
+    right: 0;
+    align-items: center;
+    text-align: center;
+    font-size: 11px;
+  }
+}
 @media (max-width: 760px) {
+  .drfl-controls {
+    grid-template-columns: 1fr;
+  }
+  .drfl-controls dt {
+    white-space: normal;
+  }
+  .drfl-opt {
+    grid-template-columns: 6rem minmax(0, 1fr) 2.5rem;
+  }
   .drfl-garage-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -626,6 +914,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .drfl-menu-btn {
+    animation: none;
+    transition: none;
+  }
   .drfl-go {
     transition: none;
   }

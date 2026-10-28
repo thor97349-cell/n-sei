@@ -19,7 +19,7 @@ import {
   mixPalette,
   Palette,
 } from "./draw";
-import { loadProgress, updateProgress } from "./progress";
+import { loadProgress, recordRun, updateProgress } from "./progress";
 import { Stage, stageAt } from "./stages";
 import {
   buildTrack,
@@ -160,6 +160,8 @@ export class Game {
   private ctx: CanvasRenderingContext2D;
   private backdrop = new Backdrop();
   private scanlines: HTMLCanvasElement | null = null;
+  private crt = true;
+  private idle = false;
   private segments: Segment[];
   private trackLength: number;
   private cars: Car[] = [];
@@ -271,6 +273,17 @@ export class Game {
     this.height = this.canvas.height = Math.max(1, Math.round(height));
     this.backdrop.resize(this.width, this.height);
     this.scanlines = makeScanlines(this.width, this.height);
+  }
+
+  // Parado atrás da tela inicial: não simula nem desenha.
+  setIdle(idle: boolean) {
+    this.idle = idle;
+    this.last = performance.now();
+    this.acc = 0;
+  }
+
+  setCrt(on: boolean) {
+    this.crt = on;
   }
 
   // Família da fonte de display (vinda do CSS), usada no HUD e nos letreiros.
@@ -473,6 +486,11 @@ export class Game {
   }
 
   private frame = (now: number) => {
+    if (this.idle) {
+      this.sound.setEngine(0, false);
+      this.raf = requestAnimationFrame(this.frame);
+      return;
+    }
     const dt = Math.min(0.1, (now - this.last) / 1000);
     this.last = now;
     if (this.phase !== "paused") {
@@ -779,9 +797,13 @@ export class Game {
     const score = Math.floor(this.score);
     const newBest = score > this.best;
     const earned = this.earned;
+    const stageNum = this.stageNum;
+    const stageName = this.stage.name;
+    const carId = this.car.id;
     const progress = updateProgress((p) => {
       p.hearts += earned;
       if (newBest) p.best = score;
+      recordRun(p, { score, stage: stageNum, stageName, car: carId, date: Date.now() });
     });
     this.earned = 0;
     this.best = progress.best;
@@ -1050,7 +1072,7 @@ export class Game {
 
     ctx.restore();
 
-    if (this.scanlines) ctx.drawImage(this.scanlines, 0, 0);
+    if (this.crt && this.scanlines) ctx.drawImage(this.scanlines, 0, 0);
     if (this.phase !== "attract") this.drawHud();
   }
 

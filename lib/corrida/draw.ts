@@ -834,7 +834,10 @@ export function makeScanlines(width: number, height: number) {
   const step = Math.max(3, Math.round(height / 240));
   g.fillStyle = "rgba(0,0,0,0.16)";
   for (let y = 0; y < height; y += step) g.fillRect(0, y, width, Math.max(1, step / 3));
-  const v = g.createRadialGradient(width / 2, height / 2, height * 0.35, width / 2, height / 2, width * 0.75);
+  // Raios pela menor e pela maior dimensão, pra vinheta funcionar também em tela vertical.
+  const inner = Math.min(width, height) * 0.35;
+  const outer = Math.max(Math.max(width, height) * 0.75, inner + 1);
+  const v = g.createRadialGradient(width / 2, height / 2, inner, width / 2, height / 2, outer);
   v.addColorStop(0, "rgba(0,0,0,0)");
   v.addColorStop(1, "rgba(0,0,0,0.55)");
   g.fillStyle = v;

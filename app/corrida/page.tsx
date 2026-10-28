@@ -11,5 +11,7 @@ const CorridaGame = dynamic(() => import("@/components/corrida/CorridaGame"), {
 });
 
 export default function CorridaPage() {
-  return <CorridaGame footer={<Link href="/">← voltar ao site</Link>} />;
+  // A música da tela inicial é opcional: coloque o arquivo em public/corrida/menu.mp3
+  // (fica fora do git). Sem ele, a tela inicial toca a batida do próprio jogo.
+  return <CorridaGame titleTrack="/corrida/menu.mp3" footer={<Link href="/">← voltar ao site</Link>} />;
 }

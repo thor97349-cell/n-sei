@@ -2,6 +2,14 @@
 
 import { CARS, UPGRADES, UpgradeId } from "./cars";
 
+export interface RunRecord {
+  score: number;
+  stage: number;
+  stageName: string;
+  car: string;
+  date: number;
+}
+
 export interface Progress {
   best: number;
   hearts: number;
@@ -9,7 +17,13 @@ export interface Progress {
   car: string;
   upgrades: Record<UpgradeId, number>;
   muted: boolean;
+  runs: RunRecord[]; // as 10 melhores corridas
+  musicVol: number;
+  sfxVol: number;
+  crt: boolean;
 }
+
+export const MAX_RUNS = 10;
 
 const KEY = "corrida-999-progress-v1";
 // Chaves da primeira versão do jogo, migradas na primeira leitura.
@@ -24,6 +38,10 @@ function fresh(): Progress {
     car: CARS[0].id,
     upgrades: { motor: 0, pneus: 0, turbo: 0 },
     muted: false,
+    runs: [],
+    musicVol: 0.8,
+    sfxVol: 0.9,
+    crt: true,
   };
 }
 
@@ -45,6 +63,9 @@ export function loadProgress(): Progress {
   if (!p.owned.includes(CARS[0].id)) p.owned.push(CARS[0].id);
   if (!p.owned.includes(p.car)) p.car = CARS[0].id;
   for (const u of UPGRADES) p.upgrades[u.id] = Math.max(0, Math.min(u.prices.length, p.upgrades[u.id] | 0));
+  if (!Array.isArray(p.runs)) p.runs = [];
+  p.musicVol = Math.max(0, Math.min(1, Number(p.musicVol)));
+  p.sfxVol = Math.max(0, Math.min(1, Number(p.sfxVol)));
   return p;
 }
 
@@ -84,4 +105,8 @@ export function buyUpgrade(id: UpgradeId): Progress | null {
   p.upgrades[id]++;
   saveProgress(p);
   return p;
+}
+
+export function recordRun(p: Progress, run: RunRecord) {
+  p.runs = [...p.runs, run].sort((a, b) => b.score - a.score).slice(0, MAX_RUNS);
 }

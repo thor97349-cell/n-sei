@@ -64,6 +64,14 @@ export class Sound {
   private nextVariant = 0;
   private last808 = 0;
   private muted = false;
+  private musicOut: GainNode | null = null;
+  private musicVol = 0.8;
+  private sfxVol = 0.9;
+  private titleEl: HTMLAudioElement | null = null;
+  private titleUrl: string | null = null;
+  private titleWanted = false;
+  private titleFailed = false;
+  private titleFade: ReturnType<typeof setInterval> | null = null;
 
   // Precisa ser chamado a partir de um gesto do usuário (clique/tecla).
   init() {
@@ -83,7 +91,10 @@ export class Sound {
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = "lowpass";
     this.musicFilter.frequency.value = 900;
-    this.musicFilter.connect(this.master);
+    this.musicOut = ctx.createGain();
+    this.musicOut.gain.value = this.musicVol;
+    this.musicFilter.connect(this.musicOut);
+    this.musicOut.connect(this.master);
     this.music = ctx.createGain();
     this.music.gain.value = 0.6;
     this.music.connect(this.musicFilter);
@@ -96,7 +107,7 @@ export class Sound {
     conv.connect(this.musicFilter);
 
     this.sfx = ctx.createGain();
-    this.sfx.gain.value = 0.9;
+    this.sfx.gain.value = this.sfxVol;
     this.sfx.connect(this.master);
 
     const len = ctx.sampleRate;
@@ -182,6 +193,7 @@ export class Sound {
 
   setMuted(muted: boolean) {
     this.muted = muted;
+    if (this.titleEl && !this.titleFade) this.titleEl.volume = muted ? 0 : this.musicVol;
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 0.8, this.ctx.currentTime, 0.05);
   }
 
@@ -201,7 +213,7 @@ export class Sound {
     const f = 45 + speedRatio * 125;
     for (const o of this.engineOscs) o.frequency.setTargetAtTime(f, t, 0.08);
     this.engineFilter.frequency.setTargetAtTime(350 + speedRatio * 900, t, 0.1);
-    this.engineGain.gain.setTargetAtTime(on ? 0.03 + speedRatio * 0.03 : 0, t, 0.15);
+    this.engineGain.gain.setTargetAtTime(on ? (0.03 + speedRatio * 0.03) * this.sfxVol : 0, t, 0.15);
   }
 
   setDrift(on: boolean, level: number) {
@@ -454,7 +466,108 @@ export class Sound {
     this.tone(final ? 880 : 440, this.now(), final ? 0.5 : 0.2, "square", 0.08, 0.005, this.sfx);
   }
 
+  // Volumes de 0 a 1, ajustados na tela de opções.
+  setVolumes(music: number, sfx: number) {
+    this.musicVol = music;
+    this.sfxVol = sfx;
+    if (this.ctx && this.musicOut && this.sfx) {
+      this.musicOut.gain.setTargetAtTime(music, this.ctx.currentTime, 0.05);
+      this.sfx.gain.setTargetAtTime(sfx, this.ctx.currentTime, 0.05);
+    }
+    if (this.titleEl && !this.titleFade) this.titleEl.volume = this.muted ? 0 : music;
+  }
+
+  // Música da tela inicial: um arquivo de áudio, se houver; senão a batida do
+  // jogo abafada, como se tocasse no rádio do carro.
+  playTitle(url: string | null) {
+    this.titleWanted = true;
+    if (this.titleFade) clearInterval(this.titleFade);
+    this.titleFade = null;
+    if (url && !this.titleFailed) {
+      this.stopMusic();
+      if (!this.titleEl || this.titleUrl !== url) {
+        this.titleEl?.pause();
+        const el = new Audio(url);
+        el.loop = true;
+        el.preload = "auto";
+        el.addEventListener("error", () => this.titleFallback());
+        this.titleEl = el;
+        this.titleUrl = url;
+      }
+      this.titleEl.volume = this.muted ? 0 : this.musicVol;
+      void this.titleEl.play().catch(() => this.titleFallback());
+      return;
+    }
+    this.titleFallback();
+  }
+
+  private titleFallback() {
+    this.titleFailed = true;
+    this.titleEl?.pause();
+    if (!this.titleWanted) return;
+    this.setVariant(0);
+    this.startMusic();
+    this.setMuffled(true);
+  }
+
+  // Abaixa a música da tela inicial aos poucos (na arrancada do carro).
+  stopTitle(seconds = 1.2) {
+    this.titleWanted = false;
+    const el = this.titleEl;
+    if (!el || el.paused) return;
+    if (this.titleFade) clearInterval(this.titleFade);
+    const from = el.volume;
+    const started = performance.now();
+    this.titleFade = setInterval(() => {
+      const p = Math.min(1, (performance.now() - started) / (seconds * 1000));
+      el.volume = from * (1 - p);
+      if (p >= 1) {
+        el.pause();
+        if (this.titleFade) clearInterval(this.titleFade);
+        this.titleFade = null;
+      }
+    }, 50);
+  }
+
+  // Clique curtinho ao passar pelos botões do menu.
+  tick() {
+    this.tone(1320, this.now(), 0.05, "square", 0.018, 0.002, this.sfx);
+  }
+
+  door() {
+    const t = this.now();
+    this.hit(t, 0.12, 400, 0.5, this.sfx);
+    this.tone(90, t, 0.15, "sine", 0.25, 0.003, this.sfx);
+  }
+
+  rev() {
+    const ctx = this.ctx;
+    if (!ctx || !this.sfx) return;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const f = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(45, t);
+    o.frequency.exponentialRampToValueAtTime(140, t + 0.35);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.7);
+    o.frequency.exponentialRampToValueAtTime(190, t + 1.4);
+    f.type = "lowpass";
+    f.frequency.value = 900;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+    o.connect(f);
+    f.connect(g);
+    g.connect(this.sfx);
+    o.start(t);
+    o.stop(t + 1.7);
+  }
+
   dispose() {
+    this.titleWanted = false;
+    if (this.titleFade) clearInterval(this.titleFade);
+    this.titleEl?.pause();
     this.stopMusic();
     if (this.ctx) void this.ctx.close();
     this.ctx = null;

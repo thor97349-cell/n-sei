@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ffmpeg.wasm copiado de node_modules no build (scripts/copy-ffmpeg-core.mjs)
 /public/editor/vendor/
+
+# música da tela inicial do jogo /corrida (arquivo pessoal, não versionado)
+/public/corrida/*.mp3
