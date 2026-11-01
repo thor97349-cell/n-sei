@@ -47,5 +47,6 @@ export interface PlayerScreen {
 export interface RaceRenderer {
   resize(width: number, height: number): void;
   render(view: RaceView): PlayerScreen;
+  degrade(): boolean;
   dispose(): void;
 }

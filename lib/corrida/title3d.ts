@@ -4,7 +4,6 @@
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
@@ -199,9 +198,50 @@ export class Title3D {
   private width = 0;
   private height = 0;
 
-  static async load(url: string) {
-    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const gltf = await loader.loadAsync(url);
+  // Carrega o personagem de uma pasta com model.txt (o .glb em base64, sem
+  // texturas) e as texturas em .jpg. Assim só há pedidos de texto e imagem pro
+  // próprio site: nada de WebAssembly, blob: ou data:, que páginas com CSP
+  // rígida (como os artefatos) bloqueiam sem avisar.
+  static async load(base: string) {
+    const res = await fetch(base + "model.txt");
+    if (!res.ok) throw new Error(`modelo não encontrado (${res.status})`);
+    const bin = Uint8Array.from(atob((await res.text()).trim()), (c) => c.charCodeAt(0));
+    const gltf = await new GLTFLoader().parseAsync(bin.buffer, "");
+    const tl = new THREE.TextureLoader();
+    const tex = async (file: string, color: boolean) => {
+      const t = await tl.loadAsync(base + file);
+      if (color) t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      return t;
+    };
+    const [body, bodyN, head, headN, acc, accN] = await Promise.all([
+      tex("body.jpg", true),
+      tex("body_n.jpg", false),
+      tex("head.jpg", true),
+      tex("head_n.jpg", false),
+      tex("acc.jpg", true),
+      tex("acc_n.jpg", false),
+    ]);
+    const maps: Record<string, [THREE.Texture, THREE.Texture | null, number]> = {
+      Body: [body, bodyN, 0.78],
+      Head: [head, headN, 0.55],
+      Eyes: [head, null, 0.25],
+      FaceAcc: [acc, accN, 0.85],
+    };
+    gltf.scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of list as THREE.MeshStandardMaterial[]) {
+        const entry = maps[m.name];
+        if (!entry) continue;
+        m.map = entry[0];
+        m.normalMap = entry[1];
+        m.roughness = entry[2];
+        m.metalness = 0;
+        m.needsUpdate = true;
+      }
+    });
     return gltf.scene;
   }
 

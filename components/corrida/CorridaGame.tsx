@@ -117,7 +117,7 @@ export default function CorridaGame({
     if (saved.graphics3d && gl) {
       try {
         const coarse = window.matchMedia("(pointer: coarse)").matches;
-        game.setRenderer3D(new Renderer3D(gl, fontRef.current, !coarse));
+        game.setRenderer3D(new Renderer3D(gl, fontRef.current, coarse));
       } catch {
         // Sem WebGL: fica no 2D clássico.
       }
@@ -127,7 +127,7 @@ export default function CorridaGame({
     // Tela inicial 3D: carrega o modelo em segundo plano e troca quando estiver pronto.
     const gl3 = title3dRef.current;
     const overlay = titleOverlayRef.current;
-    if (juiceModel && saved.graphics3d && gl3 && overlay) {
+    if (juiceModel && gl3 && overlay) {
       void import("@/lib/corrida/title3d")
         .then(async ({ Title3D }) => {
           const model = await Title3D.load(juiceModel);
@@ -289,7 +289,7 @@ export default function CorridaGame({
       return;
     }
     try {
-      game.setRenderer3D(new Renderer3D(gl, fontRef.current, !touch));
+      game.setRenderer3D(new Renderer3D(gl, fontRef.current, touch));
     } catch {
       game.setRenderer3D(null);
     }

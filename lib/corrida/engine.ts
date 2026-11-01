@@ -507,13 +507,16 @@ export class Game {
       this.raf = requestAnimationFrame(this.frame);
       return;
     }
-    const dt = Math.min(0.1, (now - this.last) / 1000);
+    // Até 0,25 s por quadro: em aparelho lento o jogo pula quadros em vez de
+    // entrar em câmera lenta.
+    const dt = Math.min(0.25, (now - this.last) / 1000);
     this.last = now;
     if (this.renderer3d && this.checkSpeed && this.phase === "playing") {
       this.slowTime = dt > 1 / 22 ? this.slowTime + dt : Math.max(0, this.slowTime - dt * 2);
       if (this.slowTime > 4) {
         this.slowTime = 0;
-        this.callbacks.onSlow3D?.();
+        // Primeiro tenta baixar a qualidade; só desiste do 3D no mínimo.
+        if (!this.renderer3d.degrade()) this.callbacks.onSlow3D?.();
       }
     }
     if (this.phase !== "paused") {
@@ -536,6 +539,8 @@ export class Game {
     const playerSegment = this.findSegment(this.position + PLAYER_Z);
     const speedPercent = this.speed / MAX_SPEED;
     const dx = dt * 2 * speedPercent;
+    // A direção ganha uma força mínima: em velocidade baixa o carro ainda vira.
+    const steerDx = this.speed > MAX_SPEED * 0.04 ? dt * 2 * Math.max(speedPercent, 0.45) : 0;
     const startPosition = this.position;
     const steer = this.keys.left ? -1 : this.keys.right ? 1 : 0;
 
@@ -573,7 +578,7 @@ export class Game {
         const after = this.driftLevel();
         if (after > before) this.sound.pickup(after * 3);
       } else {
-        this.playerX += steer * dx;
+        this.playerX += steer * steerDx;
       }
     } else {
       // Piloto automático da tela de menu: compensa a curva e volta pro centro.

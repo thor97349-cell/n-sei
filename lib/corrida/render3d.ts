@@ -35,6 +35,9 @@ import { PlayerScreen, RaceRenderer, RaceView } from "./view";
 const W = ROAD_WIDTH;
 const BACK = 8;
 const DRAW = 260;
+const DRAW_LOW = 160;
+// Escalas de resolução do 3D; o celular começa no meio e desce se ficar lento.
+const SCALES = [1, 0.8, 0.62, 0.48];
 const TRIS_PER_SEG = 14;
 
 class StripMesh {
@@ -147,14 +150,20 @@ export class Renderer3D implements RaceRenderer {
   private lastPos = 0;
   private colors = new Map<string, THREE.Color>();
   private entries: Entry[] = [];
+  private drawDistance: number;
+  private scaleIndex: number;
+  private buildingStep: number;
 
   constructor(
     canvas: HTMLCanvasElement,
     private font: string,
-    useBloom: boolean,
+    lowPower: boolean,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(1);
+    this.drawDistance = lowPower ? DRAW_LOW : DRAW;
+    this.scaleIndex = lowPower ? 2 : 0;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !lowPower, powerPreference: "high-performance" });
+    this.renderer.setPixelRatio(SCALES[this.scaleIndex]);
+    this.buildingStep = lowPower ? 12 : 8;
     // Neutral preserva o matiz das cores fortes (o ACES deixava o vermelho salmão).
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -183,7 +192,7 @@ export class Renderer3D implements RaceRenderer {
     this.paintStrip = new StripMesh((DRAW + BACK) * (TRIS_PER_SEG - 6), paintMat);
     this.scene.add(this.lit.mesh, this.paintStrip.mesh);
 
-    if (useBloom) {
+    if (!lowPower) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.45, 0.9);
@@ -234,6 +243,22 @@ export class Renderer3D implements RaceRenderer {
     this.bloom?.resolution.set(this.width / 2, this.height / 2);
     this.sky.width = Math.min(1024, Math.round(this.width / 2));
     this.sky.height = Math.min(576, Math.round(this.height / 2));
+  }
+
+  // Baixa a qualidade um degrau (tira o bloom, depois a resolução). Retorna
+  // false quando já está no mínimo.
+  degrade() {
+    if (this.composer) {
+      this.composer.dispose();
+      this.composer = null;
+      this.bloom = null;
+      return true;
+    }
+    if (this.scaleIndex >= SCALES.length - 1) return false;
+    this.scaleIndex++;
+    this.renderer.setPixelRatio(SCALES[this.scaleIndex]);
+    this.renderer.setSize(this.width, this.height, false);
+    return true;
   }
 
   dispose() {
@@ -296,7 +321,7 @@ export class Renderer3D implements RaceRenderer {
     this.entries.length = 0;
     let x = 0;
     let dx = -(segs[baseIndex].curve * basePercent);
-    for (let i = -BACK; i < DRAW; i++) {
+    for (let i = -BACK; i < this.drawDistance; i++) {
       const seg = segs[(((baseIndex + i) % n) + n) % n];
       let x1 = 0;
       let x2 = 0;
@@ -472,7 +497,7 @@ export class Renderer3D implements RaceRenderer {
       }
 
       // Prédios dos dois lados, a cada 8 segmentos.
-      if (e.i >= 0 && seg.index % 8 === 0) {
+      if (e.i >= 0 && seg.index % this.buildingStep === 0) {
         for (const side of [-1, 1]) {
           if (side < 0 && view.stage.lake) continue;
           const h1 = hash(seg.index * 2 + (side > 0 ? 1 : 0));
@@ -552,7 +577,7 @@ export class Renderer3D implements RaceRenderer {
 
     const fog = this.scene.fog as THREE.FogExp2;
     fog.color.set(pal.fog);
-    fog.density = Math.sqrt(view.fogDensity) / (DRAW * SEGMENT_LENGTH * S);
+    fog.density = Math.sqrt(view.fogDensity) / (this.drawDistance * SEGMENT_LENGTH * S);
     this.hemi.color.set(pal.skyMid).lerp(this.color("#8a70c0"), 0.5);
     this.hemi.groundColor.set(pal.ground[0]);
     this.hemi.intensity = 1.4 + view.lightning * 6;
