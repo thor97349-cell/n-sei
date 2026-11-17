@@ -10,17 +10,32 @@
    ---------------------------------------------------------------------
    - pergunta: o que a pessoa digita (letra por letra)
    - resposta: uma linha por item. Use **texto** para negrito.
-   Dica: mantenha cada resposta com no máximo ~5 linhas curtas.
+               Uma linha vazia ("") começa um novo parágrafo.
+   - anexo (opcional): foto de conta que a pessoa anexa antes de perguntar
+   Dica: mantenha cada resposta curta (o chat rola sozinho se passar da janela).
    ===================================================================== */
 const CONVERSAS = [
   {
+    anexo: {
+      tipo: "conta-de-luz",
+      referencia: "OUT/2026",
+      vencimento: "10/11/2026",
+      consumo: "152 kWh",
+      total: "R$ 148,73",
+      itens: [
+        ["Consumo 152 kWh", "R$ 108,45"],
+        ["Adicional bandeira amarela", "R$ 2,87"],
+        ["Tributos (ICMS, PIS/COFINS)", "R$ 23,21"],
+        ["Contrib. iluminação pública", "R$ 14,20"],
+      ],
+    },
     pergunta: "me ajuda a entender essa conta de luz? 😅",
     resposta: [
-      "Bora! Ela tem 4 partes principais 👇",
-      "⚡ **Consumo:** os kWh que você gastou no mês × a tarifa.",
-      "🚦 **Bandeira:** verde não muda nada; amarela e vermelha somam um extra.",
-      "🧾 **Impostos:** ICMS (do estado) e PIS/Cofins (federais).",
-      "💡 **Iluminação pública:** contribuição da prefeitura pela luz dos postes.",
+      "Vi aqui! Seus R$ 148,73 se dividem assim 👇",
+      "⚡ **Consumo:** 152 kWh × a tarifa = R$ 108,45. É o grosso da conta.",
+      "🚦 **Bandeira amarela:** + R$ 2,87, porque gerar energia ficou mais caro.",
+      "🧾 **Impostos:** R$ 23,21 de ICMS (estado) e PIS/Cofins (federais).",
+      "💡 **Iluminação pública:** R$ 14,20 pra prefeitura cuidar dos postes.",
     ],
   },
   {
@@ -31,6 +46,8 @@ const CONVERSAS = [
       "2️⃣ Destaca **estudos, cursos e projetos**, até os da escola.",
       "3️⃣ Vale **voluntariado, freela** e ajudar no negócio da família.",
       "4️⃣ **Uma página só**, em PDF, e revisa o português 👀",
+      "",
+      "📝 Quer que eu monte o seu? Me manda seu **nome, cidade, contato, escolaridade** e os **cursos que já fez** que eu deixo pronto pra baixar.",
     ],
   },
   {
@@ -50,6 +67,7 @@ const CONFIG = {
   estilo: "normal",            // "normal" ou "cinema" (também dá pra usar ?estilo=cinema na URL)
   fundo: "#ffffff",          // fundo do estilo normal (branco do site; seções cinza: "#f2f2f6")
   fundoCinema: "#3e1f7a",    // fundo do estilo cinema (roxo da seção "Por que existe")
+  legenda: "Prévia ilustrativa. Não há garantia de que a versão final seja assim.",
   placeholder: "Pergunte qualquer coisa…",
   digitandoSegundos: 1.5,    // tempo dos três pontinhos
   leituraSegundos: 3.5,      // tempo parado depois da resposta
@@ -88,7 +106,7 @@ const CONFIG = {
   /* ---------- janela do chat ---------- */
   .cam { position: absolute; inset: 0; perspective: 2200px; }
   .card {
-    position: absolute; left: 0; top: 0; width: 968px; height: 1100px;
+    position: absolute; left: 0; top: 0; width: 968px; height: 1150px;
     transform-origin: 0 0;
     background: #fff; border-radius: 44px;
     border: 1px solid #ebe8f3;
@@ -98,10 +116,8 @@ const CONFIG = {
   .cinema .card { border-color: rgba(255,255,255,.6); box-shadow: 0 70px 140px rgba(12, 2, 40, .55), 0 18px 40px rgba(12, 2, 40, .35); }
 
   .area { flex: 1; position: relative; overflow: hidden; }
-  .msgs {
-    position: absolute; inset: 0; padding: 44px 40px;
-    display: flex; flex-direction: column; gap: 28px; overflow: hidden;
-  }
+  .msgs { position: absolute; inset: 0; overflow: hidden; }
+  .lista { padding: 44px 40px; display: flex; flex-direction: column; gap: 28px; }
   .user {
     align-self: flex-end; max-width: 86%;
     background: linear-gradient(135deg, #8a52f0, var(--roxo));
@@ -110,6 +126,9 @@ const CONFIG = {
     box-shadow: 0 12px 26px rgba(122, 64, 229, .24);
     transform-origin: 100% 100%;
   }
+  .user.com-foto { width: 500px; padding: 10px 10px 18px; }
+  .user.com-foto .foto { border-radius: 28px 28px 14px 14px; }
+  .user.com-foto .legenda-foto { padding: 14px 20px 0; }
   .ia { align-self: flex-start; max-width: 92%; transform-origin: 0 0; }
   .bolha {
     background: #f5f2fc; border-radius: 10px 36px 36px 36px;
@@ -117,22 +136,28 @@ const CONFIG = {
   }
   .bolha p { margin: 0; }
   .bolha p + p { margin-top: 10px; }
+  .bolha p.novo { margin-top: 26px; padding-top: 22px; border-top: 2px solid #e6dff8; }
   .bolha b { font-weight: 600; color: var(--roxo-escuro); }
   .bolha .w { display: none; }
   .pontos { display: flex; gap: 12px; padding: 12px 6px; }
   .pontos i { width: 16px; height: 16px; border-radius: 50%; background: #a98cec; display: block; }
 
   .entrada {
-    display: flex; align-items: flex-end; gap: 18px;
-    padding: 24px 32px 32px; border-top: 1px solid var(--linha);
+    position: relative; display: flex; align-items: flex-end; gap: 18px;
+    padding: 24px 32px 32px; border-top: 1px solid var(--linha); background: #fff;
   }
   .campo {
-    flex: 1; min-height: 96px; border: 2px solid #e6e2f0; border-radius: 48px;
-    padding: 23px 34px; font-size: 33px; line-height: 1.42; color: var(--texto);
+    position: relative; flex: 1; min-height: 96px; border: 2px solid #e6e2f0; border-radius: 48px;
+    padding: 23px 34px 23px 84px; font-size: 33px; line-height: 1.42; color: var(--texto);
     background: #fff; word-break: break-word;
   }
   .campo.foco { border-color: #c7b2f5; box-shadow: 0 0 0 6px rgba(122, 64, 229, .09); }
   .campo .ph { color: #aaa7b6; }
+  .clipe {
+    position: absolute; left: 18px; bottom: 15px; width: 58px; height: 58px; border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .clipe svg { width: 34px; height: 34px; }
   .cursor {
     display: inline-block; width: 3px; height: 40px; margin: 0 1px -8px;
     background: var(--roxo); border-radius: 2px;
@@ -143,12 +168,70 @@ const CONFIG = {
   }
   .enviar svg { width: 40px; height: 40px; }
 
-  /* ---------- indicador de conversa ---------- */
-  .dots { position: absolute; left: 0; right: 0; top: 1250px; display: flex; justify-content: center; gap: 14px; }
-  .cinema .dots { top: 1290px; }
+  /* anexo aguardando envio (miniatura acima do campo) */
+  .anexo-prev {
+    position: absolute; left: 34px; bottom: calc(100% + 14px);
+    width: 170px; height: 84px; border-radius: 18px; border: 4px solid #fff;
+    box-shadow: 0 10px 26px rgba(62, 31, 124, .22); transform-origin: 0 100%;
+    display: none;
+  }
+  .anexo-prev .mini { position: absolute; inset: 0; border-radius: 14px; overflow: hidden; }
+  .anexo-prev .mini .foto { width: 480px; transform: scale(.3375); transform-origin: 0 0; }
+  .anexo-prev .x {
+    position: absolute; right: -12px; top: -12px; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--roxo-escuro); color: #fff; font-size: 22px; line-height: 34px; text-align: center; font-weight: 600;
+  }
+
+  /* ---------- "foto" da conta de luz ---------- */
+  .foto {
+    position: relative; width: 100%; height: 226px; overflow: hidden;
+    background: radial-gradient(130% 110% at 25% 15%, #ece4d6 0%, #cdbfab 55%, #a99881 100%);
+  }
+  .foto::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.28), transparent 45%, rgba(40,25,10,.18));
+  }
+  .papel {
+    position: absolute; left: 70px; top: 20px; width: 340px;
+    transform: rotate(-4deg); background: #fbfaf5; border-radius: 3px;
+    box-shadow: 0 14px 24px rgba(60, 40, 20, .38), 0 2px 4px rgba(60, 40, 20, .2);
+    font-family: "Inter", sans-serif; color: #2c3440; padding-bottom: 14px; line-height: 1.2;
+  }
+  .papel .topo {
+    background: #1f5fa8; color: #fff; padding: 9px 14px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 600; letter-spacing: .6px; border-radius: 3px 3px 0 0;
+  }
+  .papel .topo small { display: block; font-weight: 500; font-size: 8.5px; letter-spacing: 0; opacity: .85; margin-top: 2px; }
+  .papel .topo .raio { font-size: 20px; }
+  .papel .meta { display: flex; justify-content: space-between; padding: 7px 14px; font-size: 8.5px; color: #5d6672; border-bottom: 1px dashed #d5d2c8; }
+  .papel .meta b { display: block; color: #2c3440; font-size: 10.5px; margin-top: 1px; }
+  .papel .total {
+    margin: 8px 14px; background: #eaf1fa; border-radius: 4px; padding: 6px 10px;
+    display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; color: #1f5fa8; font-weight: 600;
+  }
+  .papel .total b { font-size: 20px; color: #14396b; }
+  .papel table { width: calc(100% - 28px); margin: 0 14px; font-size: 9.5px; border-collapse: collapse; }
+  .papel td { padding: 3.5px 0; border-bottom: 1px solid #ebe8df; }
+  .papel td:last-child { text-align: right; font-weight: 600; }
+  .papel .hist { display: flex; align-items: flex-end; gap: 6px; height: 30px; margin: 9px 14px 0; }
+  .papel .hist i { flex: 1; background: #a9c0dd; border-radius: 1px; }
+  .papel .hist i:last-child { background: #1f5fa8; }
+  .papel .barras { height: 24px; margin: 10px 14px 0; background: repeating-linear-gradient(90deg, #26282c 0 2px, transparent 2px 4px, #26282c 4px 5px, transparent 5px 8px, #26282c 8px 11px, transparent 11px 12px); }
+
+  /* ---------- indicador de conversa e legenda ---------- */
+  .dots { position: absolute; left: 0; right: 0; top: 1232px; display: flex; justify-content: center; gap: 14px; }
+  .cinema .dots { top: 1262px; }
   .dot { height: 16px; border-radius: 999px; background: #dcd7e8; position: relative; overflow: hidden; }
   .dot i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--roxo); border-radius: 999px; }
   .cinema .dot i { background: #fff; }
+  .faixa { display: none; position: absolute; left: 0; right: 0; bottom: 0; height: 190px;
+    background: linear-gradient(to bottom, rgba(42, 17, 88, 0), rgba(42, 17, 88, .92) 55%, #2a1158); }
+  .cinema .faixa { display: block; }
+  .legenda {
+    position: absolute; left: 60px; right: 60px; top: 1272px; text-align: center;
+    font-size: 22px; line-height: 1.35; color: #9a97a6; font-weight: 400;
+  }
+  .cinema .legenda { top: 1298px; color: rgba(236, 230, 250, .62); }
 </style>
 </head>
 <body>
@@ -157,8 +240,9 @@ const CONFIG = {
 
   <div class="cam" id="cam">
     <div class="card" id="card">
-      <div class="area"><div class="msgs" id="msgs"></div></div>
+      <div class="area"><div class="msgs" id="msgs"><div class="lista" id="lista"></div></div></div>
       <div class="entrada">
+        <div class="anexo-prev" id="anexoPrev"><div class="mini"></div><div class="x">×</div></div>
         <div class="campo" id="campo"></div>
         <div class="enviar" id="enviar">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -169,7 +253,9 @@ const CONFIG = {
     </div>
   </div>
 
+  <div class="faixa"></div>
   <div class="dots" id="dots"></div>
+  <div class="legenda" id="legenda"></div>
 </div>
 
 <script>
@@ -182,6 +268,7 @@ const CONFIG = {
   document.documentElement.style.setProperty("--fundo", BG);
   const stage = document.getElementById("stage");
   if (CINEMA) stage.classList.add("cinema");
+  document.getElementById("legenda").textContent = CONFIG.legenda || "";
 
   /* ---------- utilitários ---------- */
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -202,7 +289,22 @@ const CONFIG = {
   const graphemes = (s) => (seg ? Array.from(seg.segment(s), (x) => x.segment) : Array.from(s));
   // espaço antes de um emoji no fim da frase vira não-separável (o emoji não quebra sozinho)
   const glue = (s) => s.replace(/ (\p{Extended_Pictographic}[️‍\p{Extended_Pictographic}]*)$/u, " $1");
-  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  /* ---------- "foto" do anexo ---------- */
+  function fotoHTML(a) {
+    if (!a) return "";
+    const itens = (a.itens || []).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+    const hist = [62, 70, 58, 66, 74, 81].map((h) => `<i style="height:${h}%"></i>`).join("");
+    return `<div class="foto"><div class="papel">
+      <div class="topo"><div>CONTA DE ENERGIA<small>Distribuidora de energia elétrica</small></div><span class="raio">⚡</span></div>
+      <div class="meta"><div>Referência<b>${esc(a.referencia || "")}</b></div><div>Vencimento<b>${esc(a.vencimento || "")}</b></div><div>Consumo<b>${esc(a.consumo || "")}</b></div></div>
+      <div class="total"><span>TOTAL A PAGAR</span><b>${esc(a.total || "")}</b></div>
+      <table>${itens}</table>
+      <div class="hist">${hist}</div>
+      <div class="barras"></div>
+    </div></div>`;
+  }
 
   /* ---------- linha do tempo (determinística: o vídeo sai sempre igual) ---------- */
   const FADE_OUT = CINEMA ? 1.2 : 0.8;
@@ -211,9 +313,10 @@ const CONFIG = {
     const pergunta = glue(c.pergunta);
     const chars = graphemes(pergunta);
     const charT = [];
-    let t = CINEMA ? 1.1 : 0.8;              // começa a digitar
+    const anexoT = c.anexo ? (CINEMA ? 1.2 : 0.6) : null;    // toque no clipe
+    let t = (CINEMA ? 1.1 : 0.8) + (c.anexo ? 1.3 : 0);         // começa a digitar
     chars.forEach((ch, i) => {
-      let d = 0.045 + r() * 0.05;            // velocidade natural com variação
+      let d = 0.045 + r() * 0.05;
       const prev = chars[i - 1] || "";
       if (prev === " ") d += 0.03;
       if (/[,.?!]/.test(prev)) d += 0.12;
@@ -225,26 +328,31 @@ const CONFIG = {
     const sendT = typeEnd + 0.5;
     const typingStart = sendT + 0.45;
     const typingEnd = typingStart + CONFIG.digitandoSegundos;
-    const lines = c.resposta.map((line) => {
+    const lines = [];
+    let novo = false;
+    c.resposta.forEach((line) => {
+      if (!line.trim()) { novo = true; return; }
       let bold = false;
-      return glue(line).split(/[ \t\n]+/).filter(Boolean).map((raw) => {
+      const words = glue(line).split(/[ \t\n]+/).filter(Boolean).map((raw) => {
         let w = raw;
         if (w.startsWith("**")) { bold = true; w = w.slice(2); }
         const b = bold;
         if (w.includes("**")) { bold = false; w = w.replace("**", ""); }
         return { w, b };
       });
+      lines.push({ words, novo });
+      novo = false;
     });
     const wordT = [];
     t = typingEnd;
-    lines.forEach((words, li) => words.forEach((wd, wi) => {
-      if (li + wi > 0) t += 0.05 + r() * 0.045 + (wi === 0 ? 0.18 : 0) + (/[,.:!;]$/.test(words[wi - 1]?.w || "") ? 0.06 : 0);
+    lines.forEach((ln, li) => ln.words.forEach((wd, wi) => {
+      if (li + wi > 0) t += 0.05 + r() * 0.045 + (wi === 0 ? (ln.novo ? 0.7 : 0.18) : 0) + (/[,.:!;]$/.test(ln.words[wi - 1]?.w || "") ? 0.06 : 0);
       wordT.push(t);
     }));
     const streamEnd = t + 0.3;
-    const holdEnd = streamEnd + CONFIG.leituraSegundos + (CINEMA ? 0.4 : 0);
+    const holdEnd = streamEnd + CONFIG.leituraSegundos + (CINEMA ? 0.4 : 0) + (lines.some((l) => l.novo) ? 1.0 : 0);
     const dur = holdEnd + FADE_OUT;
-    return { c, pergunta, chars, charT, typeEnd, sendT, typingStart, typingEnd, lines, wordT, streamEnd, holdEnd, dur };
+    return { c, pergunta, chars, charT, anexoT, typeEnd, sendT, typingStart, typingEnd, lines, wordT, streamEnd, holdEnd, dur };
   });
   const raw = timelines.reduce((s, x) => s + x.dur, 0);
   const TOTAL_FRAMES = Math.ceil(raw * FPS - 1e-6);
@@ -257,11 +365,13 @@ const CONFIG = {
 
   /* ---------- elementos ---------- */
   const $ = (id) => document.getElementById(id);
-  const elCard = $("card"), elCam = $("cam"), elMsgs = $("msgs"), elCampo = $("campo"), elEnviar = $("enviar"), elDots = $("dots");
+  const elCard = $("card"), elCam = $("cam"), elMsgs = $("msgs"), elLista = $("lista"), elCampo = $("campo");
+  const elEnviar = $("enviar"), elDots = $("dots"), elPrev = $("anexoPrev");
   const enviarSvg = elEnviar.querySelector("svg");
-  const CARD = { w: 968, h: 1100 };
-  const SCREEN = CINEMA ? { x: 540, y: 640 } : { x: 540, y: 80 + CARD.h / 2 };
+  const CARD = { w: 968, h: 1150 };
+  const SCREEN = CINEMA ? { x: 540, y: 630 } : { x: 540, y: 50 + CARD.h / 2 };
   elCam.style.perspectiveOrigin = `${SCREEN.x}px ${SCREEN.y}px`;
+  const CLIPE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`;
 
   const dots = CONVERSAS.map(() => {
     const d = document.createElement("div"); d.className = "dot";
@@ -294,9 +404,14 @@ const CONFIG = {
   let built = -1, ui = null;
   function build(i) {
     const tl = timelines[i];
-    elMsgs.innerHTML = "";
+    elLista.innerHTML = "";
     const user = document.createElement("div");
-    user.className = "user"; user.textContent = tl.pergunta;
+    if (tl.c.anexo) {
+      user.className = "user com-foto";
+      user.innerHTML = fotoHTML(tl.c.anexo) + `<div class="legenda-foto">${esc(tl.pergunta)}</div>`;
+    } else {
+      user.className = "user"; user.textContent = tl.pergunta;
+    }
     const typing = document.createElement("div");
     typing.className = "ia";
     typing.innerHTML = `<div class="bolha"><div class="pontos"><i></i><i></i><i></i></div></div>`;
@@ -304,9 +419,10 @@ const CONFIG = {
     ia.className = "ia";
     const bolha = document.createElement("div"); bolha.className = "bolha";
     const spans = [];
-    tl.lines.forEach((words) => {
+    tl.lines.forEach((ln) => {
       const p = document.createElement("p");
-      words.forEach((wd, wi) => {
+      if (ln.novo) p.className = "novo";
+      ln.words.forEach((wd, wi) => {
         const s = document.createElement(wd.b ? "b" : "span");
         s.className = "w";
         s.textContent = (wi ? " " : "") + wd.w;
@@ -315,7 +431,8 @@ const CONFIG = {
       bolha.appendChild(p);
     });
     ia.appendChild(bolha);
-    elMsgs.append(user, typing, ia);
+    elLista.append(user, typing, ia);
+    elPrev.querySelector(".mini").innerHTML = fotoHTML(tl.c.anexo);
     ui = { user, typing, ia, spans, pontos: typing.querySelectorAll(".pontos i") };
     built = i;
   }
@@ -326,18 +443,37 @@ const CONFIG = {
   }
   let M = null;
   function measure() {
+    elLista.style.transform = "";
     M = timelines.map((tl, i) => {
       build(i);
-      ui.typing.style.display = "none"; ui.ia.style.display = "";
+      ui.typing.style.display = "none"; ui.ia.style.display = ""; ui.user.style.display = "";
       ui.spans.forEach((s) => { s.style.display = "inline"; });
       const user = offsetIn(ui.user), ia = offsetIn(ui.ia);
       const words = ui.spans.map((s) => { const o = offsetIn(s); return o.y + o.h / 2; });
+      const wordsBottom = ui.spans.map((s) => { const o = offsetIn(s); return o.y + o.h; });
+      const areaH = elMsgs.clientHeight;
+      const overflow = elLista.offsetHeight - areaH;
       ui.ia.style.display = "none"; ui.typing.style.display = "";
       const typing = offsetIn(ui.typing);
       const campo = offsetIn(elCampo);
-      return { user, ia, typing, words, campo, overflow: elMsgs.scrollHeight - elMsgs.clientHeight };
+      return { user, ia, typing, words, wordsBottom, campo, areaH, overflow };
     });
     built = -1;
+  }
+
+  /* ---------- rolagem suave quando a resposta passa da janela ---------- */
+  const BOLHA_PAD = 26 + 44;            // padding de baixo da bolha + da lista
+  function scrollRaw(i, lt) {
+    const tl = timelines[i], m = M[i];
+    let w = 0;
+    while (w < tl.wordT.length && lt >= tl.wordT[w]) w++;
+    if (!w) return 0;
+    return Math.max(0, m.wordsBottom[w - 1] + BOLHA_PAD - m.areaH);
+  }
+  function scrollAt(i, lt) {
+    let s = 0; const n = 10;
+    for (let k = 0; k < n; k++) s += scrollRaw(i, lt - k * 0.05);
+    return s / n;
   }
 
   /* ---------- câmera ---------- */
@@ -352,18 +488,19 @@ const CONFIG = {
     if (!CINEMA) return { ...FLAT, blur: 0 };
     const tl = timelines[i], m = M[i];
     const INPUT = () => ({
-      fx: 455, fy: m.campo.y + m.campo.h / 2 - 150,
+      fx: 455, fy: m.campo.y + m.campo.h / 2 - (tl.c.anexo ? 190 : 150),
       s: mix(1.12, 1.22, easeInOut(prog(lt, 0.8, tl.sendT - 0.8))), rx: 7, ry: 8, rz: -1,
     });
-    const CONV = () => ({ fx: CARD.w / 2, fy: (m.user.y + m.typing.y + m.typing.h) / 2 + 40, s: 1.24, rx: 3, ry: -6, rz: 0.6 });
+    const CONV = () => ({ fx: CARD.w / 2, fy: Math.min((m.user.y + m.typing.y + m.typing.h) / 2 + 40, m.areaH - 300), s: 1.2, rx: 3, ry: -6, rz: 0.6 });
     const FOLLOW = () => {
       let y = 0; const n = 12;             // média de posições recentes = movimento suave
-      for (let k = 0; k < n; k++) y += wordY(m, tl, lt - k * 0.06);
+      for (let k = 0; k < n; k++) y += wordY(m, tl, lt - k * 0.06) - scrollRaw(i, lt - k * 0.06);
       y /= n;
-      return { fx: CARD.w / 2, fy: Math.max(y - 40, m.user.y + 260), s: 1.2, rx: 2.5, ry: -4, rz: 0.4 };
+      return { fx: CARD.w / 2, fy: Math.max(y - 40, 420), s: 1.18, rx: 2.5, ry: -4, rz: 0.4 };
     };
     const READ = () => {
-      const top = m.user.y, bot = m.ia.y + m.ia.h;
+      const fin = scrollRaw(i, tl.dur);
+      const top = Math.max(0, m.user.y - fin), bot = Math.min(m.areaH, m.ia.y + m.ia.h - fin);
       const p = prog(lt, tl.streamEnd, tl.holdEnd - tl.streamEnd);
       return { fx: CARD.w / 2, fy: mix((top + bot) / 2, CARD.h / 2, 0.6), s: 0.92 + 0.04 * p,
         rx: mix(3, 1.5, p), ry: mix(-5, 4, p), rz: mix(0.4, -0.3, p) };
@@ -394,16 +531,29 @@ const CONFIG = {
     const lt = t - tl.start;
     if (built !== i) build(i);
 
+    // --- anexo: toque no clipe e miniatura acima do campo ---
+    const temAnexo = tl.anexoT !== null;
+    const clipeAtivo = temAnexo && lt >= tl.anexoT - 0.1 && lt < tl.anexoT + 0.35;
+    const clipePress = temAnexo ? Math.sin(Math.PI * prog(lt, tl.anexoT - 0.1, 0.3)) : 0;
+    const clipeHtml = `<span class="clipe" style="background:${clipeAtivo ? "#efe7fd" : "transparent"};transform:scale(${1 - 0.15 * clipePress})">${CLIPE_SVG.replace("<svg ", `<svg stroke="${clipeAtivo ? "#7a40e5" : "#a6a3b3"}" `)}</span>`;
+    const sent = lt >= tl.sendT;
+    if (temAnexo && lt >= tl.anexoT + 0.2 && lt < tl.sendT + 0.25) {
+      const pin = easeBack(prog(lt, tl.anexoT + 0.2, 0.4));
+      const pout = easeInOut(prog(lt, tl.sendT - 0.02, 0.25));
+      elPrev.style.display = "block";
+      elPrev.style.opacity = clamp(prog(lt, tl.anexoT + 0.2, 0.15)) * (1 - pout);
+      elPrev.style.transform = `translateY(${-30 * pout}px) scale(${mix(0.7, 1, pin) * (1 - 0.15 * pout)})`;
+    } else elPrev.style.display = "none";
+
     // --- campo de texto ---
     let n = 0;
     while (n < tl.charT.length && lt >= tl.charT[n]) n++;
-    const sent = lt >= tl.sendT;
     const focused = lt >= tl.charT[0] - 0.35 && !sent;
     const txt = sent ? "" : tl.chars.slice(0, n).join("");
     const last = n ? tl.charT[n - 1] : tl.charT[0] - 0.35;
     const blinkOn = lt - last < 0.45 || Math.floor((lt - last) / 0.5) % 2 === 1;
     const caret = focused && blinkOn ? '<span class="cursor"></span>' : "";
-    const html = txt ? esc(txt) + caret : caret + `<span class="ph">${esc(CONFIG.placeholder)}</span>`;
+    const html = clipeHtml + (txt ? esc(txt) + caret : caret + `<span class="ph">${esc(CONFIG.placeholder)}</span>`);
     if (elCampo._h !== html) { elCampo.innerHTML = html; elCampo._h = html; }
     elCampo.classList.toggle("foco", focused);
 
@@ -418,6 +568,7 @@ const CONFIG = {
     const foE = easeInOut(prog(lt, tl.holdEnd, CINEMA ? 0.7 : 0.45));
     elMsgs.style.opacity = 1 - foE;
     elMsgs.style.transform = `translateY(${-36 * foE}px)`;
+    elLista.style.transform = `translateY(${-scrollAt(i, lt).toFixed(2)}px)`;
 
     const ub = prog(lt, tl.sendT + 0.06, 0.42);
     ui.user.style.display = sent ? "" : "none";
@@ -446,8 +597,6 @@ const CONFIG = {
       if (k < w) { s.style.display = "inline"; s.style.opacity = easeOut(prog(lt, tl.wordT[k], 0.22)); }
       else if (s.style.display !== "none") s.style.display = "none";
     }
-    const over = elMsgs.scrollHeight - elMsgs.clientHeight;
-    elMsgs.scrollTop = over > 0 ? over : 0;
 
     // --- câmera ---
     const c = camAt(i, lt);
@@ -498,7 +647,7 @@ const CONFIG = {
   window.PREVIEW = {
     duration: DURATION, frames: TOTAL_FRAMES, fps: FPS, renderAt, timelines,
     reset() { M = null; built = -1; },
-    fits() { measure(); return M.map((m) => m.overflow); },   // > 0: a resposta não cabe
+    fits() { measure(); return M.map((m) => m.overflow); },   // > 0: a resposta rola dentro da janela
   };
 
   if (params.has("record")) return;     // a gravação controla o tempo quadro a quadro

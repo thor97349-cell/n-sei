@@ -1,6 +1,12 @@
 # Prévia do chat (Adultando)
 
-Dois vídeos com as mesmas 3 conversas (conta de luz, primeiro currículo e divisão do salário), em loop sem pulo.
+Dois vídeos com as mesmas 3 conversas, em loop sem pulo:
+
+1. **Conta de luz**: a pessoa anexa a foto da conta e a IA explica cada parte com os valores dela.
+2. **Primeiro currículo**: dicas e, em seguida, a oferta de montar o currículo pedindo nome, cidade, contato etc.
+3. **Dividir o salário**: 50/30/20 aplicado a R$ 2 mil.
+
+Embaixo de cada vídeo há uma legenda pequena: "Prévia ilustrativa. Não há garantia de que a versão final seja assim."
 
 | Arquivo | O que é |
 |---|---|
@@ -11,8 +17,8 @@ Dois vídeos com as mesmas 3 conversas (conta de luz, primeiro currículo e divi
 
 ## Trocar as conversas
 
-Edite o array `CONVERSAS` no topo do HTML (`pergunta` e `resposta`, uma linha por item, `**negrito**`).
-Em `CONFIG` dá para trocar as cores de fundo.
+Edite o array `CONVERSAS` no topo do HTML (`pergunta` e `resposta`, uma linha por item, `**negrito**`, linha vazia `""` = novo parágrafo).
+Os valores da foto da conta ficam em `anexo`. Em `CONFIG` dá para trocar as cores de fundo e o texto da legenda.
 
 ## Gerar os vídeos de novo
 

@@ -44,7 +44,7 @@ for (const input of entradas) {
   });
   const { frames, fps, duration } = await page.evaluate(() => window.PREVIEW);
   const overflow = await page.evaluate(() => window.PREVIEW.fits());
-  overflow.forEach((px, i) => { if (px > 0) console.warn(`⚠ Conversa ${i + 1}: resposta passa ${px}px da janela. Encurte o texto.`); });
+  overflow.forEach((px, i) => { if (px > 150) console.warn(`⚠ Conversa ${i + 1}: passa ${px}px da janela (o chat rola, mas o começo some). Vale encurtar o texto.`); });
   console.log(`Gravando ${frames} quadros (${duration.toFixed(2)}s) → ${output}`);
 
   // 1) quadros → arquivo intermediário sem perdas
