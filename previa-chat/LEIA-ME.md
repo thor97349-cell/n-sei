@@ -10,8 +10,8 @@ Embaixo de cada vídeo há uma legenda pequena: "Prévia ilustrativa. Não há g
 
 | Arquivo | O que é |
 |---|---|
-| `adultando-chat.mp4` | Versão normal: só a janela do chat, fundo branco. H.264, sem áudio, 1080×1350, 30 fps, 49 s, ~1,1 MB |
-| `adultando-chat-cinematico.mp4` | Versão cinematográfica: câmera em 3D, zoom no texto, foco entrando e saindo, fundo roxo do site com luzes. 52 s, ~4,6 MB |
+| `adultando-chat.mp4` | Versão normal: só a janela do chat, fundo branco. H.264, sem áudio, 1080×1350, 30 fps, 55 s, ~1,5 MB |
+| `adultando-chat-cinematico.mp4` | Versão cinematográfica: câmera em 3D, zoom no texto, foco entrando e saindo, fundo roxo do site com luzes. 58 s, ~4,6 MB |
 | `adultando-chat.html` / `adultando-chat-cinematico.html` | As mesmas animações em HTML (arquivo único, roda offline e em loop) |
 | `gravar-video.mjs` | Gera os MP4 de novo a partir dos HTML |
 
