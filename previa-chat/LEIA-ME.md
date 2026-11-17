@@ -1,18 +1,20 @@
-# Prévia do Mentor IA (Adultando)
+# Prévia do chat (Adultando)
+
+Dois vídeos com as mesmas 3 conversas (conta de luz, primeiro currículo e divisão do salário), em loop sem pulo.
 
 | Arquivo | O que é |
 |---|---|
-| `adultando-previa-chat.mp4` | Vídeo final: H.264, sem áudio, 1080×1350 (4:5), 30 fps, 65 s, ~2 MB, loop sem pulo |
-| `adultando-previa-chat.html` | A mesma animação em HTML/CSS/JS (arquivo único, fontes embutidas, roda offline e em loop) |
-| `gravar-video.mjs` | Gera o MP4 de novo a partir do HTML |
+| `adultando-chat.mp4` | Versão normal: só a janela do chat, fundo branco. H.264, sem áudio, 1080×1350, 30 fps, 49 s, ~1,1 MB |
+| `adultando-chat-cinematico.mp4` | Versão cinematográfica: câmera em 3D, zoom no texto, foco entrando e saindo, fundo roxo do site com luzes. 52 s, ~4,6 MB |
+| `adultando-chat.html` / `adultando-chat-cinematico.html` | As mesmas animações em HTML (arquivo único, roda offline e em loop) |
+| `gravar-video.mjs` | Gera os MP4 de novo a partir dos HTML |
 
 ## Trocar as conversas
 
-Abra `adultando-previa-chat.html` e edite o array `CONVERSAS` no topo do arquivo
-(`pergunta`, `resposta` com uma linha por item, `**negrito**`, e `tema`: `dinheiro`, `carreira` ou `vida`).
-Em `CONFIG` dá para trocar a cor de fundo (`#ffffff` do hero ou `#f2f2f6` das seções cinza).
+Edite o array `CONVERSAS` no topo do HTML (`pergunta` e `resposta`, uma linha por item, `**negrito**`).
+Em `CONFIG` dá para trocar as cores de fundo.
 
-## Gerar o vídeo de novo
+## Gerar os vídeos de novo
 
 Precisa de Node, Playwright (com Chromium) e ffmpeg:
 
@@ -20,14 +22,12 @@ Precisa de Node, Playwright (com Chromium) e ffmpeg:
 node previa-chat/gravar-video.mjs
 ```
 
-O script avisa se alguma resposta ficar grande demais para a janela.
-
 ## Como colocar na landing
 
 ```html
-<video src="/adultando-previa-chat.mp4" autoplay muted loop playsinline preload="auto"
+<video src="/adultando-chat.mp4" autoplay muted loop playsinline preload="auto"
        width="1080" height="1350" style="width:100%;max-width:540px;height:auto;display:block"
-       aria-label="Prévia do Mentor IA respondendo dúvidas de dinheiro, carreira e vida prática"></video>
+       aria-label="Prévia do chat do Adultando respondendo dúvidas"></video>
 ```
 
 `muted` e `playsinline` são obrigatórios para o autoplay funcionar no celular (principalmente iPhone).
