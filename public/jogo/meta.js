@@ -32,7 +32,7 @@ window.F = window.F || {};
   M.isUnlocked = (ch) => !ch.unlock || !!F.save.ach[ch.unlock];
   M.charsUnlocked = () => F.CHARACTERS.filter(M.isUnlocked).length;
   M.charFor = (achId) => F.CHARACTERS.find((c) => c.unlock === achId);
-  M.reset = () => { localStorage.removeItem(KEY); F.save = load(); F.audio.setSfx(true); F.audio.setMusic(true); };
+  M.reset = () => { try { localStorage.removeItem(KEY); } catch { /* sem armazenamento */ } F.save = load(); F.audio.setSfx(true); F.audio.setMusic(true); };
 
   // estatísticas acumuladas somadas com as da partida em andamento
   function liveStats(G) {
