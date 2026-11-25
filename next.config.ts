@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     return [
       // Editor de vídeos FoodCreator: página estática em public/editor/.
       { source: "/editor", destination: "/editor/index.html" },
+      // FAÍSCA, jogo de sobrevivência em canvas: página estática em public/jogo/.
+      { source: "/jogo", destination: "/jogo/index.html" },
     ];
   },
   headers() {
